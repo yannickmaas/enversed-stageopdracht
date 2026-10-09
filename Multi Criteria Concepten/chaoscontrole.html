@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="nl" data-game="chaoscontrole">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chaoscontrole — Enversed Studios × BHVR × Philips</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8F0F6; --panel:#FFFFFF; --ink:#0B3C5D; --soft:#5B7A91; --line:#C9D8E4;
+  --blue:#2F8FCB; --ok:#2FA36B; --warn:#EE9B2F; --crit:#D9442B; --heat:0;
+  font-family:"Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:color-mix(in srgb, var(--bg), #F6D5CC calc(var(--heat)*100%));color:var(--ink);transition:background .6s;overflow:hidden}
+body.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translate(3px,0)}50%{transform:translate(-3px,1px)}75%{transform:translate(2px,-1px)}}
+#vignette{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 calc(var(--heat)*180px) rgba(217,68,43,calc(var(--heat)*.55));z-index:5}
+header{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:22px;align-items:center;padding:12px 22px;background:var(--ink);color:#fff}
+header h1{margin:0;font-size:26px;font-weight:800;letter-spacing:.01em}
+header small{display:block;font-weight:500;font-size:13px;opacity:.7}
+.stat{text-align:right;line-height:1}
+.stat b{display:block;font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;opacity:.7}
+#chaosWrap{display:flex;flex-direction:column;gap:5px}
+#chaosWrap span{font-size:13px;opacity:.8}
+#chaosBar{height:16px;border-radius:8px;background:rgba(255,255,255,.15);overflow:hidden}
+#chaosFill{height:100%;width:0;background:linear-gradient(90deg,var(--ok),var(--warn) 55%,var(--crit));transition:width .3s}
+main{display:grid;grid-template-columns:210px 1fr 360px;gap:16px;padding:16px 22px;height:calc(100% - 70px)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;overflow:hidden}
+.panel h2{margin:0 0 10px;font-size:17px;font-weight:700}
+.res{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;margin-bottom:6px;background:#F2F7FB}
+.res i{font-style:normal;font-size:22px;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:#fff;border:2px solid var(--ok)}
+.res.busy i{border-color:var(--warn);opacity:.55}
+.res div{flex:1;font-size:15px;font-weight:600}
+.res small{display:block;font-weight:400;color:var(--soft);font-size:13px}
+.res .rb{height:4px;background:var(--line);border-radius:2px;margin-top:4px;overflow:hidden}
+.res .rb em{display:block;height:100%;width:0;background:var(--warn)}
+#legend{margin-top:14px;font-size:13px;color:var(--soft);line-height:1.5}
+#floor svg{width:100%;height:100%}
+.zone rect{fill:#F4F9FC;stroke:var(--line);stroke-width:2;transition:fill .3s}
+.zone text{font-family:inherit;font-size:15px;fill:var(--soft);font-weight:600}
+.zone.s1 rect{fill:#FFF4DC}.zone.s2 rect{fill:#FFE0BF}.zone.s3 rect{fill:#FFC9BD;animation:zp 1s infinite}
+@keyframes zp{50%{fill:#FFB2A1}}
+.zone .ic{font-size:26px}
+#feed{display:flex;flex-direction:column;gap:9px;overflow-y:auto;height:calc(100% - 30px);padding-right:4px}
+.card{border:1px solid var(--line);border-left:6px solid var(--warn);border-radius:9px;padding:10px 11px;background:#fff;animation:inn .25s ease-out}
+@keyframes inn{from{transform:translateY(-12px);opacity:0}}
+.card.sev1{border-left-color:#E8C547}.card.sev2{border-left-color:var(--warn)}.card.sev3{border-left-color:var(--crit)}
+.card.working{opacity:.65}
+.card .top{display:flex;gap:9px;align-items:flex-start}
+.card .top .ic{font-size:24px;line-height:1}
+.card h3{margin:0;font-size:16px;font-weight:700;line-height:1.15}
+.card .meta{font-size:13px;color:var(--soft)}
+.card .ub{height:6px;background:#EEF3F7;border-radius:3px;margin:8px 0;overflow:hidden}
+.card .ub em{display:block;height:100%;width:0;background:linear-gradient(90deg,#E8C547,var(--crit))}
+.card .acts{display:flex;flex-wrap:wrap;gap:6px}
+.card button{font:inherit;font-size:14px;font-weight:600;border:1px solid var(--line);background:#F2F7FB;color:var(--ink);padding:6px 9px;border-radius:6px;cursor:pointer}
+.card button:hover{background:var(--ink);color:#fff}
+.card button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.tag{font-size:12px;font-weight:700;padding:1px 6px;border-radius:4px;color:#fff;background:var(--warn);margin-left:4px}
+.sev3 .tag{background:var(--crit)}.sev1 .tag{background:#C9A62A}
+#toast{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:8;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.t{background:var(--ink);color:#fff;padding:8px 14px;border-radius:8px;font-size:16px;font-weight:600;animation:tt 2.2s forwards}
+.t.good{background:var(--ok)}.t.bad{background:var(--crit)}
+@keyframes tt{0%{opacity:0;transform:translateY(-6px)}10%,80%{opacity:1;transform:none}100%{opacity:0}}
+.overlay[hidden]{display:none}
+.overlay{position:fixed;inset:0;background:rgba(11,60,93,.82);display:grid;place-items:center;z-index:10;padding:20px}
+.box{background:#fff;border-radius:14px;max-width:620px;width:100%;padding:30px 34px;max-height:90vh;overflow:auto}
+.box h2{font-size:44px;margin:0 0 4px;font-weight:800;line-height:1}
+.box p{font-size:18px;line-height:1.45;color:#2d4f67}
+.box .big{font-size:64px;font-weight:800;margin:6px 0}
+.cta{font:inherit;font-size:22px;font-weight:700;background:var(--crit);color:#fff;border:0;border-radius:10px;padding:13px 28px;cursor:pointer}
+.cta.sec{background:#E1EAF1;color:var(--ink);margin-left:8px}
+.loop{display:flex;gap:10px;margin:16px 0;font-size:18px;font-weight:700}
+.loop span{background:#E8F0F6;padding:8px 12px;border-radius:8px}
+ol.lb{padding-left:22px;font-size:17px}
+.partners{font-size:14px;color:var(--soft);margin-top:18px}
+@media (max-width:980px){main{grid-template-columns:1fr;height:auto}body{overflow:auto}#floor{height:320px}header{grid-template-columns:1fr 1fr;}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:root{--rs-acc:#D9442B;--rs-on:#fff}
+</style>
+</head>
+<body>
+<div id="vignette"></div>
+<header>
+  <h1>Chaoscontrole<small>Afdeling 4B · dagdienst</small></h1>
+  <div id="chaosWrap"><span id="chaosLbl">Druk op de afdeling: 0%</span><div id="chaosBar"><div id="chaosFill"></div></div></div>
+  <div class="stat"><b id="mult">×3</b><span>rust-bonus</span></div>
+  <div class="stat"><b id="score">0</b><span>score</span></div>
+  <div class="stat"><b id="timer">3:00</b><span>tijd</span></div>
+</header>
+<main>
+  <section class="panel">
+    <h2>Beschikbaar team</h2>
+    <div id="res"></div>
+    <div id="legend">Kies bij elke melding wie je stuurt. Een ingezet teamlid is even bezet. Een melding die blijft liggen, escaleert.</div>
+  </section>
+  <section class="panel" id="floor"></section>
+  <section class="panel">
+    <h2>Meldingen <span id="count" style="color:var(--soft);font-weight:500"></span></h2>
+    <div id="feed"></div>
+  </section>
+</main>
+<div id="toast"></div>
+
+<div class="overlay" id="intro">
+  <div class="box">
+    <h2>Chaoscontrole</h2>
+    <p>Je dienst begint rustig. Dat blijft niet zo. Meldingen stapelen zich op: storingen, personeelstekort, veiligheidsalarmen. Je kunt niet alles tegelijk oplossen.</p>
+    <div class="loop"><span>Observeren</span><span>Prioriteren</span><span>Reageren</span></div>
+    <p>Stuur het juiste teamlid naar de juiste melding. Pak de meest kritieke melding als eerste aan voor een prioriteitsbonus. Loopt de druk op tot 100%, dan ontspoort de afdeling.</p>
+    <button class="cta" id="startBtn">Start de dienst</button>
+    <div class="partners">Enversed Studios in samenwerking met BHVR (B&amp;V partners in veiligheid) en Philips</div>
+  </div>
+</div>
+<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+
+<script>
+// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now()) {
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  return { mount };
+})();
+
+</script>
+<script>
+const ACTIONS = {
+  verpl:{label:'Verpleegkundige', res:'verpl', dur:6},
+  tech:{label:'Technicus', res:'tech', dur:7},
+  bhv:{label:'BHV-team', res:'bhv', dur:8},
+  plan:{label:'Planning bellen', res:null, dur:4},
+  herstart:{label:'Systeem herstarten', res:null, dur:5},
+  uitstel:{label:'Uitstellen', res:null, dur:0}
+};
+const CATS = {veiligheid:'Veiligheid', apparatuur:'Apparatuur', personeel:'Personeel', systeem:'Systeem', overbelasting:'Overbelasting', storing:'Storing'};
+const ZONES = {
+  k1:{n:'Kamer 1–4',x:20,y:20,w:250,h:150}, k9:{n:'Kamer 9–12',x:290,y:20,w:250,h:150},
+  post:{n:'Verpleegpost',x:560,y:20,w:220,h:150}, gang:{n:'Gang & lift',x:20,y:190,w:760,h:90},
+  voorraad:{n:'Voorraadruimte',x:20,y:300,w:250,h:160}, tech:{n:'Technische ruimte',x:290,y:300,w:250,h:160},
+  bezoek:{n:'Bezoekersruimte',x:560,y:300,w:220,h:160}
+};
+const POOL = [
+  {t:'Infuuspomp geeft alarm', c:'apparatuur', i:'💉', z:'k1', s:2, ok:'verpl', o:['verpl','tech','uitstel'], why:'Een alarmerende infuuspomp vraagt om een verpleegkundige bij de patiënt.'},
+  {t:'Patiëntmonitor verliest signaal', c:'apparatuur', i:'💓', z:'k9', s:3, ok:'verpl', o:['tech','verpl','herstart'], why:'Een onbewaakte patiënt gaat voor: eerst kijken bij de patiënt, dan pas de techniek.'},
+  {t:'Printer op de post werkt niet', c:'storing', i:'🖨️', z:'post', s:1, ok:'uitstel', o:['tech','uitstel','herstart'], why:'Een printer kan wachten. Houd de technicus vrij voor wat ertoe doet.'},
+  {t:'Rookmelder slaat aan', c:'veiligheid', i:'🔥', z:'voorraad', s:3, ok:'bhv', o:['bhv','tech','uitstel'], why:'Bij een rookmelding verifieert het BHV-team direct. Veiligheid van iedereen gaat voor.'},
+  {t:'Bezoeker gevallen in de gang', c:'veiligheid', i:'🧍', z:'gang', s:3, ok:'verpl', o:['bhv','verpl','plan'], why:'Iemand die gevallen is heeft direct zorg nodig. De verpleegkundige is het dichtst bij.'},
+  {t:'Collega meldt zich ziek', c:'personeel', i:'🤒', z:'post', s:2, ok:'plan', o:['plan','verpl','uitstel'], why:'Regel vervanging via de planning, anders loopt de werkdruk straks overal op.'},
+  {t:'Medicatiesysteem reageert traag', c:'systeem', i:'💊', z:'post', s:2, ok:'herstart', o:['tech','herstart','uitstel'], why:'Een trage module herstart je zelf. Zo blijft de technicus beschikbaar.'},
+  {t:'Liftstoring, patiënt moet naar OK', c:'storing', i:'🛗', z:'gang', s:2, ok:'tech', o:['tech','plan','uitstel'], why:'Een vastzittende lift stagneert patiëntvervoer. Dat is werk voor de technicus.'},
+  {t:'Oproepsysteem valt deels uit', c:'systeem', i:'🔔', z:'k9', s:3, ok:'tech', o:['herstart','tech','verpl'], why:'Als patiënten niet kunnen bellen, moet het oproepsysteem direct door de technicus worden hersteld.'},
+  {t:'Te veel oproepen tegelijk', c:'overbelasting', i:'📞', z:'k1', s:2, ok:'plan', o:['plan','verpl','uitstel'], why:'Bij overbelasting roep je extra handen op via de planning.'},
+  {t:'Koffieautomaat is leeg', c:'storing', i:'☕', z:'bezoek', s:1, ok:'uitstel', o:['tech','uitstel','plan'], why:'Vervelend, maar geen prioriteit. Uitstellen is hier de juiste keuze.'},
+  {t:'Noodverlichting-test mislukt', c:'veiligheid', i:'💡', z:'tech', s:1, ok:'uitstel', o:['tech','uitstel','bhv'], why:'Een mislukte test plan je in voor later. Het is geen acuut gevaar.'},
+  {t:'Stroomschommeling in gebouwdeel', c:'storing', i:'⚡', z:'tech', s:2, ok:'tech', o:['tech','herstart','bhv'], why:'Stroomproblemen laat je controleren door de technicus voordat apparatuur uitvalt.'},
+  {t:'Deur nooduitgang staat open', c:'veiligheid', i:'🚪', z:'gang', s:2, ok:'bhv', o:['bhv','uitstel','tech'], why:'Een open nooduitgang is een beveiligingsrisico. Het BHV-team controleert.'},
+  {t:'Bezoeker voelt zich onwel', c:'veiligheid', i:'😵', z:'bezoek', s:2, ok:'verpl', o:['verpl','bhv','uitstel'], why:'Iemand die onwel is, krijgt direct zorg van een verpleegkundige.'}
+];
+const TEAM = [
+  {id:'verpl',n:'Verpleegkundige Sanne',i:'👩‍⚕️'},{id:'verpl',n:'Verpleegkundige Mo',i:'👨‍⚕️'},
+  {id:'tech',n:'Technicus Ruud',i:'🔧'},{id:'bhv',n:'BHV-team',i:'🦺'}
+];
+const DURATION = 180;
+let S, raf, last;
+
+function ac(){ if(!ac.c){ try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){} } return ac.c }
+function beep(f=600,d=.08,type='sine',v=.08){const c=ac(); if(!c) return; const o=c.createOscillator(), g=c.createGain(); o.type=type; o.frequency.value=f; g.gain.value=v; g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d); o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime+d)}
+
+function drawFloor(){
+  let s = '<svg viewBox="0 0 800 480" role="img" aria-label="Plattegrond van de afdeling">';
+  for(const [k,z] of Object.entries(ZONES)){
+    s += `<g class="zone" id="z-${k}"><rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="10"/><text x="${z.x+12}" y="${z.y+24}">${z.n}</text><text class="ic" id="zi-${k}" x="${z.x+z.w/2}" y="${z.y+z.h/2+18}" text-anchor="middle"></text></g>`;
+  }
+  document.getElementById('floor').innerHTML = s + '</svg>';
+}
+
+function reset(){
+  S = {t:0, score:0, damage:0, cards:[], nextSpawn:1.5, id:0, team:TEAM.map(m=>({...m,busy:0,max:1})),
+       stats:{solved:0, prio:0, esc:{}, wrong:0, missed:{}}, over:false};
+  document.getElementById('feed').innerHTML='';
+  drawFloor(); renderTeam();
+}
+
+function spawn(){
+  const open = new Set(S.cards.map(c=>c.t));
+  const choices = POOL.filter(p=>!open.has(p.t));
+  if(!choices.length) return;
+  const p = choices[Math.floor(Math.random()*choices.length)];
+  const card = {...p, id:++S.id, sev:p.s, u:0, working:0};
+  S.cards.push(card);
+  beep(card.sev===3?880:620,.12,'triangle');
+  const el = document.createElement('div');
+  el.className = 'card'; el.id='c'+card.id;
+  document.getElementById('feed').prepend(el);
+  renderCard(card);
+}
+
+function renderCard(c){
+  const el = document.getElementById('c'+c.id); if(!el) return;
+  el.className = `card sev${c.sev}` + (c.working?' working':'');
+  const sevTxt = ['','laag','middel','kritiek'][c.sev];
+  const btns = c.working ? `<div class="meta">In behandeling…</div>` :
+    `<div class="acts">${c.o.map(a=>`<button data-c="${c.id}" data-a="${a}" ${ACTIONS[a].res && !free(ACTIONS[a].res)?'disabled':''}>${ACTIONS[a].label}</button>`).join('')}</div>`;
+  el.innerHTML = `<div class="top"><span class="ic">${c.i}</span><div><h3>${c.esc?'Geëscaleerd: ':''}${c.t}<span class="tag">${sevTxt}</span></h3><div class="meta">${CATS[c.c]} · ${ZONES[c.z].n}</div></div></div><div class="ub"><em style="width:${c.u*100}%"></em></div>${btns}`;
+}
+
+function free(id){ return S.team.some(m=>m.id===id && m.busy<=0) }
+function take(id, dur){ const m=S.team.find(m=>m.id===id && m.busy<=0); m.busy=dur; m.max=dur; renderTeam(); }
+function renderTeam(){
+  document.getElementById('res').innerHTML = S.team.map(m=>`<div class="res ${m.busy>0?'busy':''}"><i>${m.i}</i><div>${m.n}<small>${m.busy>0?'bezet':'beschikbaar'}</small><div class="rb"><em style="width:${m.busy>0?(m.busy/m.max*100):0}%"></em></div></div></div>`).join('');
+}
+
+function toast(msg, cls=''){ const t=document.createElement('div'); t.className='t '+cls; t.textContent=msg; document.getElementById('toast').appendChild(t); setTimeout(()=>t.remove(),2300); }
+
+function mult(){ const ch=chaos(); return ch<30?3:ch<60?2:1 }
+function chaos(){ return Math.min(100, S.damage + S.cards.filter(c=>!c.working).reduce((a,c)=>a + c.sev*4 + c.u*c.sev*6, 0)); }
+
+function act(id, a){
+  const c = S.cards.find(x=>x.id===id); if(!c || c.working) return;
+  const A = ACTIONS[a];
+  if(A.res && !free(A.res)) return;
+  const maxSev = Math.max(...S.cards.filter(x=>!x.working).map(x=>x.sev));
+  if(a === c.ok){
+    if(A.res) take(A.res, A.dur);
+    const prio = c.sev === maxSev && c.sev>1;
+    if(a==='uitstel'){ finish(c, prio); return; }
+    c.working = A.dur; c.prio = prio; renderCard(c); beep(520,.1);
+  } else {
+    if(A.res) take(A.res, 3);
+    S.score = Math.max(0, S.score-25); S.stats.wrong++;
+    c.u = Math.min(.98, c.u+.25);
+    toast(c.why,'bad'); beep(160,.25,'sawtooth',.06);
+    document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
+    renderCard(c);
+  }
+}
+
+function finish(c, prio){
+  const base = [0,40,90,160][c.sev];
+  const fast = c.u < .3 ? 30 : 0;
+  let pts = Math.round((base + fast) * (prio?1.5:1) * mult());
+  S.score += pts; S.stats.solved++; if(prio) S.stats.prio++;
+  toast(`${prio?'Prioriteit! ':''}+${pts}  ${c.t}`, 'good'); beep(880,.08); setTimeout(()=>beep(1175,.12),80);
+  S.cards = S.cards.filter(x=>x!==c);
+  document.getElementById('c'+c.id)?.remove();
+}
+
+function escalate(c){
+  if(c.sev < 3){
+    c.sev++; c.u = .25; c.esc = true;
+    if(c.ok==='uitstel'){ c.ok=c.o.find(a=>a!=='uitstel'); c.why='Te lang uitgesteld: nu moet er echt iemand naar kijken.'; }
+    S.stats.esc[c.c]=(S.stats.esc[c.c]||0)+1;
+    toast(`Escalatie: ${c.t}`,'bad'); beep(300,.3,'square',.05);
+    renderCard(c);
+  } else {
+    S.damage += 16; S.stats.missed[c.c]=(S.stats.missed[c.c]||0)+1;
+    toast(`Incident! ${c.t} liep uit de hand`,'bad'); beep(120,.5,'sawtooth',.08);
+    document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
+    S.cards = S.cards.filter(x=>x!==c); document.getElementById('c'+c.id)?.remove();
+  }
+}
+
+function tick(now){
+  if(S.over) return;
+  const dt = Math.min(.1,(now-last)/1000); last = now; S.t += dt;
+  const phase = S.t/DURATION;
+  S.nextSpawn -= dt;
+  if(S.nextSpawn<=0){ spawn(); S.nextSpawn = Math.max(1.6, 6 - phase*4.4) * (0.7+Math.random()*0.6); if(phase>.55 && Math.random()<.35) spawn(); }
+  for(const m of S.team) if(m.busy>0) m.busy-=dt;
+  for(const c of [...S.cards]){
+    if(c.working){ c.working -= dt; if(c.working<=0) finish(c, c.prio); continue; }
+    c.u += dt * (0.025 + c.sev*0.018) * (1 + phase*.9);
+    if(c.u>=1) escalate(c);
+  }
+  S.damage = Math.max(0, S.damage - dt*0.6);
+  // UI
+  for(const c of S.cards){ const e=document.querySelector('#c'+c.id+' .ub em'); if(e) e.style.width=(c.u*100)+'%';
+    document.querySelectorAll('#c'+c.id+' button').forEach(b=>{const r=ACTIONS[b.dataset.a].res; b.disabled = r && !free(r);}); }
+  if(Math.floor(S.t*4)!==S.lastTeam){ S.lastTeam=Math.floor(S.t*4); renderTeam(); }
+  for(const k in ZONES){ const cs=S.cards.filter(c=>c.z===k && !c.working); const mx=cs.length?Math.max(...cs.map(c=>c.sev)):0;
+    document.getElementById('z-'+k).setAttribute('class','zone'+(mx?' s'+mx:'')); document.getElementById('zi-'+k).textContent = cs.map(c=>c.i).slice(0,3).join(' '); }
+  const ch = chaos();
+  document.getElementById('chaosFill').style.width = ch+'%';
+  document.getElementById('chaosLbl').textContent = `Druk op de afdeling: ${Math.round(ch)}%`;
+  document.documentElement.style.setProperty('--heat', Math.max(0,(ch-25)/75).toFixed(2));
+  document.getElementById('mult').textContent = '×'+mult();
+  document.getElementById('score').textContent = S.score;
+  const left = Math.max(0, DURATION - S.t);
+  document.getElementById('timer').textContent = `${Math.floor(left/60)}:${String(Math.floor(left%60)).padStart(2,'0')}`;
+  document.getElementById('count').textContent = S.cards.length ? `(${S.cards.length})` : '';
+  if(ch>=100) return end(false);
+  if(left<=0) return end(true);
+  raf = requestAnimationFrame(tick);
+}
+
+function end(survived){
+  S.over = true; cancelAnimationFrame(raf);
+  const worst = Object.entries({...S.stats.esc}).map(([k,v])=>[k, v + (S.stats.missed[k]||0)*2]).sort((a,b)=>b[1]-a[1])[0];
+  let profile;
+  if(!S.stats.solved) profile = 'Je hebt nog geen meldingen opgelost. Kijk eerst welke melding het meest kritiek is en stuur daar het juiste teamlid heen.';
+  else if(worst && worst[0]==='veiligheid') profile = 'Je reageerde vlot, maar veiligheidsmeldingen bleven te lang liggen. Bij rook, een val of een open nooduitgang gaat de veiligheid van mensen altijd voor.';
+  else if(S.stats.wrong > S.stats.solved/2) profile = 'Je greep snel in, maar koos vaak het verkeerde teamlid. Een seconde langer kijken naar wat een melding echt nodig heeft, levert meer op dan snel klikken.';
+  else if(S.stats.prio >= S.stats.solved*.5) profile = 'Sterk geprioriteerd: je pakte meestal de meest kritieke melding als eerste op. Dat is precies wat een drukke afdeling nodig heeft.';
+  else if(worst) profile = `Meldingen in de categorie ${CATS[worst[0]].toLowerCase()} escaleerden het vaakst. Let op hoe kleine problemen daar doorwerken.`;
+  else profile = 'Je hield de afdeling onder controle. Houd je teamleden vrij voor kritieke meldingen door kleine storingen bewust uit te stellen.';
+  document.getElementById('endBox').innerHTML = `
+    <h2>${survived?'Dienst overleefd':'De afdeling ontspoorde'}</h2>
+    <div class="big">${S.score}</div>
+    <p>${S.stats.solved} meldingen opgelost · ${S.stats.prio} keer de hoogste prioriteit eerst · ${Object.values(S.stats.esc).reduce((a,b)=>a+b,0)} escalaties</p>
+    <p><b>Jouw prioriteitsprofiel.</b> ${profile}</p>
+    <p><b>Tip uit de BHV-praktijk.</b> Eerst mensen, dan omgeving, dan techniek. Wat kan wachten, laat je bewust wachten.</p>
+    <button class="cta" id="again">Speel opnieuw</button><div id="rsSlot"></div>`;
+  document.getElementById('end').hidden = false;
+  document.getElementById('again').onclick = start;
+  RESULTS.mount(document.getElementById('rsSlot'), {score:S.score, lines:[survived?'Dienst overleefd':'Afdeling ontspoorde', `${S.stats.solved} meldingen opgelost`, `${S.stats.prio} keer hoogste prioriteit eerst`, `${Object.values(S.stats.esc).reduce((a,b)=>a+b,0)} escalaties`, 'Prioriteitsprofiel: '+profile], tip:'Tip uit de BHV-praktijk: eerst mensen, dan omgeving, dan techniek.'});
+}
+
+function start(){
+  document.getElementById('intro').hidden = true; document.getElementById('end').hidden = true;
+  reset(); ac(); last = performance.now(); raf = requestAnimationFrame(tick);
+}
+document.getElementById('startBtn').onclick = start;
+document.getElementById('feed').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) act(+b.dataset.c, b.dataset.a); });
+reset();
+</script>
+</body>
+</html>

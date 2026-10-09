@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="nl" data-game="pressure-cooker">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pressure Cooker — Enversed Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--wine:#3B0F14;--wine2:#5A1820;--brass:#D8A657;--steam:#F4EDE4;--red:#FF3B3B;--green:#3DDC84;--amber:#FFB020;--rs-acc:#D8A657;--rs-on:#3B0F14;
+  font-family:Rubik,Arial,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:radial-gradient(circle at 50% 40%,#5A1820,var(--wine) 70%);color:var(--steam);display:flex;flex-direction:column;overflow:hidden;user-select:none}
+body.boom{animation:boom .45s}
+@keyframes boom{20%{transform:translate(-10px,6px)}40%{transform:translate(9px,-7px)}60%{transform:translate(-6px,4px)}80%{transform:translate(4px,-3px)}}
+.d{font-family:Bungee,Impact,sans-serif;font-weight:400}
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 24px;gap:16px}
+h1{margin:0;font-size:34px;color:var(--brass)}
+#stable{text-align:center;line-height:1}
+#stable b{font-family:Bungee,sans-serif;font-size:48px;display:block;font-variant-numeric:tabular-nums}
+#stable span{font-size:14px;opacity:.7}
+.hud{display:flex;gap:22px;justify-content:flex-end;align-items:center}
+.hud div{text-align:center;line-height:1}.hud b{font-family:Bungee,sans-serif;display:block;font-size:32px;font-variant-numeric:tabular-nums}.hud span{font-size:13px;opacity:.7}
+#lives{font-size:30px;letter-spacing:4px}
+#combo{color:var(--brass)}
+#grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:16px;padding:6px 24px 24px;min-height:0}
+.pot{position:relative;border:0;border-radius:28px;background:var(--wine2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--steam);font:inherit;padding:10px;touch-action:manipulation;transition:background .2s}
+.pot:active{transform:scale(.97)}
+.pot.off{opacity:.25;cursor:default}
+.pot.locked{opacity:.12;pointer-events:none}
+.pot svg{width:min(78%,210px);height:auto;overflow:visible}
+.pot .lbl{font-weight:700;font-size:clamp(15px,1.6vw,22px)}
+.pot.hot{background:#7A1E24}
+.pot.crit{background:#9C1F24;animation:pulse .35s infinite alternate}
+@keyframes pulse{to{background:#C22A2E}}
+.pot .tag{position:absolute;top:10px;right:12px;background:var(--amber);color:var(--wine);border-radius:12px;padding:2px 10px;font-weight:700;font-size:14px}
+.pop{position:absolute;left:50%;top:30%;transform:translateX(-50%);font-family:Bungee,sans-serif;font-size:30px;pointer-events:none;white-space:nowrap;animation:up .8s forwards;text-shadow:0 3px 0 rgba(0,0,0,.4)}
+@keyframes up{to{transform:translate(-50%,-60px);opacity:0}}
+.puff{position:absolute;left:50%;top:22%;width:40px;height:40px;border-radius:50%;background:var(--steam);opacity:.8;pointer-events:none;animation:puff .9s forwards}
+@keyframes puff{to{transform:translate(calc(-50% + var(--dx)),-140px) scale(4);opacity:0}}
+#banner{position:fixed;left:50%;top:92px;transform:translateX(-50%);background:var(--brass);color:var(--wine);font-family:Bungee,sans-serif;font-size:26px;padding:10px 26px;border-radius:14px;z-index:5}
+#banner[hidden]{display:none}
+button:focus-visible,a:focus-visible{outline:5px solid var(--brass);outline-offset:3px}
+.overlay{position:fixed;inset:0;background:rgba(40,8,12,.94);display:grid;place-items:center;z-index:10;padding:24px}
+.overlay[hidden]{display:none}
+.box{max-width:880px;width:100%;max-height:92vh;overflow:auto}
+.box h2{font-family:Bungee,sans-serif;font-weight:400;font-size:clamp(46px,8vw,104px);margin:0;line-height:1;color:var(--brass)}
+.box p{font-size:21px;line-height:1.45;max-width:56ch}
+.zones{display:flex;gap:10px;margin:14px 0;font-size:17px;flex-wrap:wrap}
+.zones span{padding:6px 12px;border-radius:10px;font-weight:700}
+.go{font-family:Bungee,sans-serif;font-size:30px;background:var(--brass);color:var(--wine);border:0;border-radius:16px;padding:16px 44px;cursor:pointer;margin-top:12px}
+.big{font-family:Bungee,sans-serif;font-size:100px;line-height:1}
+.st{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+.st div{background:var(--wine2);border-radius:16px;padding:12px;font-size:15px}.st b{display:block;font-family:Bungee,sans-serif;font-size:34px}
+@media (max-width:900px){#grid{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(4,1fr)}header{grid-template-columns:1fr 1fr}#stable{display:none}.st{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><h1 class="d">Pressure Cooker</h1><div id="stable"><b>0:00</b><span>systeem stabiel</span></div>
+  <div class="hud"><div><b id="lives">❤️❤️❤️</b></div><div><b id="combo">×1</b><span>combo</span></div><div><b id="score">0</b><span>score</span></div><div><b id="time">75</b><span>sec</span></div></div></header>
+<div id="grid"></div>
+<div id="banner" hidden></div>
+<div class="overlay" id="intro"><div class="box"><h2>Houd het onder controle.</h2><p>Elke afdeling bouwt druk op. Tik om stoom af te laten. Wacht je te lang, dan knapt hij. Te vroeg aftappen levert bijna niets op.</p>
+  <div class="zones"><span style="background:#5A1820">te vroeg</span><span style="background:var(--amber);color:var(--wine)">goed</span><span style="background:var(--green);color:var(--wine)">perfect ×combo</span><span style="background:var(--red)">te laat</span></div>
+  <button class="go" id="startBtn">Vuur aan</button></div></div>
+<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+<script>// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  .rs-simple .rs-row{display:flex;gap:10px;flex-wrap:wrap}
+  .rs-simple .rs-row input{flex:1;min-width:220px;font-size:20px;padding:14px 16px}
+  .rs-simple .rs-send{font-size:20px;padding:14px 22px}
+  .rs-rank{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}.rs-rank b{font-size:34px}.rs-rank span{opacity:.8}
+  .rs-top{display:flex;gap:14px;list-style:decimal inside;padding:0;margin:0 0 14px;font-size:15px;opacity:.8;flex-wrap:wrap}
+  .rs-outro{margin:18px 0 0;font-size:15px;line-height:1.45;opacity:.75;max-width:60ch}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function all() {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(1000).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).map(x => ({ ...x, _id: x.id }));
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderRank(el, runId, score) {
+    const rows = await all(); if (!rows.length) { el.innerHTML = ''; return; }
+    const place = rows.filter(x => x.score > score).length + 1;
+    el.innerHTML = `<div class="rs-rank"><b>#${place}</b><span>van ${rows.length} ${rows.length === 1 ? 'speler' : 'spelers'}</span></div><ol class="rs-top">${rows.slice(0, 5).map(x => `<li>${x.score}</li>`).join('')}</ol>`;
+  }
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now(), opts = {}) {
+    if (opts.simple !== false) return mountSimple(container, result, runId);
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  async function mountSimple(container, result, runId) {
+    const box = document.createElement('div'); box.className = 'rs rs-simple';
+    box.innerHTML = `
+      <div class="rs-rankwrap"></div>
+      <div class="rs-row">
+        <input type="email" class="rs-mail" placeholder="jouw@email.nl" aria-label="E-mailadres" autocomplete="email" inputmode="email">
+        <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Stuur mijn resultaat</a>
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Enversed Studios mag mijn e-mailadres bewaren (optioneel)</label>
+      <div class="rs-status" role="status"></div>
+      ${result.outro ? `<p class="rs-outro">${esc(result.outro)}</p>` : ''}`;
+    container.appendChild(box);
+    const $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'), $send = box.querySelector('.rs-send'), $st = box.querySelector('.rs-status');
+    const refresh = () => { const ok = validEmail($m.value.trim()); $send.setAttribute('aria-disabled', ok ? 'false' : 'true'); $send.href = ok ? mailHref($m.value.trim(), result, '') : '#'; };
+    $m.addEventListener('input', refresh);
+    $m.addEventListener('keydown', e => { if (e.key === 'Enter' && $send.getAttribute('aria-disabled') === 'false') $send.click(); });
+    await saveScore(runId, { ...result, naam: '' });
+    renderRank(box.querySelector('.rs-rankwrap'), runId, result.score);
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim();
+      let kept = false; if ($c.checked) kept = await saveContact(result, '', email);
+      $st.textContent = `Je mailprogramma opent met je resultaat. Klik daar op verzenden.${kept ? ' Je e-mailadres is bewaard.' : ''}`;
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) { const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)'; b.onclick = () => exportCsv(b); box.appendChild(b); }
+  }
+  return { mount };
+})();
+</script>
+<script>
+const NAMES=[['🏭','Productie'],['📅','Planning'],['🧑‍🤝‍🧑','Klanten'],['💻','IT'],['👷','Personeel'],['✅','Kwaliteit'],['📦','Voorraad'],['💶','Financiën']];
+const DUR=75;
+let S, raf, last;
+const $=id=>document.getElementById(id);
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.1,t='square',v=.05){const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+function hiss(){ const c=ac(); if(!c) return; const b=c.createBuffer(1,c.sampleRate*.35,c.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length); const s=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain(); f.type='highpass'; f.frequency.value=2500; g.gain.value=.12; s.buffer=b; s.connect(f).connect(g).connect(c.destination); s.start(); }
+function gauge(p){
+  const a=-210+p/100*240, r=80, rad=x=>x*Math.PI/180;
+  const arc=(from,to,col)=>{ const f=-210+from*2.4,t=-210+to*2.4; const x1=100+r*Math.cos(rad(f)),y1=100+r*Math.sin(rad(f)),x2=100+r*Math.cos(rad(t)),y2=100+r*Math.sin(rad(t)); return `<path d="M${x1} ${y1} A${r} ${r} 0 ${t-f>180?1:0} 1 ${x2} ${y2}" stroke="${col}" stroke-width="16" fill="none"/>`; };
+  return `<svg viewBox="0 0 200 170"><circle cx="100" cy="100" r="96" fill="#2A0A0E" stroke="#D8A657" stroke-width="6"/>${arc(0,35,'#6B2A30')}${arc(35,60,'#FFB020')}${arc(60,90,'#3DDC84')}${arc(90,100,'#FF3B3B')}
+   <line x1="100" y1="100" x2="${100+70*Math.cos(rad(a))}" y2="${100+70*Math.sin(rad(a))}" stroke="#F4EDE4" stroke-width="7" stroke-linecap="round"/><circle cx="100" cy="100" r="11" fill="#D8A657"/>
+   <text x="100" y="150" text-anchor="middle" font-family="Bungee,sans-serif" font-size="26" fill="#F4EDE4">${Math.floor(p)}</text></svg>`;
+}
+function start(){
+  S={t:0,score:0,combo:0,best:0,lives:3,vents:0,perfect:0,early:0,boom:0,stable:0,maxStable:0,next:8,
+     pots:NAMES.map(([ic,n],i)=>({ic,n,p:5+Math.random()*20,r:4.5+Math.random()*4.5,on:i<3,off:0,clog:0,el:null})),over:false,surge:18};
+  $('intro').hidden=true; $('end').hidden=true;
+  $('grid').innerHTML=S.pots.map((p,i)=>`<button class="pot" data-i="${i}" aria-label="${p.n}"><span class="lbl">${p.ic} ${p.n}</span><div class="g"></div></button>`).join('');
+  S.pots.forEach((p,i)=>p.el=$('grid').children[i]);
+  ac(); last=performance.now(); raf=requestAnimationFrame(loop);
+}
+$('grid').addEventListener('pointerdown',e=>{ const b=e.target.closest('.pot'); if(b) vent(+b.dataset.i); });
+$('grid').addEventListener('keydown',e=>{ const b=e.target.closest('.pot'); if(b&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); vent(+b.dataset.i);} });
+function pop(el,txt,col){ const s=document.createElement('div'); s.className='pop'; s.style.color=col; s.textContent=txt; el.appendChild(s); setTimeout(()=>s.remove(),800); }
+function puff(el,n=4){ for(let i=0;i<n;i++){ const s=document.createElement('div'); s.className='puff'; s.style.setProperty('--dx',(Math.random()*120-60)+'px'); s.style.animationDelay=(i*60)+'ms'; el.appendChild(s); setTimeout(()=>s.remove(),1100);} }
+function banner(t){ const b=$('banner'); b.textContent=t; b.hidden=false; clearTimeout(banner.t); banner.t=setTimeout(()=>b.hidden=true,1800); }
+function vent(i){
+  if(!S||S.over) return; const p=S.pots[i]; if(!p.on||p.off>0) return;
+  if(p.clog>0){ p.clog--; tone(300+(3-p.clog)*120,.06); pop(p.el,p.clog?`nog ${p.clog}×`:'los!','#FFB020'); if(p.clog) return; }
+  const v=p.p; let pts, txt, col;
+  if(v<35){ pts=5; txt='te vroeg'; col='#C9A0A0'; S.combo=0; S.early++; tone(220,.08); }
+  else if(v<60){ pts=40; txt='+40'; col='#FFB020'; S.combo=Math.max(0,S.combo-1); tone(520,.08,'triangle'); }
+  else if(v<90){ S.combo++; S.perfect++; pts=100*Math.min(5,1+Math.floor(S.combo/3)); txt=`PERFECT +${pts}`; col='#3DDC84'; tone(700+Math.min(10,S.combo)*50,.1,'triangle'); }
+  else { pts=70; txt='op het nippertje +70'; col='#FF8A5B'; tone(900,.1,'triangle'); }
+  S.best=Math.max(S.best,S.combo); S.score+=pts; S.vents++; p.p=Math.max(0,v-(v<35?v:100)); hiss(); puff(p.el,v>=60?5:2); pop(p.el,txt,col);
+}
+function boom(p){
+  S.lives--; S.boom++; S.combo=0; S.maxStable=Math.max(S.maxStable,S.stable); S.stable=0; p.p=0; p.off=4;
+  puff(p.el,10); pop(p.el,'💥 KNAL','#FF3B3B'); tone(80,.6,'sawtooth',.1); document.body.classList.remove('boom'); void document.body.offsetWidth; document.body.classList.add('boom');
+  if(S.lives<=0) end();
+}
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000); last=now; S.t+=dt; S.stable+=dt;
+  const ph=S.t/DUR;
+  S.next-=dt; if(S.next<=0){ const l=S.pots.find(p=>!p.on); if(l){ l.on=true; l.p=5; banner(`Nieuw probleem: ${l.n}`); tone(440,.2); } S.next=8; }
+  if(S.t>S.surge){ S.surge+=14+Math.random()*6; const r=Math.random();
+    if(r<.5){ S.pots.filter(p=>p.on&&!p.off).forEach(p=>p.p=Math.min(95,p.p+18)); banner('Drukgolf! Alles +18'); tone(160,.4,'sawtooth'); }
+    else { const c=S.pots.filter(p=>p.on&&!p.off&&!p.clog); if(c.length){ const p=c[Math.floor(Math.random()*c.length)]; p.clog=3; banner(`${p.n}: klep verstopt, tik 3×`); } } }
+  for(const p of S.pots){
+    if(!p.on){ p.el.className='pot locked'; continue; }
+    if(p.off>0){ p.off-=dt; p.el.className='pot off'; p.el.querySelector('.g').innerHTML=gauge(0); continue; }
+    p.p += p.r*(1+ph*1.3)*dt*(p.clog?1.25:1);
+    if(p.p>=100){ boom(p); if(S.over) return; }
+    p.el.className='pot'+(p.p>90?' crit':p.p>70?' hot':'');
+    p.el.querySelector('.g').innerHTML=gauge(p.p)+(p.clog?`<span class="tag">verstopt ${p.clog}×</span>`:'');
+  }
+  const left=Math.max(0,DUR-S.t);
+  $('time').textContent=Math.ceil(left); $('score').textContent=S.score; $('combo').textContent='×'+Math.min(5,1+Math.floor(S.combo/3));
+  $('lives').textContent='❤️'.repeat(S.lives)+'🖤'.repeat(3-S.lives);
+  $('stable').querySelector('b').textContent=`${Math.floor(S.stable/60)}:${String(Math.floor(S.stable%60)).padStart(2,'0')}`;
+  if(left<=0) return end();
+  raf=requestAnimationFrame(loop);
+}
+function end(){
+  if(S.over) return; S.over=true; cancelAnimationFrame(raf); S.maxStable=Math.max(S.maxStable,S.stable);
+  const survived=S.lives>0, secs=Math.round(Math.min(S.t,DUR));
+  if(survived) S.score+=S.lives*250;
+  const msg = S.perfect>S.vents*.6 ? 'Je voelde precies aan wanneer je moest ingrijpen.' : S.early>S.vents*.3 ? 'Je greep vaak te vroeg in. Soms is wachten slimmer dan direct reageren.' : S.boom>=2 ? 'Te veel tegelijk. Prioriteren wordt lastiger naarmate de druk stijgt.' : 'Stevig onder druk. Nog iets vaker in het groene gebied aftappen levert combo\'s op.';
+  $('endBox').innerHTML=`<h2>${survived?'Systeem overleefd':'Systeem bezweken'}</h2><div class="big">${S.score}</div>
+   <div class="st"><div><b>${S.vents}</b>problemen opgelost</div><div><b>${S.boom}</b>uit de hand gelopen</div><div><b>${Math.floor(S.maxStable)}s</b>langst stabiel</div><div><b>${secs}s</b>volgehouden</div></div>
+   <p>${msg} ${S.perfect} keer perfect getimed, hoogste reeks ${S.best}.</p>
+   <div id="rsSlot"></div><button class="go" id="again">Nog een keer</button>`;
+  $('end').hidden=false; $('again').onclick=start;
+  RESULTS.mount($('rsSlot'), {score:S.score, lines:[survived?'Systeem overleefd':'Systeem bezweken', `${S.vents} problemen opgelost, ${S.perfect} perfect getimed`, `${S.boom} problemen liepen uit de hand`, `Langst stabiel: ${Math.floor(S.maxStable)} seconden`, `Volgehouden: ${secs} van ${DUR} seconden`, msg],
+    outro:'Oplopende druk, meerdere problemen tegelijk: zulke situaties maakt Enversed Studios speelbaar in simulaties, multiplayer games en interactieve trainingen.'});
+}
+$('startBtn').onclick=start;
+$('grid').innerHTML=NAMES.map(([ic,n])=>`<div class="pot locked"><span class="lbl">${ic} ${n}</span><div class="g">${gauge(20)}</div></div>`).join('');
+</script>
+</body>
+</html>

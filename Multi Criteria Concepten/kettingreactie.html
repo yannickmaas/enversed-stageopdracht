@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="nl" data-game="kettingreactie">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kettingreactie — Enversed Studios × Chemelot × Sioux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1C2128;--grid:#26344A;--panel:#232A33;--line:#3A4656;--txt:#E7EEF6;--mut:#8C9AAD;
+  --sig:#5BE39A;--liq:#4DB3FF;--mix:#B889FF;--prod:#FFC94D;--heat:#FF8A3D;--bad:#FF5A5F;
+  font-family:"Chakra Petch","Segoe UI",sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;color:var(--txt)}
+header{display:flex;align-items:center;gap:20px;padding:14px 26px;background:rgba(28,33,40,.92);border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:28px;font-weight:700;letter-spacing:.02em}
+#lvlTitle{font-size:18px;color:var(--mut)}
+.hud{margin-left:auto;display:flex;gap:24px;align-items:center}
+.hud div{text-align:center;line-height:1}.hud b{display:block;font-size:26px}.hud span{font-size:13px;color:var(--mut)}
+main{max-width:1240px;margin:0 auto;padding:20px 26px 40px}
+#goal{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;font-size:17px;line-height:1.45;margin-bottom:18px}
+#goal b{color:var(--prod)}
+#chain{display:flex;flex-wrap:wrap;align-items:center;gap:0;row-gap:26px;padding:10px 0 20px}
+.node{width:128px;min-height:150px;border-radius:14px;background:var(--panel);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 6px;position:relative;transition:transform .15s,border-color .2s,box-shadow .2s}
+.node.slot{border-style:dashed;cursor:pointer}
+.node.slot:hover,.node.slot.target{border-color:var(--liq)}
+.node.fixed{background:#2A3340}
+.node .ic{font-size:34px;line-height:1}
+.node .nm{font-weight:700;font-size:15px;text-align:center}
+.node select{font:inherit;font-size:14px;background:#1C2128;color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:3px 4px}
+.node .rm{position:absolute;top:4px;right:6px;background:none;border:0;color:var(--mut);font-size:18px;cursor:pointer}
+.node .io{font-size:12px;color:var(--mut);text-align:center}
+.node.lit{border-color:var(--sig);box-shadow:0 0 24px rgba(91,227,154,.55);transform:scale(1.05)}
+.node.fail{border-color:var(--bad);box-shadow:0 0 24px rgba(255,90,95,.6);animation:jit .3s}
+@keyframes jit{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.node .out{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:12px;background:#1C2128;border:1px solid var(--line);border-radius:10px;padding:1px 8px;white-space:nowrap}
+.pipe{width:34px;height:8px;background:#2E3947;border-radius:4px;position:relative;overflow:hidden}
+.pipe em{position:absolute;inset:0;width:0;background:var(--c,var(--sig));box-shadow:0 0 10px var(--c,var(--sig));transition:width .35s linear}
+.pipe.on em{width:100%}
+#msg{min-height:58px;font-size:18px;line-height:1.4;padding:12px 16px;border-radius:10px;margin:6px 0 16px}
+#msg.bad{background:rgba(255,90,95,.14);border:1px solid var(--bad)}
+#msg.ok{background:rgba(91,227,154,.12);border:1px solid var(--sig)}
+#msg.info{background:rgba(77,179,255,.1);border:1px solid var(--line)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{font:inherit;font-weight:700;font-size:18px;border-radius:10px;padding:11px 22px;cursor:pointer;border:2px solid var(--line);background:var(--panel);color:var(--txt)}
+.btn.go{background:var(--sig);color:#10261A;border-color:var(--sig);font-size:22px;padding:12px 34px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,select:focus-visible,.node:focus-visible,.tool:focus-visible{outline:3px solid var(--liq);outline-offset:2px}
+h2{font-size:18px;margin:24px 0 10px;color:var(--mut);font-weight:600}
+#tools{display:flex;flex-wrap:wrap;gap:10px}
+.tool{display:flex;align-items:center;gap:10px;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;color:var(--txt);font:inherit;text-align:left}
+.tool:hover{border-color:var(--mut)}
+.tool.sel{border-color:var(--liq);background:#1E3147}
+.tool .ic{font-size:26px}
+.tool b{display:block;font-size:15px}
+.tool small{color:var(--mut);font-size:12px}
+.tool .cnt{margin-left:6px;background:#1C2128;border-radius:10px;padding:1px 8px;font-size:13px}
+.tool:disabled{opacity:.35;cursor:not-allowed}
+#win{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:9}
+#win[hidden]{display:none}
+#win div{font-size:clamp(40px,8vw,96px);font-weight:700;color:var(--prod);text-shadow:0 0 30px rgba(255,201,77,.7);animation:win 1.2s cubic-bezier(.2,1.6,.4,1)}
+@keyframes win{from{transform:scale(.3);opacity:0}}
+.overlay{position:fixed;inset:0;background:rgba(20,24,30,.9);display:grid;place-items:center;z-index:10;padding:20px}
+.overlay[hidden]{display:none}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:720px;width:100%;padding:30px 34px;max-height:92vh;overflow:auto}
+.box h2{font-size:48px;color:var(--txt);margin:0;line-height:1}
+.box p{font-size:18px;line-height:1.5}
+.lv{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin:18px 0}
+.lv button{font:inherit;text-align:left;background:#1C2128;color:var(--txt);border:2px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.lv button:hover{border-color:var(--liq)}
+.lv button:disabled{opacity:.35;cursor:not-allowed}
+.lv b{display:block;font-size:17px}.lv span{font-size:13px;color:var(--mut)}
+.types{display:flex;gap:14px;flex-wrap:wrap;font-size:15px;color:var(--mut)}
+.partners{color:var(--mut);font-size:14px;margin-top:14px}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:8}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:root{--rs-acc:#5BE39A;--rs-on:#10261A}
+</style>
+</head>
+<body>
+<header>
+  <h1>Kettingreactie</h1><span id="lvlTitle"></span>
+  <div class="hud"><div><b id="tries">0</b><span>pogingen</span></div><div><b id="total">0</b><span>sterren</span></div>
+  <button class="btn" id="resBtn">Mijn resultaat</button><button class="btn" id="menuBtn">Levels</button></div>
+</header>
+<main>
+  <div id="goal"></div>
+  <div id="chain"></div>
+  <div id="msg" class="info">Kies een module hieronder en tik op een lege plek om hem te plaatsen.</div>
+  <div class="row">
+    <button class="btn go" id="startBtn">▶ START</button>
+    <button class="btn" id="hintBtn" disabled>Hint</button>
+    <button class="btn" id="clearBtn">Leegmaken</button>
+    <div class="types"><span>⚡ signaal</span><span>💧 vloeistof</span><span>🧪 mengsel</span><span>📦 product</span></div>
+  </div>
+  <h2>Modules</h2>
+  <div id="tools"></div>
+</main>
+<div id="win" hidden><div>KETTING VOLTOOID!</div></div>
+<canvas id="fx"></canvas>
+
+<div class="overlay" id="menu"><div class="box">
+  <h2>Kettingreactie</h2>
+  <p>Bouw een proces waarin één actie de volgende activeert. Plaats de modules in de juiste volgorde, stel ze goed in en druk op START. Breekt de ketting, dan zie je waar en waarom.</p>
+  <div class="lv" id="lvList"></div>
+  <div class="partners">Enversed Studios in samenwerking met Chemelot en Sioux</div>
+</div></div>
+
+<script>
+// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now()) {
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  return { mount };
+})();
+
+</script>
+<div class="overlay" id="resOv" hidden><div class="box" id="resBox"></div></div>
+<script>
+const T = {sig:{n:'signaal',i:'⚡',c:'var(--sig)'}, liq:{n:'vloeistof',i:'💧',c:'var(--liq)'}, mix:{n:'mengsel',i:'🧪',c:'var(--mix)'}, prod:{n:'product',i:'📦',c:'var(--prod)'}};
+const lbl = s => s ? `${T[s.type].i} ${T[s.type].n}${s.type!=='sig'&&s.type!=='prod'?` ${s.temp} °C`:''}${s.druk==='hoog'?' · druk hoog':''}` : '';
+const M = {
+  pomp:{n:'Pomp',i:'🔄',io:'⚡ → 💧',f(s){ if(s.type!=='sig') return `De pomp start op een signaal, maar krijgt ${lbl(s)}.`; return {type:'liq',temp:20}; }},
+  verwarmer:{n:'Verwarmer',i:'🌡️',io:'💧/🧪 → warm',p:'temp',f(s,v){ if(!['liq','mix'].includes(s.type)) return `Een verwarmer verwarmt vloeistof of mengsel, niet ${T[s.type].n}.`; return {...s,temp:v}; }},
+  koeler:{n:'Koeler',i:'❄️',io:'💧/🧪 → 20 °C',f(s){ if(!['liq','mix'].includes(s.type)) return `Een koeler koelt vloeistof of mengsel, niet ${T[s.type].n}.`; return {...s,temp:20}; }},
+  sensor:{n:'Sensor',i:'📡',io:'💧 ≥ drempel → ⚡',p:'drempel',f(s,v){ if(!['liq','mix'].includes(s.type)) return `De sensor meet de temperatuur van een vloeistof, maar krijgt ${lbl(s)}.`; if(s.temp < v) return `De sensor wacht op ${v} °C, maar de vloeistof is ${s.temp} °C. Pas de verwarmer of de drempel aan.`; return {...s,type:'sig',carry:s}; }},
+  klep:{n:'Klep',i:'🚪',io:'⚡ → 💧',f(s){ if(s.type!=='sig') return `De klep opent op een signaal, maar krijgt ${lbl(s)}.`; const c=s.carry||{type:'liq',temp:20}; return {...c,type:'liq',released:true}; }},
+  menger:{n:'Menger',i:'🌀',io:'💧 → 🧪',f(s){ if(s.type!=='liq') return `De menger verwerkt vloeistof, maar krijgt ${lbl(s)}.`; return {...s,type:'mix'}; }},
+  reactor:{n:'Reactor',i:'⚗️',io:'🧪 ≥ 80 °C → reactie',f(s){ if(s.type!=='mix') return `De reactor heeft een mengsel nodig, maar krijgt ${lbl(s)}.`; if(s.temp<80) return `De reactie start pas vanaf 80 °C. Het mengsel is ${s.temp} °C.`; return {...s,reacted:true,druk:s.temp>=100?'hoog':'normaal'}; }},
+  veilig:{n:'Veiligheidsklep',i:'🛡️',io:'laat overdruk af',f(s){ if(s.type==='sig') return 'Een veiligheidsklep hoort in een leiding met vloeistof of mengsel.'; return {...s,druk:'normaal'}; }},
+  vul:{n:'Vulstation',i:'🧴',io:'🧪 ≤ 40 °C → 📦',f(s){ if(s.type!=='mix') return `Het vulstation vult een mengsel af, maar krijgt ${lbl(s)}.`; if(!s.reacted) return 'Het mengsel heeft nog niet gereageerd. Eerst door de reactor.'; if(s.temp>40) return `Te heet om af te vullen (${s.temp} °C). Koel het mengsel eerst.`; return {type:'prod'}; }},
+  band:{n:'Transportband',i:'➡️',io:'📦 → 📦',f(s){ if(s.type!=='prod') return `De transportband vervoert producten, geen ${T[s.type].n}.`; return {...s}; }},
+  robot:{n:'Robotarm',i:'🦾',io:'📦 → pallet',f(s){ if(s.type!=='prod') return `De robotarm pakt producten, maar krijgt ${lbl(s)}.`; return {...s,placed:true}; }}
+};
+const LEVELS = [
+ {n:'Eerste stap',sub:'2 modules',goal:'Vul de <b>warmwatertank</b> met vloeistof van minstens 60 °C.',slots:2,end:{n:'Warmwatertank',i:'🛢️',chk:s=>s.type==='liq'&&s.temp>=60?null:`De tank vraagt vloeistof van minstens 60 °C en krijgt ${lbl(s)}.`},
+  tools:{pomp:1,verwarmer:1,koeler:1,menger:1},opts:{temp:[40,60,80]},hint:'Een startknop geeft een signaal. Welke module maakt van een signaal een vloeistof?'},
+ {n:'Warm genoeg?',sub:'Sensoren als poortwachter',goal:'De <b>opslagtank</b> neemt alleen vloeistof aan die door een klep is vrijgegeven en minstens 80 °C is.',slots:4,end:{n:'Opslagtank',i:'🛢️',chk:s=>s.type!=='liq'?`De tank verwacht vloeistof, maar krijgt ${lbl(s)}.`:!s.released?'De tank opent alleen voor vloeistof die door een klep wordt vrijgegeven.':s.temp<80?`Te koud: ${s.temp} °C.`:null},
+  tools:{pomp:1,verwarmer:1,sensor:1,klep:1,koeler:1},opts:{temp:[40,60,80,100],drempel:[60,80]},hint:'Een klep opent op een signaal. Een sensor geeft een signaal als de temperatuur hoog genoeg is.'},
+ {n:'Van stof tot product',sub:'Reactie en afvullen',goal:'Maak een <b>verzendklaar product</b>. Het mengsel moet reageren en daarna koel genoeg zijn om af te vullen.',slots:6,end:{n:'Verzendklaar',i:'🚚',chk:s=>s.type==='prod'?null:`Er komt geen product aan, maar ${lbl(s)}.`},
+  tools:{pomp:1,verwarmer:1,menger:1,reactor:1,koeler:1,vul:1,sensor:1,band:1},opts:{temp:[60,80,100],drempel:[80]},hint:'De reactor wil een warm mengsel. Het vulstation wil een koel, gereageerd mengsel.'},
+ {n:'Veilig onder druk',sub:'Procesveiligheid',goal:'Deze verwarmer staat vast op <b>100 °C</b>. Daardoor loopt de druk in de reactor op. Bouw een <b>product</b> zonder noodstop.',slots:7,end:{n:'Verzendklaar',i:'🚚',chk:s=>s.type==='prod'?null:`Er komt geen product aan, maar ${lbl(s)}.`},
+  tools:{pomp:1,verwarmer:1,menger:1,reactor:1,veilig:1,koeler:1,vul:1,sensor:1,band:1},opts:{temp:[100],drempel:[80,100]},safety:true,hint:'Na een reactor met hoge druk moet direct iets komen dat de overdruk afvoert.'},
+ {n:'Het complete systeem',sub:'10 modules',goal:'Bouw de hele keten: verwarm, geef vrij met een sensor, meng, reageer, vul af en zet het product met de robotarm op de <b>pallet</b>.',slots:10,end:{n:'Pallet',i:'🟫',chk:s=>s.type!=='prod'?`De pallet wacht op een product, maar krijgt ${lbl(s)}.`:!s.placed?'Producten komen op de pallet via de robotarm.':null},
+  tools:{pomp:1,verwarmer:1,sensor:1,klep:1,menger:1,reactor:1,veilig:1,koeler:1,vul:1,band:1,robot:1},opts:{temp:[60,80,100],drempel:[60,80,100]},safety:true,hint:'Eerst vrijgeven met sensor en klep, dan pas mengen en laten reageren. Verwarm je tot 100 °C, dan heb je direct na de reactor de veiligheidsklep nodig.'}
+];
+let L, li=0, slots=[], sel=null, tries=0, running=false, stars=[0,0,0,0,0], triesLog=[0,0,0,0,0];
+const RUN_ID='ketting-'+Date.now();
+const $=id=>document.getElementById(id);
+
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function note(i,d=.25,t='triangle',v=.08){ const c=ac(); if(!c)return; const f=261.6*Math.pow(2,[0,2,4,7,9,12,14,16,19,21,24,26,28][i%13]/12); const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+function buzz(){ const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type='sawtooth';o.frequency.value=110;g.gain.value=.08;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.4);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+.4)}
+
+function load(i){
+  li=i; L=LEVELS[i]; $('startBtn').textContent='▶ START'; $('startBtn').onclick=run; slots=Array(L.slots).fill(null); sel=null; tries=0; running=false;
+  $('lvlTitle').textContent=`Level ${i+1} · ${L.n}`; $('goal').innerHTML=L.goal; $('menu').hidden=true;
+  $('hintBtn').disabled=true; msg('Kies een module hieronder en tik op een lege plek om hem te plaatsen.','info');
+  render(); hud();
+}
+function hud(){ $('tries').textContent=tries; $('total').textContent=stars.reduce((a,b)=>a+b,0)+' ★'; }
+function msg(t,c){ const m=$('msg'); m.textContent=t; m.className=c; }
+function used(k){ return slots.filter(s=>s&&s.k===k).length; }
+
+function render(){
+  let h = `<div class="node fixed" id="n-start"><span class="ic">🔘</span><span class="nm">Startknop</span><span class="io">→ ⚡</span></div><div class="pipe" id="p0"><em></em></div>`;
+  slots.forEach((s,i)=>{
+    if(!s) h += `<div class="node slot ${sel?'target':''}" tabindex="0" role="button" data-i="${i}" aria-label="Lege plek ${i+1}"><span class="io">plek ${i+1}</span></div>`;
+    else { const m=M[s.k]; const opts = m.p ? L.opts[m.p] : null;
+      h += `<div class="node" id="n${i}" data-i="${i}"><button class="rm" data-rm="${i}" aria-label="Verwijder ${m.n}">×</button><span class="ic">${m.i}</span><span class="nm">${m.n}</span><span class="io">${m.io}</span>${opts?`<select data-p="${i}" aria-label="Instelling ${m.n}">${opts.map(o=>`<option value="${o}" ${s.v==o?'selected':''}>${m.p==='temp'?'':'≥ '}${o} °C</option>`).join('')}</select>`:''}</div>`; }
+    h += `<div class="pipe" id="p${i+1}"><em></em></div>`;
+  });
+  h += `<div class="node fixed" id="n-end"><span class="ic">${L.end.i}</span><span class="nm">${L.end.n}</span></div>`;
+  $('chain').innerHTML = h;
+  $('tools').innerHTML = Object.entries(L.tools).map(([k,n])=>{ const m=M[k], left=n-used(k);
+    return `<button class="tool ${sel===k?'sel':''}" data-k="${k}" ${left<=0?'disabled':''}><span class="ic">${m.i}</span><span><b>${m.n}<span class="cnt">${left}</span></b><small>${m.io}</small></span></button>`; }).join('');
+}
+
+$('tools').onclick = e=>{ const b=e.target.closest('.tool'); if(!b||running) return; sel = sel===b.dataset.k?null:b.dataset.k; render(); note(4,.06); };
+$('chain').addEventListener('click', e=>{
+  if(running) return;
+  const rm=e.target.closest('[data-rm]'); if(rm){ slots[+rm.dataset.rm]=null; render(); note(1,.06); return; }
+  const n=e.target.closest('.slot'); if(n && sel){ place(+n.dataset.i); }
+  else if(n && !sel) msg('Kies eerst een module hieronder.','info');
+});
+$('chain').addEventListener('keydown', e=>{ const n=e.target.closest('.slot'); if(n && (e.key==='Enter'||e.key===' ') && sel){ e.preventDefault(); place(+n.dataset.i); } });
+$('chain').addEventListener('change', e=>{ const s=e.target.closest('select'); if(s){ slots[+s.dataset.p].v=+s.value; clearFx(); } });
+function place(i){ const m=M[sel]; slots[i]={k:sel, v:m.p?L.opts[m.p][0]:null}; if(L.tools[sel]-used(sel)<=0) sel=null; render(); note(7,.08); }
+$('clearBtn').onclick=()=>{ if(running) return; slots=Array(L.slots).fill(null); render(); };
+$('hintBtn').onclick=()=>msg('Hint: '+L.hint,'info');
+$('menuBtn').onclick=menu;
+
+function clearFx(){ document.querySelectorAll('.node').forEach(n=>n.classList.remove('lit','fail')); document.querySelectorAll('.out').forEach(o=>o.remove()); document.querySelectorAll('.pipe').forEach(p=>p.classList.remove('on')); }
+const wait = ms=>new Promise(r=>setTimeout(r, matchMedia('(prefers-reduced-motion:reduce)').matches?ms/3:ms));
+
+async function run(){
+  if(running) return;
+  ac(); running=true; tries++; hud(); clearFx(); render(); $('startBtn').disabled=true;
+  let s={type:'sig'}, step=0;
+  const light=(el,out)=>{ el.classList.add('lit'); if(out){ const o=document.createElement('span'); o.className='out'; o.textContent=out; el.appendChild(o);} };
+  const pipe=(i,st)=>{ const p=$('p'+i); p.style.setProperty('--c',T[st.type].c); p.classList.add('on'); };
+  light($('n-start'),'⚡ signaal'); note(0); await wait(380); pipe(0,s); await wait(380);
+  let fail=null, failEl=null;
+  for(let i=0;i<slots.length;i++){
+    const sl=slots[i]; const el=document.querySelector(`#chain [data-i="${i}"]`);
+    if(!sl){ fail='Hier is nog een lege plek. De ketting stopt.'; failEl=el; break; }
+    if(L.safety && s.druk==='hoog' && sl.k!=='veilig'){ fail='Noodstop! De druk na de reactor is te hoog. Direct na de reactor hoort een module die de overdruk afvoert.'; failEl=el; break; }
+    const r=M[sl.k].f(s, sl.v);
+    if(typeof r==='string'){ fail=r; failEl=el; break; }
+    s=r; step++; light(el,lbl(s)); note(step); await wait(380); pipe(i+1,s); await wait(360);
+  }
+  if(!fail){ if(L.safety && s.druk==='hoog'){ fail='Noodstop! De druk is nog te hoog bij het einde van de lijn.'; failEl=$('n-end'); } else { const e=L.end.chk(s); if(e){ fail=e; failEl=$('n-end'); } } }
+  if(fail){
+    failEl.classList.remove('lit'); failEl.classList.add('fail'); buzz();
+    msg(`De ketting breekt bij ${failEl.id==='n-end'?L.end.n:(slots[+failEl.dataset.i]?M[slots[+failEl.dataset.i].k].n:'plek '+(+failEl.dataset.i+1))}. ${fail}`,'bad');
+    if(tries>=3) $('hintBtn').disabled=false;
+  } else {
+    light($('n-end')); step++; note(step,.4);
+    const st = tries===1?3:tries<=3?2:1; stars[li]=Math.max(stars[li],st); if(!triesLog[li]) triesLog[li]=tries; hud();
+    [0,4,7,12].forEach((n,k)=>setTimeout(()=>note(n+7,.9,'sine',.06),k*40));
+    $('win').hidden=false; confetti(); await wait(1600); $('win').hidden=true;
+    if(li===LEVELS.length-1) setTimeout(showResults, 400);
+    msg(`Ketting voltooid in ${tries} ${tries===1?'poging':'pogingen'}: ${'★'.repeat(st)}${'☆'.repeat(3-st)}. ${li<LEVELS.length-1?'Het volgende level staat klaar.':'Je hebt alle levels voltooid.'}`,'ok');
+    if(li<LEVELS.length-1){ $('startBtn').textContent='Volgend level ▶'; $('startBtn').onclick=()=>{ $('startBtn').textContent='▶ START'; $('startBtn').onclick=run; load(li+1); }; }
+  }
+  running=false; $('startBtn').disabled=false;
+}
+$('startBtn').onclick=run;
+
+function confetti(){
+  const cv=$('fx'), c=cv.getContext('2d'); cv.width=innerWidth; cv.height=innerHeight;
+  const P=[...Array(120)].map(()=>({x:innerWidth/2,y:innerHeight/2,vx:(Math.random()-.5)*14,vy:-Math.random()*14-3,r:Math.random()*6+3,c:['#5BE39A','#4DB3FF','#B889FF','#FFC94D'][Math.floor(Math.random()*4)],g:Math.random()<.5}));
+  let f=0; (function a(){ c.clearRect(0,0,cv.width,cv.height); for(const p of P){ p.x+=p.vx; p.y+=p.vy; p.vy+=.35; c.fillStyle=p.c; c.beginPath(); if(p.g){ for(let k=0;k<8;k++){const an=k/8*Math.PI*2+f*.1; c.lineTo(p.x+Math.cos(an)*p.r*(k%2?1:.6),p.y+Math.sin(an)*p.r*(k%2?1:.6));} } else c.arc(p.x,p.y,p.r/1.5,0,7); c.fill(); }
+    if(++f<90) requestAnimationFrame(a); else c.clearRect(0,0,cv.width,cv.height); })();
+}
+
+function menu(){
+  $('lvList').innerHTML = LEVELS.map((l,i)=>`<button data-l="${i}" ${i>0&&!stars[i-1]?'disabled':''}><b>${i+1}. ${l.n} ${stars[i]?'★'.repeat(stars[i]):''}</b><span>${i>0&&!stars[i-1]?'Voltooi eerst het vorige level':l.sub}</span></button>`).join('');
+  $('menu').hidden=false;
+}
+$('lvList').onclick=e=>{ const b=e.target.closest('button'); if(b&&!b.disabled){ $('startBtn').textContent='▶ START'; $('startBtn').onclick=run; load(+b.dataset.l);} };
+function showResults(){
+  const done = stars.filter(Boolean).length, tot = stars.reduce((a,b)=>a+b,0);
+  const score = stars.reduce((a,s,i)=>a+(s?s*100+i*50:0),0);
+  $('resBox').innerHTML = `<h2>Jouw resultaat</h2><p>${done} van ${LEVELS.length} levels voltooid · ${tot} van ${LEVELS.length*3} sterren · score ${score}</p><button class="btn" id="resClose">Terug naar het spel</button><div id="rsSlot"></div>`;
+  $('resOv').hidden=false; $('resClose').onclick=()=>$('resOv').hidden=true;
+  RESULTS.mount($('rsSlot'), {score, lines:[`${done} van ${LEVELS.length} levels voltooid`, `${tot} sterren`, ...LEVELS.map((l,i)=>stars[i]?`Level ${i+1} ${l.n}: ${'★'.repeat(stars[i])} in ${triesLog[i]} ${triesLog[i]===1?'poging':'pogingen'}`:null).filter(Boolean)]}, RUN_ID);
+}
+$('resBtn').onclick=showResults;
+L=LEVELS[0]; slots=Array(L.slots).fill(null); render(); menu();
+</script>
+</body>
+</html>

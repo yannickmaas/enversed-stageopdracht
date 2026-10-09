@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="nl" data-game="build-your-solution">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Build Your Solution — Enversed Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#DFF5EA;--ink:#123A2E;--mut:#4F7466;--rs-acc:#123A2E;--rs-on:#fff;
+  font-family:Fredoka,"Trebuchet MS",sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none}
+header{display:flex;align-items:center;gap:20px;padding:14px 26px}
+h1{margin:0;font-size:36px;font-weight:700}
+#rnd{font-size:18px;color:var(--mut)}
+.hud{margin-left:auto;display:flex;gap:26px}.hud div{text-align:center;line-height:1}.hud b{display:block;font-size:34px;font-variant-numeric:tabular-nums}.hud span{font-size:14px;color:var(--mut)}
+#time.low{color:#D6453D}
+main{flex:1;display:flex;flex-direction:column;gap:18px;padding:0 26px 22px;min-height:0;overflow:auto}
+#prob{background:#fff;border-radius:28px;padding:20px 26px;display:flex;gap:20px;align-items:center}
+#prob .ic{font-size:64px}
+#prob h2{margin:0;font-size:clamp(26px,3.4vw,42px);font-weight:600;line-height:1.1}
+#build{display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap}
+.slot{width:190px;height:150px;border-radius:26px;border:5px dashed #8FC7AE;display:grid;place-items:center;font-size:40px;color:#8FC7AE;background:rgba(255,255,255,.4);transition:transform .15s,border-color .15s}
+.slot.over{border-color:var(--ink);transform:scale(1.05)}
+.slot.f{border-style:solid;border-color:transparent;padding:0;background:none}
+.plus{font-size:48px;font-weight:700;color:var(--mut)}
+#simBtn{font:inherit;font-weight:700;font-size:28px;border:0;border-radius:30px;padding:0 34px;height:150px;background:var(--ink);color:#fff;cursor:pointer}
+#simBtn:disabled{opacity:.3;cursor:not-allowed}
+#tray{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.blk{height:150px;border-radius:26px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:grab;font-weight:700;font-size:24px;border:0;font-family:inherit;box-shadow:0 8px 0 rgba(0,0,0,.18);touch-action:none;width:100%}
+.blk .ic{font-size:50px;line-height:1}
+.blk.used{opacity:.25;pointer-events:none}
+.slot .blk{width:190px}
+#ghost{position:fixed;pointer-events:none;z-index:20;width:170px;transform:translate(-50%,-50%) rotate(-4deg)}
+#ghost[hidden]{display:none}
+#sim{background:#fff;border-radius:28px;padding:20px 26px}
+#sim[hidden]{display:none}
+#sim h3{margin:0 0 6px;font-size:28px}
+#sim p{margin:0 0 12px;font-size:19px;line-height:1.4;color:var(--mut)}
+.bars{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.bar b{font-size:16px}.bar div{height:20px;border-radius:10px;background:#E6F2EC;overflow:hidden;margin-top:4px}.bar em{display:block;height:100%;width:0;border-radius:10px;transition:width 1s cubic-bezier(.3,1.3,.5,1)}
+.syn{display:inline-block;background:#FFE27A;border-radius:14px;padding:4px 12px;font-weight:600;margin:10px 8px 0 0}
+.next{font:inherit;font-weight:700;font-size:22px;border:0;border-radius:20px;padding:14px 28px;background:var(--ink);color:#fff;cursor:pointer;margin-top:14px}
+button:focus-visible,a:focus-visible{outline:5px solid #FF8A00;outline-offset:3px}
+.overlay{position:fixed;inset:0;background:rgba(18,58,46,.93);display:grid;place-items:center;z-index:10;padding:24px;color:#fff}
+.overlay[hidden]{display:none}
+.box{max-width:880px;width:100%;max-height:92vh;overflow:auto}
+.box h2{font-size:clamp(48px,8vw,100px);margin:0;line-height:1}
+.box p{font-size:21px;line-height:1.45;max-width:56ch}
+.go{font:inherit;font-weight:700;font-size:28px;background:#FFE27A;color:var(--ink);border:0;border-radius:22px;padding:16px 42px;cursor:pointer;margin-top:12px}
+.big{font-size:100px;font-weight:700;line-height:1}
+.rounds{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.rounds div{background:rgba(255,255,255,.1);border-radius:16px;padding:12px 16px;font-size:17px;line-height:1.4}
+.rounds b{font-size:20px}
+@media (max-width:900px){#tray{grid-template-columns:repeat(3,1fr)}.slot,.slot .blk{width:140px;height:120px}.bars{grid-template-columns:1fr 1fr}body{overflow:auto}#simBtn{height:80px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><h1>Build Your Solution</h1><span id="rnd"></span><div class="hud"><div><b id="score">0</b><span>score</span></div><div><b id="time">35</b><span>sec</span></div></div></header>
+<main>
+  <div id="prob"><span class="ic" id="pIc"></span><h2 id="pT"></h2></div>
+  <div id="build"><div class="slot" data-s="0">1</div><span class="plus">+</span><div class="slot" data-s="1">2</div><span class="plus">+</span><div class="slot" data-s="2">3</div><button id="simBtn" disabled>▶ Test</button></div>
+  <div id="sim" hidden></div>
+  <div id="tray"></div>
+</main>
+<div id="ghost" hidden></div>
+<div class="overlay" id="intro"><div class="box"><h2>Drie problemen. Drie bouwstenen.</h2><p>Sleep drie technieken naar de bouwplaats en test je oplossing. Sommige combinaties versterken elkaar.</p><button class="go" id="startBtn">Bouwen</button></div></div>
+<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+<script>// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  .rs-simple .rs-row{display:flex;gap:10px;flex-wrap:wrap}
+  .rs-simple .rs-row input{flex:1;min-width:220px;font-size:20px;padding:14px 16px}
+  .rs-simple .rs-send{font-size:20px;padding:14px 22px}
+  .rs-rank{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}.rs-rank b{font-size:34px}.rs-rank span{opacity:.8}
+  .rs-top{display:flex;gap:14px;list-style:decimal inside;padding:0;margin:0 0 14px;font-size:15px;opacity:.8;flex-wrap:wrap}
+  .rs-outro{margin:18px 0 0;font-size:15px;line-height:1.45;opacity:.75;max-width:60ch}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function all() {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(1000).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).map(x => ({ ...x, _id: x.id }));
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderRank(el, runId, score) {
+    const rows = await all(); if (!rows.length) { el.innerHTML = ''; return; }
+    const place = rows.filter(x => x.score > score).length + 1;
+    el.innerHTML = `<div class="rs-rank"><b>#${place}</b><span>van ${rows.length} ${rows.length === 1 ? 'speler' : 'spelers'}</span></div><ol class="rs-top">${rows.slice(0, 5).map(x => `<li>${x.score}</li>`).join('')}</ol>`;
+  }
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now(), opts = {}) {
+    if (opts.simple !== false) return mountSimple(container, result, runId);
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  async function mountSimple(container, result, runId) {
+    const box = document.createElement('div'); box.className = 'rs rs-simple';
+    box.innerHTML = `
+      <div class="rs-rankwrap"></div>
+      <div class="rs-row">
+        <input type="email" class="rs-mail" placeholder="jouw@email.nl" aria-label="E-mailadres" autocomplete="email" inputmode="email">
+        <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Stuur mijn resultaat</a>
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Enversed Studios mag mijn e-mailadres bewaren (optioneel)</label>
+      <div class="rs-status" role="status"></div>
+      ${result.outro ? `<p class="rs-outro">${esc(result.outro)}</p>` : ''}`;
+    container.appendChild(box);
+    const $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'), $send = box.querySelector('.rs-send'), $st = box.querySelector('.rs-status');
+    const refresh = () => { const ok = validEmail($m.value.trim()); $send.setAttribute('aria-disabled', ok ? 'false' : 'true'); $send.href = ok ? mailHref($m.value.trim(), result, '') : '#'; };
+    $m.addEventListener('input', refresh);
+    $m.addEventListener('keydown', e => { if (e.key === 'Enter' && $send.getAttribute('aria-disabled') === 'false') $send.click(); });
+    await saveScore(runId, { ...result, naam: '' });
+    renderRank(box.querySelector('.rs-rankwrap'), runId, result.score);
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim();
+      let kept = false; if ($c.checked) kept = await saveContact(result, '', email);
+      $st.textContent = `Je mailprogramma opent met je resultaat. Klik daar op verzenden.${kept ? ' Je e-mailadres is bewaard.' : ''}`;
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) { const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)'; b.onclick = () => exportCsv(b); box.appendChild(b); }
+  }
+  return { mount };
+})();
+</script>
+<script>
+const B={
+ vr:{n:'VR',ic:'🥽',c:'#6C4CF5',p:'stap je in een virtuele versie van de situatie',eng:.9,learn:.9,scale:.45},
+ ar:{n:'AR',ic:'📱',c:'#00A6B8',p:'verschijnen digitale aanwijzingen in de echte omgeving',eng:.7,learn:.7,scale:.8},
+ ai:{n:'AI',ic:'🤖',c:'#E4513C',p:'reageert een digitaal personage op wat je zegt',eng:.75,learn:.7,scale:.9},
+ mp:{n:'Multiplayer',ic:'👥',c:'#F28C28',p:'speel je samen, naast elkaar of op afstand',eng:.9,learn:.6,scale:.6},
+ sim:{n:'Simulatie',ic:'🧪',c:'#1FA971',p:'oefen je realistische situaties zonder risico',eng:.6,learn:.95,scale:.65},
+ gam:{n:'Gamification',ic:'🏆',c:'#D6A21E',p:'motiveren punten, uitdagingen en een scorebord',eng:.95,learn:.5,scale:.9}
+};
+const SYN=[[['vr','mp'],15,'Samen in één virtuele ruimte'],[['ai','sim'],15,'Scenario\'s die terugpraten'],[['ar','gam'],12,'Speurtocht in de echte ruimte'],[['vr','sim'],12,'Levensecht oefenen'],[['ai','gam'],10,'Een uitdager die meedenkt'],[['sim','gam'],10,'Oefenen als een spel'],[['ar','ai'],10,'Een gids in je camera'],[['mp','gam'],10,'Teams die tegen elkaar strijden']];
+const P=[
+ {ic:'🏭',t:'Nieuwe medewerkers raken verdwaald in het magazijn',w:{vr:.8,ar:.95,ai:.4,mp:.3,sim:.7,gam:.6},tip:'Oriënteren leer je het best in of met de echte ruimte.'},
+ {ic:'🌍',t:'Teams op verschillende locaties werken slecht samen',w:{vr:.65,ar:.2,ai:.35,mp:1,sim:.5,gam:.7},tip:'Samenwerken oefen je alleen echt als je ook samen speelt.'},
+ {ic:'🎪',t:'Bezoekers lopen je beursstand voorbij',w:{vr:.6,ar:.5,ai:.85,mp:.55,sim:.3,gam:.9},tip:'Aandacht trekken vraagt om iets snels, persoonlijks en uitdagends.'}
+];
+const ROUND_T=35;
+let S, iv, last, drag=null;
+const $=id=>document.getElementById(id);
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.1,t='triangle',v=.07){const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+const blk=(k,cls='')=>`<button class="blk ${cls}" data-k="${k}" style="background:${B[k].c}"><span class="ic">${B[k].ic}</span>${B[k].n}</button>`;
+
+function start(){ S={r:0,score:0,log:[]}; $('intro').hidden=true; $('end').hidden=true; ac(); round(); }
+function round(){
+  const p=P[S.r]; S.slots=[null,null,null]; S.left=ROUND_T; S.tested=false;
+  $('rnd').textContent=`Probleem ${S.r+1} van ${P.length}`; $('pIc').textContent=p.ic; $('pT').textContent=p.t; $('sim').hidden=true;
+  render(); clearInterval(iv); last=performance.now(); iv=setInterval(tick,100);
+}
+function tick(){ const n=performance.now(); S.left-=(n-last)/1000; last=n; if(S.left<=0){ S.left=0; clearInterval(iv); test(true);} const t=Math.ceil(S.left); $('time').textContent=t; $('time').className=t<=8?'low':''; }
+function render(){
+  document.querySelectorAll('.slot').forEach((el,i)=>{ const k=S.slots[i]; el.className='slot'+(k?' f':''); el.innerHTML=k?blk(k):String(i+1); });
+  $('tray').innerHTML=Object.keys(B).map(k=>blk(k,S.slots.includes(k)?'used':'')).join('');
+  $('simBtn').disabled=S.slots.includes(null)||S.tested; $('score').textContent=S.score;
+}
+function place(k,i){ if(S.tested) return; if(i==null) i=S.slots.indexOf(null); if(i<0) return; const old=S.slots.indexOf(k); if(old>=0) S.slots[old]=null; S.slots[i]=k; tone(520+i*140,.08); render(); }
+// Drag and drop (pointer) with tap fallback
+document.addEventListener('pointerdown',e=>{
+  const b=e.target.closest('.blk'); if(!b||S.tested) return; e.preventDefault();
+  const inSlot=b.closest('.slot');
+  drag={k:b.dataset.k,x:e.clientX,y:e.clientY,moved:false,from:inSlot?+inSlot.dataset.s:null};
+  $('ghost').innerHTML=blk(drag.k);
+});
+document.addEventListener('pointermove',e=>{
+  if(!drag) return; if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>8) drag.moved=true;
+  if(!drag.moved) return; const g=$('ghost'); g.hidden=false; g.style.left=e.clientX+'px'; g.style.top=e.clientY+'px';
+  document.querySelectorAll('.slot').forEach(s=>{ const r=s.getBoundingClientRect(); s.classList.toggle('over', e.clientX>r.left&&e.clientX<r.right&&e.clientY>r.top&&e.clientY<r.bottom); });
+});
+document.addEventListener('pointerup',e=>{
+  if(!drag) return; $('ghost').hidden=true; const d=drag; drag=null;
+  const over=[...document.querySelectorAll('.slot')].find(s=>s.classList.contains('over')); document.querySelectorAll('.slot').forEach(s=>s.classList.remove('over'));
+  if(!d.moved){ if(d.from!=null){ S.slots[d.from]=null; tone(300,.06); render(); } else place(d.k); return; }
+  if(over) place(d.k,+over.dataset.s); else if(d.from!=null){ S.slots[d.from]=null; render(); }
+});
+document.addEventListener('keydown',e=>{ const b=e.target.closest&&e.target.closest('.blk'); if(b&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); const s=b.closest('.slot'); if(s){ S.slots[+s.dataset.s]=null; render(); } else place(b.dataset.k); } });
+$('simBtn').onclick=()=>test(false);
+
+function test(timeUp){
+  clearInterval(iv); S.tested=true; render();
+  const p=P[S.r], ks=S.slots.filter(Boolean);
+  const fit = ks.length ? ks.reduce((a,k)=>a+p.w[k],0)/3 : 0;
+  const syns = SYN.filter(([pair])=>pair.every(k=>ks.includes(k)));
+  const avg = f=>ks.length?ks.reduce((a,k)=>a+B[k][f],0)/ks.length:0;
+  const synB = syns.reduce((a,s)=>a+s[1],0);
+  const m = {Betrokkenheid:avg('eng'), Leereffect:avg('learn'), 'Past bij het probleem':fit, Schaalbaarheid:avg('scale')};
+  const pts = Math.round(fit*500 + synB*8 + (timeUp?0:S.left*6)) * (ks.length===3?1:ks.length/3);
+  S.score+=Math.round(pts);
+  const best = Object.entries(p.w).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>B[k].n);
+  const desc = ks.length ? `In deze oplossing ${ks.map(k=>B[k].p).join(', ').replace(/, ([^,]*)$/,' en $1')}.` : 'Er stond nog niets op de bouwplaats.';
+  const verdict = fit>=.8?'Sterke oplossing.':fit>=.6?'Werkt, maar kan scherper.':'Deze combinatie mist het doel.';
+  S.log.push({p:p.t, ks:ks.map(k=>B[k].n), pts:Math.round(pts), verdict, desc, syns:syns.map(s=>s[2])});
+  $('sim').innerHTML=`<h3>${verdict} +${Math.round(pts)}</h3><p>${desc} ${fit<.8?p.tip:''}</p>
+   <div class="bars">${Object.entries(m).map(([n,v])=>`<div class="bar"><b>${n}</b><div><em data-w="${Math.round(v*100)}" style="background:${v>=.75?'#1FA971':v>=.55?'#D6A21E':'#E4513C'}"></em></div></div>`).join('')}</div>
+   ${syns.map(s=>`<span class="syn">✨ ${s[2]} +${s[1]}</span>`).join('')}
+   <div><button class="next" id="nx">${S.r<P.length-1?'Volgend probleem':'Bekijk resultaat'}</button></div>`;
+  $('sim').hidden=false; requestAnimationFrame(()=>document.querySelectorAll('#sim em').forEach(e=>e.style.width=e.dataset.w+'%'));
+  fit>=.8 ? [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.2),i*90)) : tone(fit>=.6?440:200,.25);
+  $('nx').onclick=()=>{ S.r++; S.r<P.length?round():end(); };
+  $('sim').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function end(){
+  const used=[...new Set(S.log.flatMap(l=>l.ks))];
+  $('endBox').innerHTML=`<h2>Jouw oplossingen</h2><div class="big">${S.score}</div>
+   <div class="rounds">${S.log.map(l=>`<div><b>${l.ks.join(' + ')||'—'}</b> · ${l.p}<br>${l.verdict} ${l.syns.length?`✨ ${l.syns.join(', ')}`:''}</div>`).join('')}</div>
+   <p style="font-size:17px;opacity:.85">Gebruikte technieken: ${used.join(', ')}.</p>
+   <div id="rsSlot"></div><button class="go" id="again">Opnieuw bouwen</button>`;
+  $('end').hidden=false; $('again').onclick=start;
+  RESULTS.mount($('rsSlot'), {score:S.score, lines:S.log.map(l=>`${l.p}: ${l.ks.join(' + ')} (${l.pts} punten). ${l.verdict} ${l.desc}${l.syns.length?' Combinatie: '+l.syns.join(', ')+'.':''}`),
+    outro:'VR-trainingen, AI-personages, multiplayer games en simulaties: dit zijn geen verzonnen bouwstenen. Enversed Studios combineert ze in echte projecten voor organisaties en onderwijs.'});
+}
+$('startBtn').onclick=start;
+S={slots:[null,null,null],r:0,score:0}; $('pIc').textContent=P[0].ic; $('pT').textContent=P[0].t; render();
+</script>
+</body>
+</html>

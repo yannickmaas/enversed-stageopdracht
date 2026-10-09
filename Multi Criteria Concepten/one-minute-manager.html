@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="nl" data-game="one-minute-manager">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>One Minute Manager — Enversed Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#1D2B64;--navy2:#26377A;--coral:#FF6F59;--sun:#FFC857;--mint:#43D9AD;--txt:#F2F4FF;--mut:#A9B2DB;--rs-acc:#FFC857;--rs-on:#1D2B64;
+  font-family:Outfit,"Segoe UI",sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--navy);color:var(--txt);display:flex;flex-direction:column;overflow:hidden;user-select:none}
+header{display:flex;align-items:center;gap:22px;padding:12px 24px}
+h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.02em}
+#clock{margin-left:auto;font-size:64px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;color:var(--sun)}
+#clock.low{color:var(--coral)}
+#score{font-size:34px;font-weight:800;min-width:120px;text-align:right}
+#meters{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0 24px}
+.mt b{font-size:18px;display:flex;justify-content:space-between}
+.mt div{height:22px;border-radius:11px;background:var(--navy2);overflow:hidden;margin-top:4px}
+.mt em{display:block;height:100%;border-radius:11px;transition:width .3s,background .3s}
+#pool{display:flex;align-items:center;gap:10px;padding:14px 24px;min-height:78px}
+#pool .lbl{font-size:18px;color:var(--mut);margin-right:6px}
+.tok{width:50px;height:50px;border-radius:50%;background:var(--sun);display:grid;place-items:center;font-size:26px;box-shadow:0 4px 0 #C89A2E}
+.tok.sick{background:#555F8F;box-shadow:none;opacity:.6}
+#depts{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:0 24px 24px;min-height:0}
+.dp{background:var(--navy2);border-radius:26px;padding:16px;display:flex;flex-direction:column;gap:10px;position:relative;border:4px solid transparent;transition:border-color .2s}
+.dp.short{border-color:var(--coral)}
+.dp.ok{border-color:var(--mint)}
+.dp h2{margin:0;font-size:26px;display:flex;gap:10px;align-items:center}
+.dp h2 span{font-size:40px}
+.need{font-size:17px;color:var(--mut)}
+.need b{color:var(--txt);font-size:22px}
+.slots{flex:1;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}
+.ctrl{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ctrl button{font:inherit;font-weight:800;font-size:40px;height:84px;border:0;border-radius:20px;cursor:pointer;color:var(--navy)}
+.ctrl .mi{background:#A9B2DB}.ctrl .pl{background:var(--mint)}
+.ctrl button:disabled{opacity:.3;cursor:not-allowed}
+.ev{position:absolute;top:-14px;right:14px;background:var(--coral);color:#fff;font-weight:800;border-radius:14px;padding:4px 12px;font-size:15px;animation:bob .5s infinite alternate}
+@keyframes bob{to{transform:translateY(-4px)}}
+#toast{position:fixed;left:50%;top:120px;transform:translateX(-50%);z-index:6;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.t{background:#fff;color:var(--navy);font-weight:800;font-size:22px;border-radius:14px;padding:10px 20px;animation:tt 2s forwards}
+.t.good{background:var(--mint)}.t.bad{background:var(--coral);color:#fff}
+@keyframes tt{0%{opacity:0;transform:translateY(-8px)}10%,80%{opacity:1;transform:none}100%{opacity:0}}
+#choice{position:fixed;inset:0;background:rgba(15,22,55,.75);display:grid;place-items:center;z-index:8}
+#choice[hidden]{display:none}
+#choice .c{background:#fff;color:var(--navy);border-radius:26px;padding:26px;max-width:760px;width:92%}
+#choice h3{margin:0 0 14px;font-size:34px}
+#choice .opts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#choice .opts button{font:inherit;font-weight:800;font-size:22px;border:0;border-radius:20px;padding:22px;cursor:pointer;color:#fff;text-align:left}
+#choice .opts button small{display:block;font-weight:400;font-size:16px;opacity:.9;margin-top:4px}
+#choice .opts button:nth-child(1){background:var(--navy)}#choice .opts button:nth-child(2){background:var(--coral)}
+#cbar{height:8px;background:var(--sun);border-radius:4px;margin-top:14px}
+button:focus-visible,a:focus-visible{outline:5px solid var(--sun);outline-offset:3px}
+.overlay{position:fixed;inset:0;background:rgba(15,22,55,.95);display:grid;place-items:center;z-index:10;padding:24px}
+.overlay[hidden]{display:none}
+.box{max-width:900px;width:100%;max-height:92vh;overflow:auto}
+.box h2{font-size:clamp(48px,8vw,104px);margin:0;letter-spacing:-.03em;line-height:1}
+.box p{font-size:21px;line-height:1.45;max-width:56ch}
+.go{font:inherit;font-weight:800;font-size:30px;background:var(--sun);color:var(--navy);border:0;border-radius:20px;padding:16px 46px;cursor:pointer;margin-top:12px}
+.big{font-size:104px;font-weight:800;line-height:1}
+.fin{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+.fin div{background:var(--navy2);border-radius:18px;padding:14px;font-size:16px}.fin b{display:block;font-size:40px}
+.dec{list-style:none;padding:0;margin:10px 0;display:flex;flex-direction:column;gap:6px;font-size:17px}
+.dec li{background:var(--navy2);border-radius:12px;padding:8px 12px}
+@media (max-width:900px){#depts{grid-template-columns:1fr 1fr}#meters{grid-template-columns:1fr}body{overflow:auto}.fin{grid-template-columns:1fr}#choice .opts{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><h1>One Minute Manager</h1><div id="clock">60</div><div id="score">0</div></header>
+<div id="meters"></div>
+<div id="pool"></div>
+<div id="depts"></div>
+<div id="toast"></div>
+<div id="choice" hidden><div class="c"><h3 id="cq"></h3><div class="opts" id="copts"></div><div id="cbar"></div></div></div>
+<div class="overlay" id="intro"><div class="box"><h2>60 seconden. Jouw bedrijf.</h2><p>Zet je team in waar het nodig is. Er gebeurt steeds iets nieuws. Houd snelheid, kwaliteit en stabiliteit in balans.</p><button class="go" id="startBtn">Aan de slag</button></div></div>
+<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+<script>// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  .rs-simple .rs-row{display:flex;gap:10px;flex-wrap:wrap}
+  .rs-simple .rs-row input{flex:1;min-width:220px;font-size:20px;padding:14px 16px}
+  .rs-simple .rs-send{font-size:20px;padding:14px 22px}
+  .rs-rank{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}.rs-rank b{font-size:34px}.rs-rank span{opacity:.8}
+  .rs-top{display:flex;gap:14px;list-style:decimal inside;padding:0;margin:0 0 14px;font-size:15px;opacity:.8;flex-wrap:wrap}
+  .rs-outro{margin:18px 0 0;font-size:15px;line-height:1.45;opacity:.75;max-width:60ch}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function all() {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(1000).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).map(x => ({ ...x, _id: x.id }));
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderRank(el, runId, score) {
+    const rows = await all(); if (!rows.length) { el.innerHTML = ''; return; }
+    const place = rows.filter(x => x.score > score).length + 1;
+    el.innerHTML = `<div class="rs-rank"><b>#${place}</b><span>van ${rows.length} ${rows.length === 1 ? 'speler' : 'spelers'}</span></div><ol class="rs-top">${rows.slice(0, 5).map(x => `<li>${x.score}</li>`).join('')}</ol>`;
+  }
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now(), opts = {}) {
+    if (opts.simple !== false) return mountSimple(container, result, runId);
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  async function mountSimple(container, result, runId) {
+    const box = document.createElement('div'); box.className = 'rs rs-simple';
+    box.innerHTML = `
+      <div class="rs-rankwrap"></div>
+      <div class="rs-row">
+        <input type="email" class="rs-mail" placeholder="jouw@email.nl" aria-label="E-mailadres" autocomplete="email" inputmode="email">
+        <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Stuur mijn resultaat</a>
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Enversed Studios mag mijn e-mailadres bewaren (optioneel)</label>
+      <div class="rs-status" role="status"></div>
+      ${result.outro ? `<p class="rs-outro">${esc(result.outro)}</p>` : ''}`;
+    container.appendChild(box);
+    const $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'), $send = box.querySelector('.rs-send'), $st = box.querySelector('.rs-status');
+    const refresh = () => { const ok = validEmail($m.value.trim()); $send.setAttribute('aria-disabled', ok ? 'false' : 'true'); $send.href = ok ? mailHref($m.value.trim(), result, '') : '#'; };
+    $m.addEventListener('input', refresh);
+    $m.addEventListener('keydown', e => { if (e.key === 'Enter' && $send.getAttribute('aria-disabled') === 'false') $send.click(); });
+    await saveScore(runId, { ...result, naam: '' });
+    renderRank(box.querySelector('.rs-rankwrap'), runId, result.score);
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim();
+      let kept = false; if ($c.checked) kept = await saveContact(result, '', email);
+      $st.textContent = `Je mailprogramma opent met je resultaat. Klik daar op verzenden.${kept ? ' Je e-mailadres is bewaard.' : ''}`;
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) { const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)'; b.onclick = () => exportCsv(b); box.appendChild(b); }
+  }
+  return { mount };
+})();
+</script>
+<script>
+const D=[{k:'prod',ic:'🏭',n:'Productie'},{k:'kwal',ic:'🔍',n:'Kwaliteit'},{k:'pers',ic:'💬',n:'Team & zorg'},{k:'lev',ic:'🚚',n:'Levering'}];
+const EV=[
+ {t:'Grote order binnen!',d:'prod',v:2},{t:'Klacht van een klant',d:'kwal',v:2},{t:'Deadline vandaag',d:'lev',v:2},
+ {t:'Twee nieuwe collega\'s starten',d:'pers',v:1},{t:'Ziekmelding',sick:true},{t:'Nieuwe machine draait sneller',d:'prod',v:-1},{t:'Audit komt langs',d:'kwal',v:1}];
+const CH=[
+ {q:'De order is groter dan gepland. Wat doe je?',o:[{t:'Overwerk vragen',s:'+2 handen, stabiliteit −15',f:S=>{S.extra+=2; S.m.stab-=15; setTimeout(()=>{ if(!S.over){ S.extra-=2; trim(); } },12000);}},{t:'Deel van de order uitstellen',s:'minder vraag, snelheid −10',f:S=>{S.d.prod=Math.max(1,S.d.prod-2); S.m.snel-=10;}}]},
+ {q:'Een klant wil het vandaag nog. Kwaliteit checken?',o:[{t:'Volledig controleren',s:'kwaliteit +10, snelheid −10',f:S=>{S.m.kwal+=10; S.m.snel-=10;}},{t:'Steekproef en versturen',s:'snelheid +10, kwaliteit −15',f:S=>{S.m.snel+=10; S.m.kwal-=15;}}]},
+ {q:'Het team is moe. Wat nu?',o:[{t:'Korte pauze voor iedereen',s:'stabiliteit +20, 5 s minder inzet',f:S=>{S.m.stab+=20; S.pause=5;}},{t:'Doorzetten, bijna klaar',s:'stabiliteit −15',f:S=>{S.m.stab-=15;}}]}
+];
+let S, raf, last;
+const $=id=>document.getElementById(id);
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.1,t='triangle',v=.07){const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+function toast(m,c=''){ const t=document.createElement('div'); t.className='t '+c; t.textContent=m; $('toast').appendChild(t); setTimeout(()=>t.remove(),2000); }
+const cap=()=>7+S.extra-S.sick;
+const used=()=>Object.values(S.a).reduce((x,y)=>x+y,0);
+function trim(){ while(used()>cap()){ const k=Object.keys(S.a).sort((a,b)=>S.a[b]-S.a[a])[0]; S.a[k]--; } render(); }
+function start(){
+  S={t:0,score:0,m:{snel:60,kwal:60,stab:60},d:{prod:2,kwal:1,pers:1,lev:1},a:{prod:1,kwal:1,pers:1,lev:1},extra:0,sick:0,pause:0,
+     nextEv:4,chAt:[14,32,48],chI:0,flag:{},hist:{snel:0,kwal:0,stab:0,n:0},log:[],over:false,choosing:false};
+  $('intro').hidden=true; $('end').hidden=true;
+  $('depts').innerHTML=D.map(d=>`<div class="dp" id="d-${d.k}"><h2><span>${d.ic}</span>${d.n}</h2><div class="need">nodig: <b id="n-${d.k}"></b></div><div class="slots" id="s-${d.k}"></div><div class="ctrl"><button class="mi" data-k="${d.k}" data-v="-1" aria-label="Minder ${d.n}">−</button><button class="pl" data-k="${d.k}" data-v="1" aria-label="Meer ${d.n}">+</button></div></div>`).join('');
+  render(); ac(); last=performance.now(); raf=requestAnimationFrame(loop);
+}
+$('depts').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||!S||S.over||S.choosing) return; const k=b.dataset.k, v=+b.dataset.v;
+  if(v>0 && used()>=cap()){ toast('Niemand meer vrij','bad'); tone(160,.15,'sawtooth'); return; }
+  if(v<0 && S.a[k]<=0) return;
+  S.a[k]+=v; tone(v>0?600:400,.06);
+  const f=S.flag[k]; if(f && v>0 && S.a[k]>=S.d[k]){ const q=S.t-f.t; if(q<4){ S.score+=60; toast(`Snel geschakeld +60`,'good'); } S.log.push(`${f.ev}: binnen ${q.toFixed(1)} s ${D.find(d=>d.k===k).n.toLowerCase()} versterkt`); delete S.flag[k]; }
+  render(); });
+function render(){
+  const free=cap()-used();
+  $('pool').innerHTML=`<span class="lbl">Vrij:</span>${Array(Math.max(0,free)).fill('<span class="tok">🙂</span>').join('')}${Array(S.sick).fill('<span class="tok sick">🤒</span>').join('')}${free<=0&&!S.sick?'<span class="lbl">iedereen is ingezet</span>':''}`;
+  for(const d of D){ const a=S.a[d.k], n=S.d[d.k];
+    $('n-'+d.k).textContent=n; $('s-'+d.k).innerHTML=Array(a).fill('<span class="tok">🙂</span>').join('');
+    $('d-'+d.k).className='dp'+(a<n?' short':' ok'); $('d-'+d.k).querySelector('.ev')?.remove();
+    if(S.flag[d.k]) $('d-'+d.k).insertAdjacentHTML('beforeend',`<span class="ev">${S.flag[d.k].ev}</span>`);
+    $('d-'+d.k).querySelector('.pl').disabled=free<=0; $('d-'+d.k).querySelector('.mi').disabled=a<=0; }
+}
+function meters(){ const L={snel:'⚡ Snelheid',kwal:'💎 Kwaliteit',stab:'⚖️ Stabiliteit'};
+  $('meters').innerHTML=Object.entries(L).map(([k,n])=>{ const v=Math.round(S.m[k]); return `<div class="mt"><b>${n}<span>${v}</span></b><div><em style="width:${v}%;background:${v>=65?'#43D9AD':v>=40?'#FFC857':'#FF6F59'}"></em></div></div>`; }).join(''); }
+function event(){
+  const e=EV[Math.floor(Math.random()*EV.length)];
+  if(e.sick){ if(S.sick>=2) return; S.sick++; trim(); toast('Ziekmelding: één collega minder','bad'); S.log.push('Ziekmelding opgevangen'); setTimeout(()=>{ if(S&&!S.over){ S.sick=Math.max(0,S.sick-1); render(); toast('Collega is weer terug','good'); } },10000); tone(200,.3,'sawtooth'); return; }
+  S.d[e.d]=Math.max(1,Math.min(5,S.d[e.d]+e.v));
+  if(e.v>0){ S.flag[e.d]={t:S.t,ev:e.t}; toast(e.t); tone(880,.1,'square',.05); } else { toast(e.t,'good'); S.log.push(e.t); }
+  render();
+}
+function choice(){
+  const c=CH[S.chI++]; S.choosing=true; $('cq').textContent=c.q;
+  $('copts').innerHTML=c.o.map((o,i)=>`<button data-i="${i}">${o.t}<small>${o.s}</small></button>`).join(''); $('choice').hidden=false; tone(520,.2,'square',.05);
+  const t0=performance.now(); const bar=$('cbar');
+  const pick=i=>{ if(!S.choosing) return; S.choosing=false; $('choice').hidden=true; c.o[i].f(S); S.log.push(`${c.q.replace('?','')} → ${c.o[i].t}`); last=performance.now(); render(); };
+  $('copts').onclick=e=>{ const b=e.target.closest('button'); if(b) pick(+b.dataset.i); };
+  (function cd(){ if(!S.choosing) return; const p=(performance.now()-t0)/6000; bar.style.width=Math.max(0,100-p*100)+'%'; if(p>=1) return pick(1); requestAnimationFrame(cd); })();
+}
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  if(!S.choosing){
+    S.t+=dt; const cov=k=>Math.min(1,S.a[k]/S.d[k]);
+    const paused=S.pause>0; if(paused) S.pause-=dt; const f=paused?0:1;
+    const tgt={snel:(cov('prod')*.6+cov('lev')*.4)*100*f, kwal:cov('kwal')*100*(f||.8), stab:(cov('pers')*70 + (used()<cap()?30:15))};
+    const overStretch = Object.keys(S.d).reduce((a,k)=>a+S.d[k],0) > cap();
+    if(overStretch) tgt.stab-=15;
+    for(const k in S.m){ S.m[k]+= (tgt[k]-S.m[k])*dt*.35; S.m[k]=Math.max(0,Math.min(100,S.m[k])); S.hist[k]+=S.m[k]*dt; }
+    S.hist.n+=dt;
+    S.score += Math.round((S.m.snel+S.m.kwal+S.m.stab)/3*dt*1.6*(Math.min(S.m.snel,S.m.kwal,S.m.stab)>50?1.3:1));
+    for(const [k,f2] of Object.entries(S.flag)) if(S.t-f2.t>8){ S.log.push(`${f2.ev}: niet opgevangen`); delete S.flag[k]; S.m.stab-=6; render(); }
+    S.nextEv-=dt; if(S.nextEv<=0){ event(); S.nextEv=Math.max(2.8,6-S.t/20)*(0.8+Math.random()*.4); }
+    if(S.chI<S.chAt.length && S.t>=S.chAt[S.chI]) choice();
+  }
+  meters(); const left=Math.max(0,60-S.t); $('clock').textContent=Math.ceil(left); $('clock').className=left<=10?'low':''; $('score').textContent=S.score;
+  if(left<=0) return end();
+  raf=requestAnimationFrame(loop);
+}
+function end(){
+  S.over=true; cancelAnimationFrame(raf);
+  const avg=k=>Math.round(S.hist[k]/Math.max(1,S.hist.n));
+  const A={snel:avg('snel'),kwal:avg('kwal'),stab:avg('stab')};
+  const low=Object.entries(A).sort((a,b)=>a[1]-b[1])[0], names={snel:'snelheid',kwal:'kwaliteit',stab:'stabiliteit'};
+  const msg = low[1]>=60 ? 'Een gebalanceerd bedrijf: niets bleef structureel liggen.' : `Je ${names[low[0]]} bleef achter. In het echt voel je dat pas later, als het misgaat.`;
+  $('endBox').innerHTML=`<h2>Werkdag voorbij</h2><div class="big">${S.score}</div>
+   <div class="fin"><div><b>${A.snel}</b>⚡ snelheid</div><div><b>${A.kwal}</b>💎 kwaliteit</div><div><b>${A.stab}</b>⚖️ stabiliteit</div></div>
+   <p>${msg}</p><ul class="dec">${S.log.slice(-6).map(l=>`<li>${l}</li>`).join('')}</ul>
+   <div id="rsSlot"></div><button class="go" id="again">Nieuwe werkdag</button>`;
+  $('end').hidden=false; $('again').onclick=start;
+  RESULTS.mount($('rsSlot'), {score:S.score, lines:[`Snelheid ${A.snel}, kwaliteit ${A.kwal}, stabiliteit ${A.stab} (gemiddeld)`, msg, ...S.log.slice(-8)],
+    outro:'Beperkte middelen, veranderende vraag, keuzes met gevolgen: zo maakt Enversed Studios complexe organisatievraagstukken speelbaar in serious games en simulaties.'});
+}
+$('startBtn').onclick=start;
+S={m:{snel:60,kwal:60,stab:60}}; meters();
+</script>
+</body>
+</html>

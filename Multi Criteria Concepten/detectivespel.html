@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="nl" data-game="detectivespel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Detectivespel — Enversed Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--plum:#2B1E2F;--plum2:#3D2B40;--amber:#F4B860;--paper:#EFE6D8;--ink:#2A2126;--red:#D2553F;--green:#7FB77E;--rs-acc:#F4B860;--rs-on:#2B1E2F;
+  font-family:"Courier Prime","Courier New",monospace;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--plum);color:var(--paper);display:flex;flex-direction:column;overflow:hidden}
+.disp{font-family:"DM Serif Display",Georgia,serif;font-weight:400}
+header{display:flex;align-items:center;gap:24px;padding:14px 26px}
+header h1{margin:0;font-size:34px}
+#case{font-size:18px;opacity:.75}
+.hud{margin-left:auto;display:flex;gap:28px}
+.hud div{text-align:center;line-height:1}.hud b{display:block;font-size:34px;font-variant-numeric:tabular-nums}.hud span{font-size:14px;opacity:.65}
+#time.low{color:var(--red)}
+main{flex:1;display:grid;grid-template-columns:1fr 330px;gap:18px;padding:0 26px 22px;min-height:0}
+#sceneWrap{position:relative;border-radius:18px;overflow:hidden;background:#1B1320}
+#scene{width:100%;height:100%;display:block}
+.obj{cursor:pointer}
+.obj .glow{fill:none;stroke:var(--amber);stroke-width:0;transition:stroke-width .2s}
+.obj:hover .glow,.obj:focus-visible .glow{stroke-width:4;stroke-dasharray:8 6}
+.obj.seen{opacity:.55}
+.obj:focus{outline:none}
+#torch{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle 190px at var(--x,50%) var(--y,50%),transparent 0,rgba(10,6,12,.72) 100%)}
+#card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,90%);background:var(--paper);color:var(--ink);border-radius:6px;padding:22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.5);z-index:4}
+#card[hidden]{display:none}
+#card .ic{font-size:64px;line-height:1}
+#card h3{font-family:"DM Serif Display",serif;font-weight:400;font-size:30px;margin:8px 0 6px}
+#card p{font-size:19px;line-height:1.35;margin:0 0 18px}
+.acts{display:flex;gap:10px}
+.btn{font:inherit;font-weight:700;font-size:20px;padding:14px 22px;border-radius:10px;border:3px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
+.btn.pri{background:var(--ink);color:var(--paper)}
+aside{background:var(--plum2);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+aside h2{margin:0;font-size:26px}
+.slots{display:flex;flex-direction:column;gap:10px;flex:1}
+.slot{border:3px dashed rgba(239,230,216,.3);border-radius:10px;min-height:74px;display:flex;align-items:center;gap:12px;padding:10px 12px;font-size:16px}
+.slot.f{border-style:solid;border-color:var(--amber);background:rgba(244,184,96,.1);cursor:pointer}
+.slot .ic{font-size:34px}
+.slot small{display:block;opacity:.6;font-size:13px}
+#solveBtn{font:inherit;font-weight:700;font-size:24px;padding:18px;border-radius:12px;border:0;background:var(--amber);color:var(--plum);cursor:pointer}
+#solveBtn:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible,a:focus-visible{outline:4px solid var(--amber);outline-offset:3px}
+.overlay{position:fixed;inset:0;background:rgba(20,12,22,.94);display:grid;place-items:center;z-index:10;padding:24px}
+.overlay[hidden]{display:none}
+.box{max-width:820px;width:100%;max-height:92vh;overflow:auto}
+.box h2{font-size:clamp(44px,7vw,84px);margin:0;line-height:1}
+.box p{font-size:20px;line-height:1.45;max-width:60ch}
+.causes{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.causes button{font:inherit;text-align:left;background:var(--paper);color:var(--ink);border:0;border-radius:12px;padding:20px;cursor:pointer;font-size:19px;display:flex;gap:14px;align-items:center}
+.causes button span{font-size:40px}
+.causes button:hover{outline:4px solid var(--amber)}
+.big{font-size:96px;line-height:1;margin:10px 0}
+.facts{display:flex;gap:26px;flex-wrap:wrap;font-size:19px;margin:10px 0 4px}
+.facts b{display:block;font-size:34px}
+.clues{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.clue{background:var(--plum2);border-radius:10px;padding:8px 12px;font-size:16px}
+.clue.ok{border:2px solid var(--green)}.clue.no{border:2px solid var(--red);opacity:.8}
+.go{font:inherit;font-weight:700;font-size:26px;background:var(--amber);color:var(--plum);border:0;border-radius:14px;padding:18px 40px;cursor:pointer;margin-top:10px}
+#stamp{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:11}
+#stamp[hidden]{display:none}
+#stamp div{font-family:"DM Serif Display",serif;font-size:clamp(56px,10vw,130px);color:var(--red);border:10px solid var(--red);padding:6px 30px;transform:rotate(-8deg);animation:st .5s cubic-bezier(.2,1.6,.4,1)}
+#stamp div.ok{color:var(--green);border-color:var(--green)}
+@keyframes st{from{transform:rotate(-8deg) scale(2.2);opacity:0}}
+@media (max-width:900px){main{grid-template-columns:1fr}aside{min-height:260px}body{overflow:auto}#sceneWrap{min-height:420px}.causes{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><h1 class="disp">Detectivespel</h1><span id="case"></span>
+  <div class="hud"><div><b id="score">0</b><span>score</span></div><div><b id="time">75</b><span>sec</span></div></div></header>
+<main>
+  <div id="sceneWrap"><svg id="scene" viewBox="0 0 900 560" role="img" aria-label="Plaats delict"></svg><div id="torch"></div>
+    <div id="card" hidden></div></div>
+  <aside><h2 class="disp">Bewijs</h2><div class="slots" id="slots"></div><button id="solveBtn" disabled>Wat is er gebeurd?</button></aside>
+</main>
+<div class="overlay" id="intro"><div class="box">
+  <h2 class="disp">Er is iets misgegaan.</h2>
+  <p>Doorzoek de ruimte. Bewaar drie aanwijzingen. Kies de oorzaak voordat de tijd op is.</p>
+  <button class="go" id="startBtn">Begin onderzoek</button></div></div>
+<div class="overlay" id="solve" hidden><div class="box"><h2 class="disp">Wat is de oorzaak?</h2><div class="causes" id="causes"></div></div></div>
+<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+<div id="stamp" hidden><div></div></div>
+<script>// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  .rs-simple .rs-row{display:flex;gap:10px;flex-wrap:wrap}
+  .rs-simple .rs-row input{flex:1;min-width:220px;font-size:20px;padding:14px 16px}
+  .rs-simple .rs-send{font-size:20px;padding:14px 22px}
+  .rs-rank{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}.rs-rank b{font-size:34px}.rs-rank span{opacity:.8}
+  .rs-top{display:flex;gap:14px;list-style:decimal inside;padding:0;margin:0 0 14px;font-size:15px;opacity:.8;flex-wrap:wrap}
+  .rs-outro{margin:18px 0 0;font-size:15px;line-height:1.45;opacity:.75;max-width:60ch}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function all() {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(1000).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).map(x => ({ ...x, _id: x.id }));
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderRank(el, runId, score) {
+    const rows = await all(); if (!rows.length) { el.innerHTML = ''; return; }
+    const place = rows.filter(x => x.score > score).length + 1;
+    el.innerHTML = `<div class="rs-rank"><b>#${place}</b><span>van ${rows.length} ${rows.length === 1 ? 'speler' : 'spelers'}</span></div><ol class="rs-top">${rows.slice(0, 5).map(x => `<li>${x.score}</li>`).join('')}</ol>`;
+  }
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now(), opts = {}) {
+    if (opts.simple !== false) return mountSimple(container, result, runId);
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  async function mountSimple(container, result, runId) {
+    const box = document.createElement('div'); box.className = 'rs rs-simple';
+    box.innerHTML = `
+      <div class="rs-rankwrap"></div>
+      <div class="rs-row">
+        <input type="email" class="rs-mail" placeholder="jouw@email.nl" aria-label="E-mailadres" autocomplete="email" inputmode="email">
+        <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Stuur mijn resultaat</a>
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Enversed Studios mag mijn e-mailadres bewaren (optioneel)</label>
+      <div class="rs-status" role="status"></div>
+      ${result.outro ? `<p class="rs-outro">${esc(result.outro)}</p>` : ''}`;
+    container.appendChild(box);
+    const $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'), $send = box.querySelector('.rs-send'), $st = box.querySelector('.rs-status');
+    const refresh = () => { const ok = validEmail($m.value.trim()); $send.setAttribute('aria-disabled', ok ? 'false' : 'true'); $send.href = ok ? mailHref($m.value.trim(), result, '') : '#'; };
+    $m.addEventListener('input', refresh);
+    $m.addEventListener('keydown', e => { if (e.key === 'Enter' && $send.getAttribute('aria-disabled') === 'false') $send.click(); });
+    await saveScore(runId, { ...result, naam: '' });
+    renderRank(box.querySelector('.rs-rankwrap'), runId, result.score);
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim();
+      let kept = false; if ($c.checked) kept = await saveContact(result, '', email);
+      $st.textContent = `Je mailprogramma opent met je resultaat. Klik daar op verzenden.${kept ? ' Je e-mailadres is bewaard.' : ''}`;
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) { const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)'; b.onclick = () => exportCsv(b); box.appendChild(b); }
+  }
+  return { mount };
+})();
+</script>
+<script>
+const CASES = [
+ { name:'Zaak 1 · Het lab', title:'De koelcel is ontdooid', time:75,
+   bg:`<rect width="900" height="560" fill="#4A3A4E"/><rect y="400" width="900" height="160" fill="#34283A"/><rect x="560" y="60" width="200" height="140" fill="#1B2A3A" stroke="#6B5A70" stroke-width="8"/><circle cx="700" cy="110" r="18" fill="#E8E2C8" opacity=".8"/><rect x="40" y="250" width="380" height="20" fill="#5E4B62"/><rect x="60" y="270" width="16" height="130" fill="#5E4B62"/><rect x="384" y="270" width="16" height="130" fill="#5E4B62"/>`,
+   objs:[
+    {id:'koel',ic:'🧊',n:'Koelcel',t:'Temperatuurlog: stabiel −20 °C, om 02:15 stroom weg.',rel:true,box:[450,170,140,240],d:`<rect x="455" y="175" width="130" height="230" rx="8" fill="#C9D3DC"/><rect x="470" y="195" width="100" height="40" rx="4" fill="#1B2A3A"/><text x="520" y="222" text-anchor="middle" font-size="20" fill="#F2A541" font-family="Courier Prime">+8°C</text><rect x="562" y="280" width="10" height="50" rx="4" fill="#8A96A5"/><path d="M470 405 q30 18 60 0 q20 14 50 0" fill="#7FB7D8" opacity=".6"/>`},
+    {id:'stekker',ic:'🔌',n:'Stopcontact',t:'De stekker van de koelcel ligt los. Ernaast: de stofzuiger.',rel:true,box:[600,330,150,80],d:`<rect x="610" y="340" width="40" height="44" rx="4" fill="#EFE6D8"/><path d="M590 400 q20 -30 45 -12" stroke="#1B1B1B" stroke-width="6" fill="none"/><rect x="668" y="340" width="70" height="60" rx="14" fill="#C0392B"/><path d="M700 340 q10 -40 40 -60" stroke="#333" stroke-width="5" fill="none"/>`},
+    {id:'badge',ic:'🪪',n:'Toegangslog',t:'02:14 · badge Schoonmaak. Verder niemand vannacht.',rel:true,box:[780,220,90,120],d:`<rect x="790" y="230" width="70" height="100" rx="6" fill="#222"/><rect x="800" y="242" width="50" height="34" fill="#3BB273" opacity=".85"/><text x="825" y="265" text-anchor="middle" font-size="12" fill="#111" font-family="Courier Prime">02:14</text>`},
+    {id:'sms',ic:'📱',n:'Telefoon',t:'Gemiste melding 02:40: "Alarm koelcel". Niemand reageerde.',rel:true,box:[260,210,80,50],d:`<rect x="270" y="222" width="54" height="30" rx="4" fill="#111"/><rect x="274" y="226" width="46" height="22" fill="#D2553F"/>`},
+    {id:'raam',ic:'🪟',n:'Raam',t:'Het raam staat op een kier. Buiten was het 11 °C.',rel:false,box:[555,55,210,150],d:''},
+    {id:'mok',ic:'☕',n:'Koffiemok',t:'Koude koffie. Mok met "Beste collega".',rel:false,box:[100,210,60,50],d:`<rect x="110" y="215" width="36" height="36" rx="4" fill="#EFE6D8"/><path d="M146 222 q14 6 0 18" stroke="#EFE6D8" stroke-width="5" fill="none"/>`},
+    {id:'agenda',ic:'📅',n:'Kalender',t:'Onderhoud koelcel: gepland over 3 weken.',rel:false,box:[140,70,120,120],d:`<rect x="150" y="80" width="100" height="100" fill="#EFE6D8"/><rect x="150" y="80" width="100" height="22" fill="#D2553F"/><g fill="#B5AFA3">${[0,1,2,3].map(r=>[0,1,2,3].map(c=>`<rect x="${158+c*23}" y="${110+r*17}" width="16" height="11"/>`).join('')).join('')}</g>`},
+    {id:'plant',ic:'🪴',n:'Plant',t:'Een verlepte plant. Al weken geen water gehad.',rel:false,box:[20,300,80,110],d:`<rect x="35" y="360" width="50" height="45" fill="#8E5B3E"/><path d="M60 360 q-30 -40 -20 -60 M60 360 q10 -50 30 -55 M60 360 q-5 -30 5 -70" stroke="#6E8A4E" stroke-width="7" fill="none"/>`}
+   ],
+   causes:[{id:'a',ic:'⚡',t:'Stroomstoring in het gebouw'},{id:'b',ic:'🧹',t:'Schoonmaak trok de stekker eruit',ok:true},{id:'c',ic:'🪟',t:'Warme lucht door het open raam'},{id:'d',ic:'🛠️',t:'Koelcel versleten, onderhoud te laat'}],
+   concl:'Om 02:14 kwam de schoonmaak binnen, om 02:15 viel de koelcel uit. De stekker lag los naast de stofzuiger, en het alarm werd gemist.'},
+ { name:'Zaak 2 · Het magazijn', title:'De beursbestelling kwam nooit aan', time:65,
+   bg:`<rect width="900" height="560" fill="#3E3A30"/><rect y="400" width="900" height="160" fill="#2D2A23"/>${[0,1,2].map(i=>`<rect x="${30+i*120}" y="60" width="100" height="340" fill="none" stroke="#6B6150" stroke-width="8"/><line x1="${30+i*120}" y1="170" x2="${130+i*120}" y2="170" stroke="#6B6150" stroke-width="8"/><line x1="${30+i*120}" y1="285" x2="${130+i*120}" y2="285" stroke="#6B6150" stroke-width="8"/>`).join('')}<rect x="420" y="250" width="440" height="22" fill="#5A5140"/>`,
+   objs:[
+    {id:'label',ic:'🏷️',n:'Verzendlabel',t:'Retour gekomen. Adres: Beursweg 12 — het oude adres.',rel:true,box:[40,190,90,80],d:`<rect x="45" y="195" width="80" height="70" fill="#C49A5E"/><rect x="55" y="205" width="60" height="34" fill="#fff"/><path d="M60 215h40M60 225h28" stroke="#111" stroke-width="3"/>`},
+    {id:'printer',ic:'🖨️',n:'Labelprinter',t:'Sjabloon "Klanten 2024" nog actief.',rel:true,box:[450,180,130,75],d:`<rect x="455" y="190" width="120" height="62" rx="8" fill="#D8D8D8"/><rect x="480" y="175" width="70" height="20" fill="#fff"/><circle cx="560" cy="205" r="5" fill="#3BB273"/>`},
+    {id:'mail',ic:'✉️',n:'Mailbox',t:'Ongelezen: "Let op, ons nieuwe adres is Expolaan 3."',rel:true,box:[610,160,140,95],d:`<rect x="620" y="170" width="120" height="80" rx="6" fill="#1B2A3A"/><rect x="630" y="182" width="100" height="14" fill="#F2A541"/><rect x="630" y="204" width="80" height="8" fill="#6B7C90"/><rect x="630" y="218" width="90" height="8" fill="#6B7C90"/><circle cx="728" cy="178" r="9" fill="#D2553F"/>`},
+    {id:'planning',ic:'🚛',n:'Rijplanning',t:'Chauffeur gewisseld, maar rit op tijd vertrokken.',rel:false,box:[160,300,100,90],d:`<rect x="170" y="310" width="80" height="70" fill="#EFE6D8"/><path d="M180 330h60M180 345h45M180 360h55" stroke="#555" stroke-width="3"/>`},
+    {id:'weer',ic:'🌧️',n:'Weerbericht',t:'Code geel die dag. Geen wegen afgesloten.',rel:false,box:[780,170,90,80],d:`<rect x="785" y="175" width="80" height="70" fill="#2F4058"/><circle cx="815" cy="205" r="14" fill="#D0D6DE"/><circle cx="838" cy="200" r="16" fill="#D0D6DE"/><path d="M810 228l-4 10M826 228l-4 10M842 228l-4 10" stroke="#7FB7D8" stroke-width="3"/>`},
+    {id:'rooster',ic:'🗓️',n:'Pauzerooster',t:'Iedereen had gewoon pauze om 12:00.',rel:false,box:[280,70,100,90],d:`<rect x="290" y="80" width="80" height="70" fill="#EFE6D8"/><rect x="290" y="80" width="80" height="16" fill="#7FB77E"/>`},
+    {id:'doos',ic:'📦',n:'Stapel dozen',t:'Standaard dozen. Niets bijzonders.',rel:false,box:[640,300,160,110],d:`<rect x="650" y="340" width="70" height="65" fill="#B8894F"/><rect x="725" y="320" width="70" height="85" fill="#C49A5E"/><rect x="680" y="290" width="70" height="50" fill="#A8793F"/>`},
+    {id:'scanner',ic:'📟',n:'Handscanner',t:'Batterij 12%. Scans kwamen wel binnen.',rel:false,box:[480,300,90,90],d:`<rect x="500" y="310" width="40" height="70" rx="8" fill="#333"/><rect x="506" y="318" width="28" height="22" fill="#F2A541"/>`},
+    {id:'post',ic:'🗒️',n:'Post-it',t:'"Klant belt terug over adreswijziging??" — nooit opgevolgd.',rel:true,box:[400,80,90,80],d:`<rect x="410" y="90" width="66" height="60" fill="#F7E07C" transform="rotate(-6 443 120)"/>`}
+   ],
+   causes:[{id:'a',ic:'🌧️',t:'Vertraging door het weer'},{id:'b',ic:'🚛',t:'Wissel van chauffeur'},{id:'c',ic:'🏷️',t:'Oud adres in het labelsjabloon',ok:true},{id:'d',ic:'📟',t:'Scanner registreerde niets'}],
+   concl:'De klant was verhuisd en had dat gemaild, maar de mail bleef ongelezen. Het labelsjabloon gebruikte nog het oude adres, dus het pakket ging naar de Beursweg.'}
+];
+let S, C, ci, iv, last;
+const $=id=>document.getElementById(id);
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.1,t='sine',v=.07){const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+
+$('sceneWrap').addEventListener('pointermove', e=>{ const r=$('sceneWrap').getBoundingClientRect(); $('torch').style.setProperty('--x',(e.clientX-r.left)+'px'); $('torch').style.setProperty('--y',(e.clientY-r.top)+'px'); });
+
+function begin(){ S={score:0, found:[], wrong:0, speeds:[], solved:0, cases:[]}; ci=0; loadCase(); ac(); }
+function loadCase(){
+  C = CASES[ci]; C.left = C.time; C.board=[]; C.seen=new Set();
+  $('case').textContent = `${C.name} · ${C.title}`;
+  ['intro','end','solve'].forEach(id=>$(id).hidden=true); $('card').hidden=true;
+  render(); renderSlots(); hud();
+  clearInterval(iv); last=performance.now(); iv=setInterval(tick,100);
+}
+function tick(){ const n=performance.now(); C.left-=(n-last)/1000; last=n; if(C.left<=0){ C.left=0; hud(); return openSolve(true);} hud(); }
+function hud(){ $('score').textContent=S.score; const t=Math.ceil(C.left); $('time').textContent=t; $('time').className=t<=10?'low':''; }
+function render(){
+  $('scene').innerHTML = C.bg + C.objs.map(o=>{ const [x,y,w,h]=o.box; return `<g class="obj ${C.seen.has(o.id)?'seen':''}" tabindex="0" role="button" aria-label="${o.n}" data-id="${o.id}">${o.d}<rect class="glow" x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="transparent"/></g>`; }).join('');
+}
+function renderSlots(){
+  $('slots').innerHTML = [0,1,2].map(i=>{ const o=C.board[i]; return o?`<div class="slot f" data-rm="${i}" title="Tik om te verwijderen"><span class="ic">${o.ic}</span><div>${o.n}<small>${o.t}</small></div></div>`:`<div class="slot">?</div>`; }).join('');
+  $('solveBtn').disabled = C.board.length<1;
+}
+function inspect(id){
+  const o=C.objs.find(x=>x.id===id); C.seen.add(id); render(); tone(440,.08,'triangle');
+  const inBoard = C.board.includes(o);
+  $('card').hidden=false; $('card').dataset.id=id;
+  $('card').innerHTML = `<div class="ic">${o.ic}</div><h3>${o.n}</h3><p>${o.t}</p><div class="acts">${inBoard?'':`<button class="btn pri" data-a="keep" ${C.board.length>=3?'disabled':''}>Bewaar als bewijs</button>`}<button class="btn" data-a="close">Terug</button></div>`;
+  $('card').querySelector('button').focus();
+}
+$('scene').addEventListener('click', e=>{ const g=e.target.closest('.obj'); if(g) inspect(g.dataset.id); });
+$('scene').addEventListener('keydown', e=>{ const g=e.target.closest('.obj'); if(g&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); inspect(g.dataset.id);} });
+$('card').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.a==='keep'){ const o=C.objs.find(x=>x.id===$('card').dataset.id); C.board.push(o); o.at = C.time-C.left; tone(660,.08,'triangle'); setTimeout(()=>tone(990,.1,'triangle'),70); renderSlots(); }
+  $('card').hidden=true; });
+$('slots').onclick = e=>{ const s=e.target.closest('[data-rm]'); if(s){ C.board.splice(+s.dataset.rm,1); renderSlots(); tone(300,.06); } };
+$('solveBtn').onclick = ()=>openSolve(false);
+function openSolve(timeUp){
+  clearInterval(iv); $('card').hidden=true;
+  $('causes').innerHTML = C.causes.map(c=>`<button data-c="${c.id}"><span>${c.ic}</span>${c.t}</button>`).join('');
+  $('solve').hidden=false; if(timeUp) tone(200,.3,'square',.05);
+}
+$('causes').onclick = e=>{ const b=e.target.closest('button'); if(!b) return; conclude(C.causes.find(c=>c.id===b.dataset.c)); };
+function conclude(choice){
+  $('solve').hidden=true;
+  const rel = C.board.filter(o=>o.rel).length, irr = C.board.length-rel;
+  let pts = rel*120 - irr*60;
+  if(choice.ok) pts += 300 + Math.round(C.left*8);
+  pts = Math.max(0,pts); S.score += pts;
+  S.cases.push({name:C.name, ok:!!choice.ok, choice, rel, irr, board:[...C.board], time:Math.round(C.time-C.left), concl:C.concl, pts});
+  if(choice.ok) S.solved++;
+  const st=$('stamp'); st.hidden=false; st.firstElementChild.textContent = choice.ok?'OPGELOST':'ONJUIST'; st.firstElementChild.className = choice.ok?'ok':'';
+  choice.ok ? [523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle'),i*90)) : tone(150,.5,'sawtooth',.06);
+  setTimeout(()=>{ st.hidden=true; if(ci<CASES.length-1){ ci++; showBetween(); } else finish(); }, 1400);
+}
+function showBetween(){
+  const k=S.cases[S.cases.length-1];
+  $('endBox').innerHTML = `<h2 class="disp">${k.ok?'Goed gezien.':'Net niet.'}</h2><p>${k.concl}</p><div class="facts"><div><b>+${k.pts}</b>punten</div><div><b>${k.rel}/3</b>sterke aanwijzingen</div><div><b>${k.time}s</b>tijd</div></div><button class="go" id="nextBtn">Volgende zaak</button>`;
+  $('end').hidden=false; $('nextBtn').onclick=loadCase; $('nextBtn').focus();
+}
+function finish(){
+  const tot = S.cases.reduce((a,k)=>a+k.time,0), rel=S.cases.reduce((a,k)=>a+k.rel,0), irr=S.cases.reduce((a,k)=>a+k.irr,0);
+  const verdict = S.solved===2 && irr===0 ? 'Meesterdetective. Je liet elke afleiding liggen.' : S.solved===2 ? 'Beide zaken opgelost. Een paar afleidingen hielden je even op.' : S.solved===1 ? 'Eén zaak opgelost. De details maakten het verschil.' : 'Deze keer bleef de dader buiten schot. Let op de tijdstippen.';
+  $('endBox').innerHTML = `<h2 class="disp">Dossier gesloten</h2><div class="big disp">${S.score}</div>
+   <div class="facts"><div><b>${S.solved}/2</b>zaken opgelost</div><div><b>${rel}</b>sterke aanwijzingen</div><div><b>${irr}</b>afleidingen bewaard</div><div><b>${tot}s</b>totale tijd</div></div>
+   <p>${verdict}</p>
+   ${S.cases.map(k=>`<div class="clues">${k.board.map(o=>`<span class="clue ${o.rel?'ok':'no'}">${o.ic} ${o.n}</span>`).join('')}</div>`).join('')}
+   <div id="rsSlot"></div><button class="go" id="again">Nieuw onderzoek</button>`;
+  $('end').hidden=false; $('again').onclick=begin;
+  RESULTS.mount($('rsSlot'), {score:S.score, lines:[`${S.solved} van 2 zaken opgelost`, `${rel} sterke aanwijzingen gevonden, ${irr} afleidingen bewaard`, `Totale tijd ${tot} seconden`, ...S.cases.map(k=>`${k.name}: ${k.ok?'opgelost':'niet opgelost'} (gekozen: ${k.choice.t})`), verdict],
+    outro:'Zoeken, verbanden leggen en zelf de conclusie trekken: zo werkt interactieve storytelling. Enversed Studios gebruikt dezelfde technieken in trainingen en serious games.'});
+}
+$('startBtn').onclick=begin;
+C=CASES[0]; C.seen=new Set(); render();
+</script>
+</body>
+</html>

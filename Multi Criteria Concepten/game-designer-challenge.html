@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="nl" data-game="game-designer-challenge">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game Designer Challenge — Enversed Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--pur:#2A1B5A;--pur2:#3B2A78;--pink:#FF5DA2;--yel:#FFE45E;--cy:#4DE1FF;--txt:#F4F0FF;--rs-acc:#FF5DA2;--rs-on:#fff;
+  font-family:Nunito,"Segoe UI",sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--pur);background-image:linear-gradient(rgba(77,225,255,.07) 2px,transparent 2px),linear-gradient(90deg,rgba(77,225,255,.07) 2px,transparent 2px);background-size:48px 48px;color:var(--txt);display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none}
+.px{font-family:"Press Start 2P","Courier New",monospace;font-weight:400}
+header{display:flex;align-items:center;gap:20px;padding:14px 26px}
+h1{margin:0;font-size:20px;color:var(--yel);line-height:1.4}
+.hud{margin-left:auto;display:flex;gap:24px}.hud div{text-align:center;line-height:1}.hud b{display:block;font-family:"Press Start 2P",monospace;font-size:26px;font-variant-numeric:tabular-nums}.hud span{font-size:13px;opacity:.7}
+#time.low{color:var(--pink)}
+main{flex:1;display:flex;flex-direction:column;gap:18px;padding:0 26px 22px;min-height:0;overflow:auto}
+#prob{background:var(--pur2);border:4px solid var(--cy);border-radius:10px;padding:18px 22px;display:flex;gap:18px;align-items:center}
+#prob .ic{font-size:60px}
+#prob h2{margin:0;font-size:clamp(24px,3vw,38px);font-weight:800;line-height:1.15}
+#prob small{display:block;color:var(--cy);font-size:15px;margin-bottom:4px}
+#build{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+.slot{width:180px;height:140px;border:5px dashed rgba(77,225,255,.5);border-radius:10px;display:grid;place-items:center;font-family:"Press Start 2P",monospace;font-size:24px;color:rgba(77,225,255,.6);transition:transform .15s,border-color .15s}
+.slot.over{border-color:var(--yel);transform:scale(1.05)}
+.slot.f{border:0}
+.plus{font-family:"Press Start 2P",monospace;font-size:26px;color:var(--pink)}
+#genBtn{font-family:"Press Start 2P",monospace;font-size:16px;line-height:1.5;border:0;border-radius:10px;padding:0 24px;height:140px;background:var(--pink);color:#fff;cursor:pointer;box-shadow:0 8px 0 #B83572}
+#genBtn:disabled{opacity:.3;cursor:not-allowed;box-shadow:none}
+#tray{display:grid;grid-template-columns:repeat(7,1fr);gap:12px}
+.blk{height:140px;border-radius:10px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:grab;font-weight:800;font-size:19px;border:0;font-family:inherit;box-shadow:0 8px 0 rgba(0,0,0,.35);touch-action:none;width:100%;text-align:center;padding:6px}
+.blk .ic{font-size:46px;line-height:1}
+.blk.used{opacity:.2;pointer-events:none}
+.slot .blk{width:180px}
+#ghost{position:fixed;pointer-events:none;z-index:20;width:160px;transform:translate(-50%,-50%) rotate(-5deg)}
+#ghost[hidden]{display:none}
+#demo{position:fixed;inset:0;background:#120B2B;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px}
+#demo[hidden]{display:none}
+#demo svg{width:min(1100px,96vw);height:auto;border-radius:12px;border:4px solid var(--cy)}
+#demoTitle{font-family:"Press Start 2P",monospace;font-size:clamp(18px,3vw,34px);color:var(--yel);text-align:center;line-height:1.4}
+button:focus-visible,a:focus-visible{outline:5px solid var(--yel);outline-offset:3px}
+.overlay{position:fixed;inset:0;background:rgba(18,11,43,.95);display:grid;place-items:center;z-index:10;padding:24px}
+.overlay[hidden]{display:none}
+.box{max-width:920px;width:100%;max-height:92vh;overflow:auto}
+.box h2{font-family:"Press Start 2P",monospace;font-weight:400;font-size:clamp(22px,4vw,44px);margin:0 0 10px;line-height:1.35;color:var(--yel)}
+.box p{font-size:21px;line-height:1.45;max-width:58ch}
+.go{font-family:"Press Start 2P",monospace;font-size:18px;background:var(--pink);color:#fff;border:0;border-radius:10px;padding:20px 34px;cursor:pointer;margin-top:12px;box-shadow:0 8px 0 #B83572}
+.card{display:grid;grid-template-columns:260px 1fr;gap:22px;background:var(--pur2);border:4px solid var(--cy);border-radius:12px;padding:18px;margin:10px 0}
+.card img,.card .thumb{width:100%;border-radius:8px;border:3px solid var(--pink);background:#120B2B}
+.card h3{margin:0 0 6px;font-family:"Press Start 2P",monospace;font-weight:400;font-size:18px;color:var(--yel);line-height:1.5}
+.card ul{margin:6px 0;padding-left:20px;font-size:17px;line-height:1.5}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.chip{border-radius:8px;padding:4px 10px;font-weight:800;font-size:15px}
+.big{font-family:"Press Start 2P",monospace;font-size:54px;line-height:1.2}
+.sb{display:flex;gap:18px;flex-wrap:wrap;font-size:16px;opacity:.9}
+@media (max-width:1000px){#tray{grid-template-columns:repeat(4,1fr)}.slot,.slot .blk{width:130px;height:110px}#genBtn{height:80px}.card{grid-template-columns:1fr}body{overflow:auto}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><h1 class="px">GAME DESIGNER<br>CHALLENGE</h1><div class="hud"><div><b id="time">60</b><span>sec</span></div></div></header>
+<main>
+  <div id="prob"><span class="ic" id="pIc"></span><div><small>Opdracht van de klant</small><h2 id="pT"></h2></div></div>
+  <div id="build"><div class="slot" data-s="0">1</div><span class="plus">+</span><div class="slot" data-s="1">2</div><span class="plus">+</span><div class="slot" data-s="2">3</div><button id="genBtn" disabled>BOUW<br>GAME</button></div>
+  <div id="tray"></div>
+</main>
+<div id="ghost" hidden></div>
+<div id="demo" hidden><div id="demoTitle"></div><svg id="demoSvg" viewBox="0 0 1000 560"></svg></div>
+<div class="overlay" id="intro"><div class="box"><h2>Jij bent de game designer.</h2><p>Een klant heeft een probleem. Kies drie bouwstenen en zie welke game eruit komt. Je hebt 60 seconden.</p><button class="go" id="startBtn">START</button></div></div>
+<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+<script>// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  .rs-simple .rs-row{display:flex;gap:10px;flex-wrap:wrap}
+  .rs-simple .rs-row input{flex:1;min-width:220px;font-size:20px;padding:14px 16px}
+  .rs-simple .rs-send{font-size:20px;padding:14px 22px}
+  .rs-rank{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}.rs-rank b{font-size:34px}.rs-rank span{opacity:.8}
+  .rs-top{display:flex;gap:14px;list-style:decimal inside;padding:0;margin:0 0 14px;font-size:15px;opacity:.8;flex-wrap:wrap}
+  .rs-outro{margin:18px 0 0;font-size:15px;line-height:1.45;opacity:.75;max-width:60ch}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function all() {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(1000).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).map(x => ({ ...x, _id: x.id }));
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderRank(el, runId, score) {
+    const rows = await all(); if (!rows.length) { el.innerHTML = ''; return; }
+    const place = rows.filter(x => x.score > score).length + 1;
+    el.innerHTML = `<div class="rs-rank"><b>#${place}</b><span>van ${rows.length} ${rows.length === 1 ? 'speler' : 'spelers'}</span></div><ol class="rs-top">${rows.slice(0, 5).map(x => `<li>${x.score}</li>`).join('')}</ol>`;
+  }
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now(), opts = {}) {
+    if (opts.simple !== false) return mountSimple(container, result, runId);
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  async function mountSimple(container, result, runId) {
+    const box = document.createElement('div'); box.className = 'rs rs-simple';
+    box.innerHTML = `
+      <div class="rs-rankwrap"></div>
+      <div class="rs-row">
+        <input type="email" class="rs-mail" placeholder="jouw@email.nl" aria-label="E-mailadres" autocomplete="email" inputmode="email">
+        <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Stuur mijn resultaat</a>
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Enversed Studios mag mijn e-mailadres bewaren (optioneel)</label>
+      <div class="rs-status" role="status"></div>
+      ${result.outro ? `<p class="rs-outro">${esc(result.outro)}</p>` : ''}`;
+    container.appendChild(box);
+    const $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'), $send = box.querySelector('.rs-send'), $st = box.querySelector('.rs-status');
+    const refresh = () => { const ok = validEmail($m.value.trim()); $send.setAttribute('aria-disabled', ok ? 'false' : 'true'); $send.href = ok ? mailHref($m.value.trim(), result, '') : '#'; };
+    $m.addEventListener('input', refresh);
+    $m.addEventListener('keydown', e => { if (e.key === 'Enter' && $send.getAttribute('aria-disabled') === 'false') $send.click(); });
+    await saveScore(runId, { ...result, naam: '' });
+    renderRank(box.querySelector('.rs-rankwrap'), runId, result.score);
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim();
+      let kept = false; if ($c.checked) kept = await saveContact(result, '', email);
+      $st.textContent = `Je mailprogramma opent met je resultaat. Klik daar op verzenden.${kept ? ' Je e-mailadres is bewaard.' : ''}`;
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) { const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)'; b.onclick = () => exportCsv(b); box.appendChild(b); }
+  }
+  return { mount };
+})();
+</script>
+<script>
+const B={
+ vr:{n:'VR',ic:'🥽',c:'#7B5CFF',w:'VR',p:'Spelers zetten een VR-bril op en staan midden in de situatie.'},
+ ar:{n:'AR',ic:'📱',c:'#00B3D6',w:'Live',p:'Digitale aanwijzingen verschijnen over de echte werkplek.'},
+ ai:{n:'AI',ic:'🤖',c:'#FF6B4A',w:'Coach',p:'Een AI-personage reageert op wat de speler zegt en doet.'},
+ mp:{n:'Multiplayer',ic:'👥',c:'#F29F05',w:'Squad',p:'Teams spelen samen en moeten elkaar helpen.'},
+ sim:{n:'Simulatie',ic:'🧪',c:'#18B87A',w:'Sim',p:'De situatie verloopt realistisch: fouten hebben gevolgen.'},
+ gam:{n:'Gamification',ic:'🏆',c:'#E6B800',w:'Challenge',p:'Punten, badges en een scorebord houden spelers scherp.'},
+ tr:{n:'Interactieve training',ic:'🧩',c:'#E0529C',w:'Academy',p:'Stap voor stap leren met directe feedback.'}
+};
+const SYN=[[['vr','mp'],80,'Samen in VR'],[['ai','sim'],80,'Scenario dat terugpraat'],[['ar','gam'],60,'Speurtocht op de werkvloer'],[['vr','sim'],70,'Levensecht oefenen'],[['ai','tr'],50,'Persoonlijke coach'],[['mp','gam'],50,'Teamcompetitie'],[['ar','tr'],50,'Instructie op locatie']];
+const P=[
+ {ic:'🔥',k:'Brandalarm',t:'Medewerkers moeten de brandprocedure echt kennen',w:{vr:.9,ar:.6,ai:.45,mp:.7,sim:.95,gam:.7,tr:.6},scene:'fire'},
+ {ic:'🤝',k:'Klantgesprek',t:'Verkopers moeten lastige klantgesprekken oefenen',w:{vr:.6,ar:.2,ai:1,mp:.5,sim:.8,gam:.5,tr:.65},scene:'talk'},
+ {ic:'🦺',k:'Hoogtewerk',t:'Nieuwe monteurs moeten veilig leren werken op hoogte',w:{vr:1,ar:.6,ai:.4,mp:.4,sim:.9,gam:.6,tr:.7},scene:'height'}
+];
+let S, iv, last, drag=null;
+const $=id=>document.getElementById(id);
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.1,t='square',v=.05){const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+const blk=(k,cls='')=>`<button class="blk ${cls}" data-k="${k}" style="background:${B[k].c}"><span class="ic">${B[k].ic}</span>${B[k].n}</button>`;
+function start(){ S={p:P[Math.floor(Math.random()*P.length)],slots:[null,null,null],left:60,done:false}; $('intro').hidden=true; $('end').hidden=true; $('demo').hidden=true; $('pIc').textContent=S.p.ic; $('pT').textContent=S.p.t; render(); ac(); clearInterval(iv); last=performance.now(); iv=setInterval(tick,100); }
+function tick(){ const n=performance.now(); S.left-=(n-last)/1000; last=n; if(S.left<=0){ S.left=0; clearInterval(iv); generate(); } const t=Math.ceil(S.left); $('time').textContent=t; $('time').className=t<=10?'low':''; }
+function render(){ document.querySelectorAll('.slot').forEach((el,i)=>{ const k=S.slots[i]; el.className='slot'+(k?' f':''); el.innerHTML=k?blk(k):String(i+1); }); $('tray').innerHTML=Object.keys(B).map(k=>blk(k,S.slots.includes(k)?'used':'')).join(''); $('genBtn').disabled=S.slots.includes(null)||S.done; }
+function place(k,i){ if(S.done) return; if(i==null) i=S.slots.indexOf(null); if(i<0) return; const o=S.slots.indexOf(k); if(o>=0) S.slots[o]=null; S.slots[i]=k; tone(440+i*160,.08); render(); }
+document.addEventListener('pointerdown',e=>{ const b=e.target.closest('.blk'); if(!b||!S||S.done) return; e.preventDefault(); const s=b.closest('.slot'); drag={k:b.dataset.k,x:e.clientX,y:e.clientY,moved:false,from:s?+s.dataset.s:null}; $('ghost').innerHTML=blk(drag.k); });
+document.addEventListener('pointermove',e=>{ if(!drag) return; if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>8) drag.moved=true; if(!drag.moved) return; const g=$('ghost'); g.hidden=false; g.style.left=e.clientX+'px'; g.style.top=e.clientY+'px'; document.querySelectorAll('.slot').forEach(s=>{ const r=s.getBoundingClientRect(); s.classList.toggle('over',e.clientX>r.left&&e.clientX<r.right&&e.clientY>r.top&&e.clientY<r.bottom); }); });
+document.addEventListener('pointerup',()=>{ if(!drag) return; $('ghost').hidden=true; const d=drag; drag=null; const over=[...document.querySelectorAll('.slot')].find(s=>s.classList.contains('over')); document.querySelectorAll('.slot').forEach(s=>s.classList.remove('over'));
+  if(!d.moved){ if(d.from!=null){ S.slots[d.from]=null; render(); } else place(d.k); return; } if(over) place(d.k,+over.dataset.s); else if(d.from!=null){ S.slots[d.from]=null; render(); } });
+document.addEventListener('keydown',e=>{ const b=e.target.closest&&e.target.closest('.blk'); if(b&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); const s=b.closest('.slot'); if(s){ S.slots[+s.dataset.s]=null; render(); } else place(b.dataset.k); } });
+$('genBtn').onclick=()=>{ clearInterval(iv); generate(); };
+
+function scene(ks,t){ // t: 0..1 animation progress
+  const p=S.p.scene, has=k=>ks.includes(k); let s='';
+  if(p==='fire') s+=`<rect width="1000" height="560" fill="#3A3F5C"/><rect y="400" width="1000" height="160" fill="#2A2E45"/>${[0,1,2].map(i=>`<rect x="${120+i*260}" y="260" width="180" height="90" fill="#4E5578"/><rect x="${150+i*260}" y="220" width="70" height="40" fill="#20243A"/>`).join('')}<rect x="860" y="200" width="100" height="200" fill="#18B87A"/><text x="910" y="190" text-anchor="middle" font-size="22" fill="#18B87A" font-family="Nunito" font-weight="800">EXIT</text>
+     <g opacity="${has('sim')?.9:.5}">${[0,1,2,3,4].map(i=>`<circle cx="${200+i*40+Math.sin(t*9+i)*14}" cy="${230-i*30-t*60}" r="${30+i*10+t*30}" fill="#8A8FA8" opacity="${.5-i*.08}"/>`).join('')}<path d="M180 400 q20 -70 40 -20 q10 -50 30 0 q15 -40 30 10z" fill="#FF6B4A"/></g>`;
+  if(p==='talk') s+=`<rect width="1000" height="560" fill="#2E4057"/><rect y="400" width="1000" height="160" fill="#23324A"/><rect x="300" y="330" width="400" height="30" fill="#8C6A4A"/><g transform="translate(620 330)"><circle cy="-120" r="42" fill="#E0A77E"/><rect x="-50" y="-78" width="100" height="120" rx="30" fill="#5C6BC0"/><path d="M-18 -110 q18 ${-8+Math.sin(t*20)*6} 36 0" stroke="#1F1F1F" stroke-width="5" fill="none"/></g><g transform="translate(380 330)"><circle cy="-110" r="38" fill="#C98E6A"/><rect x="-46" y="-72" width="92" height="110" rx="28" fill="#FF5DA2"/></g>`;
+  if(p==='height') s+=`<rect width="1000" height="560" fill="#7EC8E3"/><rect y="470" width="1000" height="90" fill="#6B8E4E"/><g stroke="#E6B800" stroke-width="10">${[0,1,2,3].map(i=>`<line x1="${420}" y1="${470-i*110}" x2="${580}" y2="${470-i*110}"/>`).join('')}<line x1="420" y1="470" x2="420" y2="120"/><line x1="580" y1="470" x2="580" y2="120"/></g><rect x="360" y="90" width="280" height="30" fill="#E6B800"/><g transform="translate(${480+Math.sin(t*3)*20} 90)"><circle cy="-70" r="18" fill="#E0A77E"/><path d="M-20 -80 a20 20 0 0 1 40 0z" fill="#FFE45E"/><rect x="-18" y="-52" width="36" height="52" rx="8" fill="#F29F05"/></g>${has('sim')?'<path d="M470 40 q60 20 120 0" stroke="#fff" stroke-width="4" fill="none" stroke-dasharray="8 8"/><text x="620" y="40" font-size="18" fill="#fff" font-family="Nunito" font-weight="800">wind 6 Bft</text>':''}`;
+  if(has('mp')) s+=[0,1,2].map(i=>`<g transform="translate(${140+i*110} ${470+Math.sin(t*8+i)*6})"><circle cy="-60" r="20" fill="${['#FFE45E','#4DE1FF','#FF5DA2'][i]}"/><rect x="-20" y="-40" width="40" height="44" rx="10" fill="${['#FFE45E','#4DE1FF','#FF5DA2'][i]}"/><rect x="-34" y="-104" width="68" height="22" rx="6" fill="#120B2B"/><text y="-88" text-anchor="middle" font-size="14" fill="#fff" font-family="Nunito" font-weight="800">Speler ${i+1}</text></g>`).join('');
+  if(has('ai')) s+=`<g transform="translate(760 150)"><rect x="-150" y="-60" width="300" height="90" rx="18" fill="#fff"/><path d="M-20 30 l20 30 l10 -30z" fill="#fff"/><text x="0" y="-18" text-anchor="middle" font-size="20" fill="#2A1B5A" font-family="Nunito" font-weight="800">🤖 ${['Wat doe je als eerste?','Goed zo. En nu?','Waarom koos je dat?'][Math.floor(t*3)%3]}</text><text x="0" y="12" text-anchor="middle" font-size="15" fill="#6B5C9A" font-family="Nunito">reageert op jouw keuze</text></g>`;
+  if(has('ar')) s+=`<g transform="translate(90 70)"><rect width="190" height="330" rx="24" fill="#120B2B"/><rect x="12" y="20" width="166" height="290" rx="10" fill="rgba(77,225,255,.15)" stroke="#4DE1FF" stroke-width="3"/><circle cx="95" cy="${140+Math.sin(t*6)*10}" r="30" fill="none" stroke="#4DE1FF" stroke-width="5" stroke-dasharray="8 6"/><text x="95" y="230" text-anchor="middle" font-size="16" fill="#4DE1FF" font-family="Nunito" font-weight="800">tik hier ›</text></g>`;
+  if(has('tr')) s+=`<g transform="translate(40 40)"><rect width="230" height="${40+3*38}" rx="12" fill="rgba(18,11,43,.85)"/>${['Stap 1','Stap 2','Stap 3'].map((x,i)=>`<text x="20" y="${38+i*38}" font-size="20" fill="${t*3>i?'#18B87A':'#aaa'}" font-family="Nunito" font-weight="800">${t*3>i?'✓':'○'} ${x}</text>`).join('')}</g>`;
+  if(has('gam')) s+=`<g transform="translate(800 490)"><rect x="-10" y="-36" width="190" height="56" rx="12" fill="#120B2B"/><text x="10" y="2" font-size="28" fill="#FFE45E" font-family="Press Start 2P, monospace">${String(Math.floor(t*4200)).padStart(4,'0')}</text></g>${t>.5?`<g transform="translate(760 ${360-(t-.5)*80})" opacity="${1.4-t}"><circle r="34" fill="#E6B800"/><text y="12" text-anchor="middle" font-size="34">🏅</text></g>`:''}`;
+  if(has('vr')) s+=`<path d="M0 0 H1000 V560 H0Z M80 90 Q80 40 200 40 H440 Q500 40 500 110 Q500 40 560 40 H800 Q920 40 920 90 V470 Q920 520 800 520 H560 Q500 520 500 450 Q500 520 440 520 H200 Q80 520 80 470Z" fill="#0A0620" fill-rule="evenodd" opacity=".9"/><text x="500" y="545" text-anchor="middle" font-size="16" fill="#7B5CFF" font-family="Press Start 2P, monospace">VR · 90 FPS</text>`;
+  return s;
+}
+function generate(){
+  if(S.done) return; S.done=true; render();
+  const ks=S.slots.filter(Boolean), p=S.p;
+  const fit=ks.reduce((a,k)=>a+p.w[k],0)/3;
+  const syns=SYN.filter(([pr])=>pr.every(k=>ks.includes(k)));
+  const bold = ks.includes('ai')&&ks.includes('ar') ? 60 : 0;
+  const score=Math.round(fit*700 + syns.reduce((a,s)=>a+s[1],0) + bold + S.left*6);
+  const title=[p.k, ...ks.map(k=>B[k].w)].slice(0,3).join(' ') + (ks.length>2?' '+B[ks[2]].w:'');
+  const niceTitle=[...new Set(title.split(' '))].join(' ');
+  $('demoTitle').textContent=niceTitle.toUpperCase(); $('demo').hidden=false;
+  const t0=performance.now(), D=5200; let lastBeat=-1;
+  (function anim(n){ const t=Math.min(1,(n-t0)/D); $('demoSvg').innerHTML=scene(ks,t); const beat=Math.floor(t*8); if(beat!==lastBeat){ lastBeat=beat; tone([262,330,392,523,392,330,392,523][beat%8],.12,'square',.04);} if(t<1) requestAnimationFrame(anim); else setTimeout(()=>result(ks,fit,syns,bold,score,niceTitle),400); })(t0);
+}
+function result(ks,fit,syns,bold,score,title){
+  $('demo').hidden=true;
+  const thumb=`<svg class="thumb" viewBox="0 0 1000 560">${scene(ks,.75)}</svg>`;
+  const verdict = fit>=.8 ? 'De klant is enthousiast.' : fit>=.6 ? 'Goed idee, met ruimte om aan te scherpen.' : 'Leuk gemaakt, maar het lost het probleem maar half op.';
+  const pitch = ks.map(k=>B[k].p);
+  $('endBox').innerHTML=`<h2>${title}</h2>
+   <div class="card">${thumb}<div><h3>${verdict}</h3><ul>${pitch.map(x=>`<li>${x}</li>`).join('')}</ul>
+   <div class="chips">${ks.map(k=>`<span class="chip" style="background:${B[k].c}">${B[k].ic} ${B[k].n}</span>`).join('')}${syns.map(s=>`<span class="chip" style="background:#FFE45E;color:#2A1B5A">✨ ${s[2]}</span>`).join('')}${bold?'<span class="chip" style="background:#4DE1FF;color:#2A1B5A">💡 Gedurfd</span>':''}</div></div></div>
+   <div class="big">${score}</div><div class="sb"><span>Past bij het probleem: ${Math.round(fit*100)}%</span><span>Tijd over: ${Math.ceil(S.left)} s</span></div>
+   <div id="rsSlot"></div><button class="go" id="again">NIEUWE KLANT</button>`;
+  $('end').hidden=false; $('again').onclick=start;
+  RESULTS.mount($('rsSlot'), {score, lines:[`Opdracht: ${S.p.t}`, `Jouw game: ${title}`, `Bouwstenen: ${ks.map(k=>B[k].n).join(' + ')}`, ...pitch, `Past bij het probleem: ${Math.round(fit*100)}%`, ...syns.map(s=>`Combinatie: ${s[2]}`), verdict],
+    outro:'Een organisatieprobleem vertalen naar een game die mensen zelf ervaren: dit is wat Enversed Studios dagelijks doet, met VR, AI, multiplayer en simulatie.'});
+  score>=800?[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.2,'triangle',.07),i*90)):tone(440,.2,'triangle');
+}
+$('startBtn').onclick=start;
+S={p:P[0],slots:[null,null,null],done:false}; $('pIc').textContent=P[0].ic; $('pT').textContent=P[0].t; render();
+</script>
+</body>
+</html>

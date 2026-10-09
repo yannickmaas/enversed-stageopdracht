@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="nl" data-game="inspectierush">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inspectierush — Enversed Studios × Sendcloud</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#DCE1E6;--floor:#C5CCD3;--ink:#13233A;--mut:#5D6B7C;--blue:#2F5BEA;--mint:#00B89C;--gold:#F2B705;--red:#E0393E;--orange:#F07A1A;font-family:Archivo,Arial,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);display:flex;flex-direction:column;overflow:hidden}
+body.alarm{box-shadow:inset 0 0 0 6px var(--red)}
+header{display:flex;align-items:center;gap:24px;padding:12px 24px;background:#fff;border-bottom:3px solid var(--blue)}
+h1{margin:0;font-size:28px;font-weight:900;letter-spacing:-.02em}
+h1 small{display:block;font-size:13px;color:var(--mut);font-weight:600;letter-spacing:0}
+.hud{display:flex;gap:28px;margin-left:auto}
+.hud div{text-align:center;line-height:1}
+.hud b{display:block;font-size:32px;font-weight:900;font-variant-numeric:tabular-nums}
+.hud span{font-size:13px;color:var(--mut)}
+#timer{transition:transform .2s}
+#timer.low{color:var(--red);transform:scale(1.2)}
+main{flex:1;display:grid;grid-template-columns:1fr 250px;gap:16px;padding:16px 24px;min-height:0}
+#stage{position:relative;background:linear-gradient(#E9EDF1 0 62%,var(--floor) 62%);border-radius:14px;overflow:hidden}
+#stage svg{width:100%;height:100%}
+.hot{cursor:pointer}
+.hot:hover .hl{stroke:var(--blue);stroke-width:3;stroke-dasharray:6 4;fill:rgba(47,91,234,.06)}
+.hl{fill:transparent;stroke:transparent}
+.hot:focus-visible{outline:none}
+.hot:focus-visible .hl{stroke:var(--blue);stroke-width:4}
+.mark{pointer-events:none}
+.mark circle{fill:none;stroke-width:5;animation:pulse 1.2s ease-out infinite}
+@keyframes pulse{0%{stroke-opacity:1}100%{stroke-opacity:.35}}
+.mark text{font:800 15px Archivo, Arial, sans-serif;paint-order:stroke;stroke:#fff;stroke-width:4px}
+#zones{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+#zones button{font:inherit;font-weight:800;font-size:16px;border:2px solid var(--ink);background:#fff;color:var(--ink);border-radius:30px;padding:8px 16px;cursor:pointer}
+#zones button.on{background:var(--ink);color:#fff}
+button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+#pop{position:absolute;background:#fff;border-radius:12px;box-shadow:0 8px 30px rgba(19,35,58,.25);padding:12px;width:230px;z-index:4}
+#pop[hidden]{display:none}
+#pop h3{margin:0 0 8px;font-size:16px}
+#pop button{display:block;width:100%;text-align:left;font:inherit;font-weight:700;font-size:15px;margin-top:6px;padding:8px 10px;border-radius:8px;border:2px solid transparent;background:#F1F4F7;cursor:pointer;color:var(--ink)}
+#pop button:hover{border-color:var(--ink)}
+#pop .k{border-left:6px solid var(--red)}#pop .b{border-left:6px solid var(--orange)}#pop .s{border-left:6px solid var(--gold)}
+#pop .x{background:none;color:var(--mut);font-weight:600}
+aside{background:#fff;border-radius:14px;padding:16px;overflow:auto}
+aside h2{margin:0 0 10px;font-size:18px}
+.chk{display:flex;justify-content:space-between;font-size:15px;padding:7px 0;border-bottom:1px solid #E5E9ED}
+.chk b{color:var(--mut);font-weight:600}
+.chk.cur{font-weight:800}
+#feedback{margin-top:14px;font-size:15px;line-height:1.4;min-height:80px}
+.fb{padding:8px 10px;border-radius:8px;margin-bottom:6px;animation:fi .2s}
+@keyframes fi{from{opacity:0;transform:translateX(10px)}}
+.fb.g{background:#E1F7F2}.fb.r{background:#FDE5E5}.fb.o{background:#FFF3DA}
+#msg{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:800;padding:10px 18px;border-radius:10px;font-size:17px;z-index:3;white-space:nowrap}
+#msg[hidden]{display:none}
+.overlay{position:fixed;inset:0;background:rgba(19,35,58,.85);display:grid;place-items:center;z-index:10;padding:20px}
+.overlay[hidden]{display:none}
+.box{background:#fff;border-radius:18px;max-width:720px;width:100%;padding:30px 34px;max-height:92vh;overflow:auto}
+.box h2{font-size:46px;font-weight:900;margin:0;letter-spacing:-.02em;line-height:1}
+.box p{font-size:18px;line-height:1.45}
+.lvls{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+.lvls button{font:inherit;text-align:left;border:2px solid #D2D9E0;background:#F6F8FA;border-radius:12px;padding:14px;cursor:pointer;color:var(--ink)}
+.lvls button:hover{border-color:var(--blue)}
+.lvls b{display:block;font-size:19px;font-weight:900}
+.lvls span{font-size:14px;color:var(--mut)}
+.verdict{display:inline-block;font-weight:900;font-size:22px;padding:8px 16px;border-radius:10px;color:#fff;margin:8px 0}
+.big{font-size:66px;font-weight:900;line-height:1;margin-top:10px}
+.rep{list-style:none;padding:0;margin:10px 0}
+.rep li{padding:8px 10px;border-radius:8px;margin-bottom:6px;font-size:15px;line-height:1.35}
+.rep .f{background:#E1F7F2}.rep .m{background:#FDE5E5}
+.cta{font:inherit;font-size:20px;font-weight:900;background:var(--blue);color:#fff;border:0;border-radius:12px;padding:13px 26px;cursor:pointer}
+.partners{color:var(--mut);font-size:14px;margin-top:14px}
+@media (max-width:900px){main{grid-template-columns:1fr}aside{max-height:200px}.lvls{grid-template-columns:1fr}body{overflow:auto}#stage{min-height:420px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:root{--rs-acc:#2F5BEA;--rs-on:#fff}
+</style>
+</head>
+<body>
+<header>
+  <h1>Inspectierush<small id="lvlName">Depot · inspectieplatform 3</small></h1>
+  <div class="hud">
+    <div><b id="combo">×1</b><span>combo</span></div>
+    <div><b id="acc">–</b><span>accuracy</span></div>
+    <div><b id="score">0</b><span>score</span></div>
+    <div><b id="timer">60</b><span>seconden</span></div>
+  </div>
+</header>
+<main>
+  <div id="stage">
+    <div id="msg" hidden></div>
+    <svg id="view" viewBox="0 0 800 440" role="img" aria-label="Voertuig"></svg>
+    <div id="zones"></div>
+    <div id="pop" hidden></div>
+  </div>
+  <aside>
+    <h2>Checklist</h2>
+    <div id="checklist"></div>
+    <div id="feedback"></div>
+  </aside>
+</main>
+
+<div class="overlay" id="intro"><div class="box">
+  <h2>Inspectierush</h2>
+  <p>Deze bus vertrekt zo. Jij bepaalt of hij veilig de weg op kan. Draai het voertuig via de zones, tik op alles wat niet in orde is en geef aan hoe ernstig het is.</p>
+  <p><b>Scannen, herkennen, selecteren.</b> Snelheid telt, maar een onterechte melding kost punten. Niet elke kras is een gebrek.</p>
+  <div class="lvls" id="lvls"></div>
+  <div class="partners">Enversed Studios in samenwerking met Sendcloud</div>
+</div></div>
+<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+
+<script>
+// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now()) {
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  return { mount };
+})();
+
+</script>
+<script>
+const SEV = {k:{n:'Kritiek',pts:150,c:'#E0393E'}, b:{n:'Belangrijk',pts:100,c:'#F07A1A'}, s:{n:'Klein',pts:50,c:'#C99400'}};
+const ZONES = [{id:'voor',n:'Voorzijde'},{id:'zij',n:'Zijkant'},{id:'achter',n:'Achterzijde'},{id:'lading',n:'Laadruimte'},{id:'cabine',n:'Cabine'}];
+// Each part: id, zone, name, sev (when defect), why, hit box [x,y,w,h], draw(defect)
+const PARTS = [
+ // Voorzijde
+ {id:'kopL',z:'voor',n:'Koplamp links',sev:'b',why:'Zonder werkende koplamp ben je slecht zichtbaar en zie je zelf minder.',box:[222,222,80,70],
+  d:x=>`<circle cx="262" cy="257" r="30" fill="${x?'#4A5563':'#FFF6C8'}" stroke="#8A96A5" stroke-width="5"/>${x?'<path d="M246 244 L276 270 M276 244 L246 270" stroke="#2B333D" stroke-width="3"/>':'<circle cx="262" cy="257" r="14" fill="#FFE27A"/>'}`},
+ {id:'kopR',z:'voor',n:'Koplamp rechts',sev:'b',why:'Zonder werkende koplamp ben je slecht zichtbaar en zie je zelf minder.',box:[498,222,80,70],
+  d:x=>`<circle cx="538" cy="257" r="30" fill="${x?'#4A5563':'#FFF6C8'}" stroke="#8A96A5" stroke-width="5"/>${x?'':'<circle cx="538" cy="257" r="14" fill="#FFE27A"/>'}`},
+ {id:'ruit',z:'voor',n:'Voorruit',sev:'b',why:'Een ster in de voorruit belemmert het zicht en kan verder scheuren.',box:[250,70,300,120],
+  d:x=>`<path d="M258 180 L292 78 L508 78 L542 180 Z" fill="#9EC6E8" stroke="#5D6B7C" stroke-width="4"/>${x?'<g stroke="#fff" stroke-width="2.5"><path d="M440 120 l-26 -18 M440 120 l30 -14 M440 120 l-8 32 M440 120 l24 22 M440 120 l-30 12"/><circle cx="440" cy="120" r="5" fill="#fff"/></g>':''}`},
+ {id:'wisser',z:'voor',n:'Ruitenwisser',sev:'s',why:'Een gescheurde wisser laat strepen achter bij regen. Snel vervangen.',box:[290,150,140,40],
+  d:x=>x?`<path d="M300 176 L345 160" stroke="#1F2630" stroke-width="5"/><path d="M345 160 L372 150 M378 148 L418 134" stroke="#1F2630" stroke-width="5"/><path d="M372 150 l3 8 M378 148 l-2 9" stroke="#1F2630" stroke-width="2"/>`:`<path d="M300 176 L418 134" stroke="#1F2630" stroke-width="5"/>`},
+ {id:'kentV',z:'voor',n:'Kenteken voor',sev:'s',why:'Een onleesbaar kenteken is een overtreding. Even schoonmaken.',box:[340,300,120,44],
+  d:x=>`<rect x="345" y="306" width="110" height="32" rx="4" fill="#F2C400" stroke="#1F2630" stroke-width="2"/><text x="400" y="329" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-weight="800" font-size="18" fill="#1F2630">VX-482-B</text>${x?'<rect x="345" y="306" width="110" height="32" rx="4" fill="#7A6546" opacity=".82"/>':''}`},
+ {id:'af_vlieg',z:'voor',n:'Insecten op bumper',af:true,why:'Insecten op de bumper zijn geen gebrek.',box:[480,318,110,34],
+  d:()=>`<g fill="#3B3F45">${[[492,332],[512,340],[530,329],[548,343],[568,334],[578,345]].map(([a,b])=>`<circle cx="${a}" cy="${b}" r="2.5"/>`).join('')}</g>`},
+ // Zijkant
+ {id:'bandV',z:'zij',n:'Band rechtsvoor',sev:'k',why:'Een zachte band vergroot de remweg en kan klappen. Niet vertrekken.',box:[522,262,116,116],
+  d:x=>x?`<path d="M532 330 A48 48 0 1 1 628 330 L636 360 L524 360 Z" fill="#23282F"/><circle cx="580" cy="322" r="20" fill="#AEB7C2"/>`:`<circle cx="580" cy="318" r="48" fill="#23282F"/><circle cx="580" cy="318" r="20" fill="#AEB7C2"/>${tread(580,318)}`},
+ {id:'bandA',z:'zij',n:'Band rechtsachter',sev:'k',why:'Het profiel is weggesleten. Op nat wegdek heb je dan nauwelijks grip.',box:[142,262,116,116],
+  d:x=>`<circle cx="200" cy="318" r="48" fill="${x?'#4B535D':'#23282F'}"/><circle cx="200" cy="318" r="20" fill="#AEB7C2"/>${x?'':tread(200,318)}`},
+ {id:'spiegel',z:'zij',n:'Buitenspiegel',sev:'b',why:'Een gebarsten spiegel geeft een vertekend beeld van achteropkomend verkeer.',box:[676,118,60,64],
+  d:x=>`<rect x="690" y="126" width="34" height="46" rx="6" fill="#1F2630"/><rect x="695" y="131" width="24" height="36" rx="3" fill="#BFD7EC"/>${x?'<path d="M697 134 L716 164 M716 134 L700 158" stroke="#fff" stroke-width="2"/>':''}`},
+ {id:'deur',z:'zij',n:'Schuifdeur',sev:'b',why:'Een kier betekent dat de deur niet goed in het slot zit. Tijdens de rit kan hij openschuiven.',box:[300,120,180,170],
+  d:x=>`<rect x="${x?312:306}" y="128" width="168" height="156" rx="6" fill="none" stroke="#7D8997" stroke-width="3"/>${x?'<rect x="303" y="128" width="8" height="156" fill="#1F2630"/>':''}<rect x="${x?452:446}" y="196" width="22" height="8" rx="3" fill="#5D6B7C"/>`},
+ {id:'olie',z:'zij',n:'Onder de motor',sev:'b',why:'Een olievlek wijst op een lek. Laat de bus nakijken voordat hij vertrekt.',box:[560,370,170,50],
+  d:x=>x?`<ellipse cx="640" cy="392" rx="62" ry="12" fill="#1A1C20" opacity=".85"/><ellipse cx="624" cy="389" rx="16" ry="3" fill="#6B5FA8" opacity=".6"/>`:''},
+ {id:'af_kras',z:'zij',n:'Kras op carrosserie',af:true,why:'Een kleine kras is cosmetisch en geen reden om niet te vertrekken.',box:[150,150,120,50],
+  d:()=>`<path d="M160 170 L250 180 M168 176 L230 183" stroke="#9AA4AF" stroke-width="2"/>`},
+ {id:'af_sticker',z:'zij',n:'Bedrijfssticker',af:true,why:'De bedrijfssticker hoort erbij.',box:[500,150,150,60],
+  d:()=>`<rect x="510" y="160" width="130" height="40" rx="20" fill="#2F5BEA"/><text x="575" y="186" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-weight="900" font-size="16" fill="#fff">bezorgd!</text>`},
+ // Achterzijde
+ {id:'lichtL',z:'achter',n:'Achterlicht links',sev:'k',why:'Zonder remlicht ziet het verkeer achter je niet dat je remt.',box:[196,200,58,110],
+  d:x=>`<rect x="206" y="210" width="38" height="90" rx="6" fill="${x?'#5A3A3C':'#E0393E'}"/>${x?'<path d="M210 222 L240 290" stroke="#2B1B1C" stroke-width="3"/>':'<rect x="212" y="218" width="26" height="30" rx="3" fill="#FF8C8F"/>'}`},
+ {id:'lichtR',z:'achter',n:'Achterlicht rechts',sev:'k',why:'Zonder remlicht ziet het verkeer achter je niet dat je remt.',box:[546,200,58,110],
+  d:x=>`<rect x="556" y="210" width="38" height="90" rx="6" fill="${x?'#5A3A3C':'#E0393E'}"/>${x?'':'<rect x="562" y="218" width="26" height="30" rx="3" fill="#FF8C8F"/>'}`},
+ {id:'kentA',z:'achter',n:'Kenteken achter',sev:'s',why:'Het kenteken hangt los. Vastzetten voordat je hem verliest.',box:[338,300,124,50],
+  d:x=>`<g transform="${x?'rotate(9 400 322)':''}"><rect x="345" y="306" width="110" height="32" rx="4" fill="#F2C400" stroke="#1F2630" stroke-width="2"/><text x="400" y="329" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-weight="800" font-size="18" fill="#1F2630">VX-482-B</text></g>`},
+ {id:'klep',z:'achter',n:'Achterdeuren',sev:'b',why:'De rechterdeur valt niet in het slot. Lading kan onderweg naar buiten vallen.',box:[260,80,280,210],
+  d:x=>`<line x1="400" y1="88" x2="400" y2="290" stroke="#7D8997" stroke-width="3"/>${x?'<path d="M402 88 L420 92 L420 288 L402 290 Z" fill="#1F2630"/>':''}<rect x="384" y="180" width="10" height="26" rx="3" fill="#5D6B7C"/><rect x="${x?410:406}" y="180" width="10" height="26" rx="3" fill="#5D6B7C"/>`},
+ {id:'af_modder',z:'achter',n:'Modderspatten',af:true,why:'Modder op de bumper is geen gebrek, zolang lichten en kenteken zichtbaar zijn.',box:[470,330,120,40],
+  d:()=>`<g fill="#8A7555" opacity=".8"><circle cx="490" cy="350" r="6"/><circle cx="512" cy="344" r="4"/><circle cx="535" cy="352" r="7"/><circle cx="560" cy="346" r="4"/><circle cx="575" cy="354" r="3"/></g>`},
+ // Laadruimte
+ {id:'band',z:'lading',n:'Spanband',sev:'k',why:'Losse lading schuift bij een noodstop naar voren en kan de bestuurder raken.',box:[160,120,300,60],
+  d:x=>x?`<path d="M170 150 l12 0 M448 150 l-12 0" stroke="#F07A1A" stroke-width="6"/><text x="310" y="140" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="13" fill="#9AA4AF">geen spanband</text>`:`<rect x="170" y="144" width="280" height="12" fill="#F07A1A"/><rect x="300" y="138" width="24" height="24" rx="3" fill="#5D6B7C"/>`},
+ {id:'zwaar',z:'lading',n:'Stapeling',sev:'b',why:'Het zware pakket staat bovenop lichte dozen. Die worden geplet en de lading wordt instabiel.',box:[480,140,150,210],
+  d:x=>x?`<rect x="500" y="290" width="70" height="56" fill="#D8B27A" stroke="#9C7A48" stroke-width="2"/><rect x="490" y="160" width="130" height="130" fill="#B98D52" stroke="#7E5E33" stroke-width="3"/><text x="555" y="232" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-weight="900" font-size="22" fill="#fff">25 kg</text>`:`<rect x="490" y="216" width="130" height="130" fill="#B98D52" stroke="#7E5E33" stroke-width="3"/><text x="555" y="288" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-weight="900" font-size="22" fill="#fff">25 kg</text><rect x="520" y="160" width="70" height="56" fill="#D8B27A" stroke="#9C7A48" stroke-width="2"/>`},
+ {id:'kapot',z:'lading',n:'Pakket vooraan',sev:'s',why:'Een gescheurd pakket meld je en tape je af, zodat de inhoud niet beschadigt.',box:[170,250,120,100],
+  d:x=>`<rect x="180" y="262" width="100" height="84" fill="#D8B27A" stroke="#9C7A48" stroke-width="2"/>${x?'<path d="M190 262 L206 290 L222 272 L240 300 L256 276 L270 262 Z" fill="#6B5433"/>':'<rect x="222" y="262" width="16" height="84" fill="#C9A265"/>'}`},
+ {id:'rol',z:'lading',n:'Rolcontainer',sev:'k',why:'De rolcontainer staat niet vergrendeld. Hij kan tijdens het rijden gaan rollen.',box:[650,130,110,230],
+  d:x=>`<rect x="660" y="140" width="90" height="190" fill="none" stroke="#7D8997" stroke-width="4"/>${[0,1,2,3].map(i=>`<line x1="${672+i*22}" y1="140" x2="${672+i*22}" y2="330" stroke="#7D8997" stroke-width="2"/>`).join('')}<circle cx="672" cy="342" r="10" fill="#23282F"/><circle cx="738" cy="342" r="10" fill="#23282F"/><rect x="690" y="228" width="30" height="24" rx="4" fill="${x?'#E0393E':'#00B89C'}"/><text x="705" y="246" text-anchor="middle" font-size="15" fill="#fff" font-family="Archivo, Arial, sans-serif" font-weight="900">${x?'!':'✓'}</text>`},
+ {id:'af_scheef',z:'lading',n:'Scheve verzendlabel',af:true,why:'Een scheef label is geen probleem zolang de barcode leesbaar is.',box:[300,250,110,100],
+  d:()=>`<rect x="310" y="262" width="90" height="84" fill="#D8B27A" stroke="#9C7A48" stroke-width="2"/><rect x="325" y="280" width="54" height="34" fill="#fff" transform="rotate(-12 352 297)"/><g transform="rotate(-12 352 297)" stroke="#1F2630" stroke-width="2">${[0,1,2,3,4,5,6,7].map(i=>`<line x1="${331+i*6}" y1="286" x2="${331+i*6}" y2="306"/>`).join('')}</g>`},
+ // Cabine
+ {id:'lamp',z:'cabine',n:'Dashboard',sev:'b',why:'Het motorlampje brandt. Meld dit voordat je vertrekt.',box:[250,70,300,100],
+  d:x=>`<rect x="260" y="80" width="280" height="80" rx="30" fill="#1F2630"/><circle cx="340" cy="120" r="28" fill="#2B333D" stroke="#5D6B7C" stroke-width="3"/><circle cx="460" cy="120" r="28" fill="#2B333D" stroke="#5D6B7C" stroke-width="3"/><circle cx="400" cy="118" r="11" fill="${x?'#F2B705':'#333C47'}"/>${x?'<text x="400" y="123" text-anchor="middle" font-size="12" font-weight="900" fill="#1F2630" font-family="Archivo, Arial, sans-serif">!</text>':''}`},
+ {id:'gordel',z:'cabine',n:'Veiligheidsgordel',sev:'k',why:'Een gerafelde gordel kan bij een botsing scheuren. Niet rijden.',box:[120,170,150,220],
+  d:x=>`<rect x="140" y="190" width="120" height="190" rx="18" fill="#3C4654"/>${x?'<path d="M150 200 L170 240 L162 246 L182 280 L174 286 L196 320 L188 326 L240 372" stroke="#8A96A5" stroke-width="12" fill="none" stroke-linejoin="bevel"/>':'<path d="M150 200 L240 372" stroke="#8A96A5" stroke-width="14"/>'}`},
+ {id:'blusser',z:'cabine',n:'Brandblusser',sev:'b',why:'De keuringsdatum is verlopen. Bij brand kun je niet op deze blusser vertrouwen.',box:[600,180,110,200],
+  d:x=>`<rect x="625" y="210" width="56" height="160" rx="22" fill="#E0393E"/><rect x="640" y="190" width="26" height="24" fill="#1F2630"/><rect x="630" y="270" width="46" height="36" fill="#fff"/><text x="653" y="286" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="10" font-weight="800" fill="#1F2630">keuring</text><text x="653" y="300" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="11" font-weight="900" fill="${x?'#E0393E':'#00896F'}">${x?'01-2025':'03-2027'}</text>`},
+ {id:'ehbo',z:'cabine',n:'Verbandtrommel',sev:'s',why:'De verbandtrommel ontbreekt. Leg een nieuwe in de cabine.',box:[300,300,110,80],
+  d:x=>x?`<rect x="310" y="310" width="90" height="60" rx="6" fill="none" stroke="#9AA4AF" stroke-width="3" stroke-dasharray="8 6"/>`:`<rect x="310" y="310" width="90" height="60" rx="6" fill="#00B89C"/><path d="M355 322 v36 M337 340 h36" stroke="#fff" stroke-width="9"/>`},
+ {id:'docs',z:'cabine',n:'Vrachtdocumenten',sev:'b',why:'Zonder vrachtpapieren mag de lading niet vervoerd worden.',box:[440,300,120,80],
+  d:x=>x?`<rect x="450" y="310" width="100" height="60" rx="4" fill="none" stroke="#9AA4AF" stroke-width="3" stroke-dasharray="8 6"/>`:`<rect x="450" y="310" width="100" height="60" rx="4" fill="#2F5BEA"/><rect x="462" y="322" width="60" height="6" fill="#fff"/><rect x="462" y="334" width="44" height="6" fill="#fff"/>`},
+ {id:'af_koffie',z:'cabine',n:'Koffiebeker',af:true,why:'Een koffiebeker in de houder is geen gebrek.',box:[560,90,70,80],
+  d:()=>`<path d="M574 110 L616 110 L610 160 L580 160 Z" fill="#fff" stroke="#9AA4AF" stroke-width="2"/><rect x="570" y="102" width="50" height="10" rx="3" fill="#5D6B7C"/>`}
+];
+function tread(cx,cy){ let s=''; for(let i=0;i<16;i++){const a=i/16*Math.PI*2; s+=`<line x1="${cx+Math.cos(a)*38}" y1="${cy+Math.sin(a)*38}" x2="${cx+Math.cos(a)*47}" y2="${cy+Math.sin(a)*47}" stroke="#4B535D" stroke-width="3"/>`} return s; }
+
+const BASE = {
+ voor:`<ellipse cx="400" cy="378" rx="260" ry="18" fill="#000" opacity=".12"/><path d="M210 360 L200 150 Q205 60 290 58 L510 58 Q595 60 600 150 L590 360 Z" fill="#F4F6F8" stroke="#8A96A5" stroke-width="4"/><rect x="200" y="296" width="400" height="60" rx="10" fill="#3C4654"/><rect x="330" y="232" width="140" height="44" rx="8" fill="#3C4654"/><rect x="210" y="356" width="60" height="22" rx="6" fill="#23282F"/><rect x="530" y="356" width="60" height="22" rx="6" fill="#23282F"/>`,
+ zij:`<ellipse cx="410" cy="372" rx="330" ry="16" fill="#000" opacity=".12"/><path d="M80 300 L80 110 Q80 90 100 90 L600 90 Q640 90 680 170 L720 230 Q730 250 730 280 L730 300 Z" fill="#F4F6F8" stroke="#8A96A5" stroke-width="4"/><path d="M600 100 Q636 104 666 170 L600 170 Z" fill="#9EC6E8" stroke="#5D6B7C" stroke-width="3"/><rect x="80" y="286" width="650" height="22" fill="#3C4654"/>`,
+ achter:`<ellipse cx="400" cy="378" rx="260" ry="18" fill="#000" opacity=".12"/><rect x="190" y="70" width="420" height="290" rx="22" fill="#F4F6F8" stroke="#8A96A5" stroke-width="4"/><rect x="190" y="340" width="420" height="24" rx="6" fill="#3C4654"/><rect x="380" y="362" width="40" height="18" rx="4" fill="#5D6B7C"/><circle cx="400" cy="384" r="8" fill="#5D6B7C"/>`,
+ lading:`<path d="M80 60 L720 60 L780 380 L20 380 Z" fill="#8E7A62"/><path d="M120 90 L680 90 L700 360 L100 360 Z" fill="#A89378"/><line x1="100" y1="360" x2="700" y2="360" stroke="#6E5C47" stroke-width="4"/><rect x="170" y="160" width="130" height="100" fill="#D8B27A" stroke="#9C7A48" stroke-width="2"/><rect x="310" y="160" width="140" height="100" fill="#CFA56B" stroke="#9C7A48" stroke-width="2"/><rect x="420" y="262" width="60" height="84" fill="#D8B27A" stroke="#9C7A48" stroke-width="2"/>`,
+ cabine:`<rect x="60" y="40" width="680" height="360" rx="30" fill="#56606D"/><path d="M60 60 L740 60 L700 170 L100 170 Z" fill="#9EC6E8" opacity=".6"/><rect x="60" y="160" width="680" height="30" fill="#2B333D"/><circle cx="400" cy="250" r="70" fill="none" stroke="#1F2630" stroke-width="16"/><rect x="100" y="380" width="600" height="20" fill="#2B333D"/>`
+};
+
+const LEVELS = [
+ {n:'Ochtendronde',sub:'Elektrische bezorgbus · 4 gebreken',time:60,defects:4,pinned:['bandV','kopL','band']},
+ {n:'Drukke middag',sub:'Bezorgbus met volle lading · 6 gebreken',time:60,defects:6,pinned:['lichtR','blusser','zwaar']},
+ {n:'Spoedvertrek',sub:'45 seconden · 8 gebreken · druk van de planner',time:45,defects:8,pinned:['bandA','docs','gordel','rol'],pressure:true}
+];
+
+let S, timerId, last;
+const $ = id=>document.getElementById(id);
+
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.08,t='sine',v=.07){const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+
+$('lvls').innerHTML = LEVELS.map((l,i)=>`<button data-l="${i}"><b>${l.n}</b><span>${l.sub}</span></button>`).join('');
+$('lvls').onclick = e=>{ const b=e.target.closest('button'); if(b) start(+b.dataset.l); };
+
+function start(li){
+  const L = LEVELS[li];
+  const cand = PARTS.filter(p=>!p.af && !L.pinned.includes(p.id)).sort(()=>Math.random()-.5);
+  const defects = new Set([...L.pinned, ...cand.slice(0, L.defects - L.pinned.length).map(p=>p.id)]);
+  S = {L, li, defects, marks:{}, zone:'zij', left:L.time, score:0, streak:0, correct:0, wrong:0, over:false, visited:new Set(['zij'])};
+  $('lvlName').textContent = `${L.n} · ${L.sub}`;
+  $('intro').hidden = true; $('end').hidden = true; $('feedback').innerHTML=''; $('pop').hidden=true;
+  renderZones(); render(); hud(); ac();
+  last = performance.now(); clearInterval(timerId); timerId = setInterval(tick, 100);
+}
+
+function tick(){
+  const now = performance.now(); S.left -= (now-last)/1000; last = now;
+  if(S.L.pressure && !S.msgShown && S.left < S.L.time/2){ S.msgShown = true; showMsg('Planner: "De chauffeur moet over 5 minuten weg!"'); tone(440,.2,'square',.05); }
+  if(S.left <= 0){ S.left = 0; hud(); return end(); }
+  hud();
+}
+function showMsg(t){ const m=$('msg'); m.textContent=t; m.hidden=false; setTimeout(()=>m.hidden=true,3500); }
+
+function hud(){
+  const t = Math.ceil(S.left); $('timer').textContent = t; $('timer').className = t<=10?'low':'';
+  document.body.classList.toggle('alarm', t<=10 && t%2===0);
+  $('score').textContent = S.score; $('combo').textContent = '×'+comboMult().toFixed(2).replace(/\.?0+$/,'');
+  const tot = S.correct + S.wrong; $('acc').textContent = tot ? Math.round(S.correct/tot*100)+'%' : '–';
+}
+function comboMult(){ return Math.min(2, 1 + S.streak*0.25); }
+
+function renderZones(){
+  $('zones').innerHTML = ZONES.map(z=>`<button data-z="${z.id}" class="${S.zone===z.id?'on':''}">${z.n}</button>`).join('');
+  $('checklist').innerHTML = ZONES.map(z=>{
+    const found = Object.values(S.marks).filter(m=>m.z===z.id && m.ok).length;
+    return `<div class="chk ${S.zone===z.id?'cur':''}"><span>${S.visited.has(z.id)?'✔':'○'} ${z.n}</span><b>${found} gevonden</b></div>`; }).join('');
+}
+$('zones').onclick = e=>{ const b=e.target.closest('button'); if(!b||S.over) return; S.zone=b.dataset.z; S.visited.add(S.zone); $('pop').hidden=true; renderZones(); render(); tone(520,.04); };
+
+function render(){
+  const parts = PARTS.filter(p=>p.z===S.zone);
+  let s = BASE[S.zone];
+  for(const p of parts){
+    const [x,y,w,h] = p.box;
+    s += `<g class="hot" tabindex="0" role="button" aria-label="${p.n}" data-id="${p.id}">${p.d(S.defects.has(p.id))}<rect class="hl" x="${x}" y="${y}" width="${w}" height="${h}" rx="10"/></g>`;
+  }
+  for(const p of parts){ const m = S.marks[p.id]; if(!m) continue; const [x,y,w,h]=p.box; const col = m.ok ? (m.sevOk?'#00B89C':'#F2B705') : '#E0393E';
+    s += `<g class="mark"><circle cx="${x+w/2}" cy="${y+h/2}" r="${Math.max(w,h)/2+8}" stroke="${col}"/><text x="${x+w/2}" y="${y-6}" text-anchor="middle" fill="${col}">${m.ok?(m.sevOk?'✓ '+SEV[m.sev].n:'~ '+SEV[m.sev].n):'✕ geen gebrek'}</text></g>`; }
+  $('view').innerHTML = s;
+}
+
+function openPop(id, ev){
+  if(S.over || S.marks[id]) return;
+  const p = PARTS.find(x=>x.id===id); const r = $('stage').getBoundingClientRect();
+  const pop = $('pop'); pop.hidden = false;
+  let cx = (ev.clientX ?? (r.left + r.width/2)) - r.left + 12, cy = (ev.clientY ?? (r.top + r.height/2)) - r.top - 20;
+  cx = Math.min(cx, r.width - 245); cy = Math.min(Math.max(10,cy), r.height - 250);
+  pop.style.left = cx+'px'; pop.style.top = cy+'px';
+  pop.innerHTML = `<h3>${p.n}: wat is het probleem?</h3>
+    <button class="k" data-s="k">Kritiek · niet vertrekken</button>
+    <button class="b" data-s="b">Belangrijk · eerst herstellen</button>
+    <button class="s" data-s="s">Klein · noteren</button>
+    <button class="x" data-s="">Toch niet, verder kijken</button>`;
+  pop.dataset.id = id; pop.querySelector('button').focus();
+  tone(740,.04);
+}
+$('view').addEventListener('click', e=>{ const g=e.target.closest('.hot'); if(g) openPop(g.dataset.id, e); else $('pop').hidden=true; });
+$('view').addEventListener('keydown', e=>{ if((e.key==='Enter'||e.key===' ') && e.target.closest('.hot')){ e.preventDefault(); openPop(e.target.closest('.hot').dataset.id, {}); } });
+$('pop').onclick = e=>{ const b=e.target.closest('button'); if(!b) return; const id=$('pop').dataset.id; $('pop').hidden=true; if(b.dataset.s) mark(id, b.dataset.s); };
+addEventListener('keydown', e=>{ if(e.key==='Escape') $('pop').hidden=true; });
+
+function fb(t,c){ const d=document.createElement('div'); d.className='fb '+c; d.textContent=t; $('feedback').prepend(d); while($('feedback').children.length>4) $('feedback').lastChild.remove(); }
+
+function mark(id, sev){
+  const p = PARTS.find(x=>x.id===id);
+  const isDef = S.defects.has(id);
+  if(isDef){
+    const sevOk = sev === p.sev;
+    const pts = Math.round(SEV[p.sev].pts * (sevOk?1:.5) * comboMult());
+    S.score += pts; S.correct++; S.streak++;
+    S.marks[id] = {z:p.z, ok:true, sev, sevOk};
+    fb(`+${pts} · ${p.n}${sevOk?'':` (eigenlijk ${SEV[p.sev].n.toLowerCase()})`}. ${p.why}`, sevOk?'g':'o');
+    tone(sevOk?880:660,.1,'triangle'); setTimeout(()=>tone(sevOk?1320:880,.1,'triangle'),70);
+  } else {
+    S.score = Math.max(0, S.score-60); S.wrong++; S.streak = 0;
+    S.marks[id] = {z:p.z, ok:false};
+    fb(`−60 · ${p.af ? p.why : p.n+' is in orde.'}`, 'r');
+    tone(150,.25,'sawtooth',.05);
+  }
+  render(); renderZones(); hud();
+  const foundAll = [...S.defects].every(d=>S.marks[d]?.ok);
+  if(foundAll) setTimeout(end, 500);
+}
+
+function end(){
+  if(S.over) return; S.over = true; clearInterval(timerId); document.body.classList.remove('alarm'); $('pop').hidden = true;
+  const missed = [...S.defects].filter(d=>!S.marks[d]?.ok).map(d=>PARTS.find(p=>p.id===d));
+  const found = [...S.defects].filter(d=>S.marks[d]?.ok).map(d=>PARTS.find(p=>p.id===d));
+  const missedK = missed.filter(p=>p.sev==='k');
+  let bonus = 0; if(!missed.length) bonus = Math.round(S.left*10);
+  const penalty = missedK.length*100;
+  S.score = Math.max(0, S.score + bonus - penalty);
+  const tot = S.correct+S.wrong, acc = tot?Math.round(S.correct/tot*100):0;
+  const v = missedK.length ? ['Niet veilig','#E0393E'] : missed.length || acc<70 ? ['Herinspectie nodig','#F07A1A'] : ['Goedgekeurd voor vertrek','#00B89C'];
+  $('endBox').innerHTML = `<h2>Inspectie afgerond</h2>
+   <div class="big">${S.score}</div>
+   <span class="verdict" style="background:${v[1]}">${v[0]}</span>
+   <p>${found.length} van ${S.defects.size} gebreken gevonden · accuracy ${acc}%${bonus?` · tijdbonus +${bonus}`:''}${penalty?` · gemiste kritieke gebreken −${penalty}`:''}</p>
+   ${S.L.pressure?'<p><b>Tijdsdruk is nooit een reden om een inspectie over te slaan.</b> Eén gemist kritiek gebrek weegt zwaarder dan een vertraagde levering.</p>':''}
+   <h3>Inspectierapport</h3>
+   <ul class="rep">${missed.map(p=>`<li class="m"><b>Gemist · ${p.n} (${SEV[p.sev].n.toLowerCase()}).</b> ${p.why}</li>`).join('')}${found.map(p=>`<li class="f"><b>Gevonden · ${p.n}.</b> ${p.why}</li>`).join('')}</ul>
+   <div id="rsSlot"></div>
+   <div class="lvls">${LEVELS.map((l,i)=>`<button data-l="${i}"><b>${i===S.li?'Opnieuw: ':''}${l.n}</b><span>${l.sub}</span></button>`).join('')}</div>`;
+  $('end').hidden = false;
+  $('endBox').querySelector('.lvls').onclick = e=>{ const b=e.target.closest('button'); if(b) start(+b.dataset.l); };
+  RESULTS.mount($('rsSlot'), {score:S.score, lines:[`Scenario: ${S.L.n}`, `Oordeel: ${v[0]}`, `${found.length} van ${S.defects.size} gebreken gevonden`, `Accuracy ${acc}%`, ...missed.map(p=>`Gemist: ${p.n} (${SEV[p.sev].n.toLowerCase()})`)]});
+}
+
+// initial preview behind intro
+S = {defects:new Set(), marks:{}, zone:'zij', visited:new Set(['zij'])}; render();
+</script>
+</body>
+</html>

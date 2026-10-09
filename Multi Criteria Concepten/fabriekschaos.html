@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="nl" data-game="fabriekschaos">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fabriekschaos — Enversed Studios × Chemelot × Sioux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--steel:#16324F;--deep:#0E2236;--yel:#FFC914;--ok:#3DDC84;--bad:#FF4D4D;--txt:#EAF2FA;--mut:#8FA9C2;font-family:Rubik,"Trebuchet MS",sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--steel);color:var(--txt)}
+body{display:flex;flex-direction:column;overflow:hidden}
+.stripe{height:10px;background:repeating-linear-gradient(-45deg,var(--yel) 0 16px,var(--deep) 16px 32px)}
+header{display:flex;align-items:center;gap:26px;padding:12px 24px}
+h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.01em;color:var(--yel)}
+.hud{display:flex;gap:26px;margin-left:auto;align-items:center}
+.hud div{text-align:center;line-height:1}
+.hud b{display:block;font-size:34px;font-weight:800;font-variant-numeric:tabular-nums}
+.hud span{font-size:13px;color:var(--mut)}
+#timer.low{color:var(--bad)}
+#combo{color:var(--yel);transition:transform .15s}
+#combo.pop{transform:scale(1.35)}
+#order{display:flex;gap:10px;align-items:center;background:var(--deep);padding:8px 14px;border-radius:12px;border:2px solid transparent}
+#order.rush{border-color:var(--yel)}
+#order h2{margin:0 6px 0 0;font-size:15px;color:var(--mut);font-weight:600}
+.oi{display:flex;align-items:center;gap:5px;font-weight:800;font-size:20px}
+.oi i{width:22px;height:22px;border-radius:6px;display:inline-block}
+.oi.done{opacity:.3;text-decoration:line-through}
+#stage{flex:1;position:relative;min-height:0}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:pointer}
+footer{display:flex;gap:12px;align-items:center;padding:10px 24px 16px;flex-wrap:wrap}
+footer button{font:inherit;font-weight:800;font-size:17px;background:var(--deep);color:var(--txt);border:2px solid #2B4D70;border-radius:10px;padding:9px 16px;cursor:pointer}
+footer button:hover{border-color:var(--yel)}
+button:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+#speedLbl{font-weight:800;min-width:120px}
+.help{color:var(--mut);font-size:15px;margin-left:auto;max-width:560px;line-height:1.35}
+.overlay{position:fixed;inset:0;background:rgba(14,34,54,.9);display:grid;place-items:center;z-index:10;padding:20px}
+.overlay[hidden]{display:none}
+.box{background:var(--steel);border:3px solid var(--yel);border-radius:18px;max-width:680px;width:100%;padding:30px 34px;max-height:92vh;overflow:auto}
+.box h2{font-size:48px;margin:0;font-weight:900;color:var(--yel);line-height:1}
+.box p{font-size:18px;line-height:1.45}
+.box .big{font-size:70px;font-weight:900}
+.cta{font:inherit;font-size:22px;font-weight:900;background:var(--yel);color:var(--deep);border:0;border-radius:12px;padding:14px 30px;cursor:pointer}
+.rules{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:17px;margin:18px 0}
+.rules b{color:var(--yel)}
+.bars{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+.bar{display:grid;grid-template-columns:140px 1fr 60px;gap:10px;align-items:center;font-size:15px}
+.bar div{height:14px;background:var(--deep);border-radius:7px;overflow:hidden}
+.bar em{display:block;height:100%;background:var(--ok)}
+.bar.worst em{background:var(--bad)}
+.partners{color:var(--mut);font-size:14px;margin-top:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+:root{--rs-acc:#FFC914;--rs-on:#0E2236}
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<header>
+  <h1>Fabriekschaos</h1>
+  <div id="order"></div>
+  <div class="hud">
+    <div><b id="combo">×1</b><span>combo</span></div>
+    <div><b id="score">0</b><span>score</span></div>
+    <div><b id="timer">90</b><span>seconden</span></div>
+  </div>
+</header>
+<div id="stage"><canvas id="cv" aria-label="Productielijn"></canvas></div>
+<footer>
+  <button id="slower" aria-label="Band langzamer">◀ Langzamer</button>
+  <span id="speedLbl">Band: normaal</span>
+  <button id="faster" aria-label="Band sneller">Sneller ▶</button>
+  <div class="help">Tik op <b>verkeerde of beschadigde producten</b> om ze van de band te halen. Tik op een <b>storende machine</b> om te repareren. Tik op <b>Grondstof</b> om bij te vullen en op de <b>Reactor</b> om te koelen.</div>
+</footer>
+
+<div class="overlay" id="intro"><div class="box">
+  <h2>Fabriekschaos</h2>
+  <p>Je hebt 90 seconden om zoveel mogelijk correcte producten af te leveren. Machines haperen, verkeerde onderdelen rollen binnen en de klant verandert zomaar van gedachten.</p>
+  <div class="rules">
+    <b>Order</b><span>Lever de kleuren en aantallen die bovenaan gevraagd worden.</span>
+    <b>Sorteren</b><span>Tik foute kleuren en beschadigde producten weg voordat ze de klant bereiken.</span>
+    <b>Repareren</b><span>Een machine met vonken houdt de lijn tegen. Tik er drie keer op.</span>
+    <b>Proces</b><span>Houd de grondstof op peil en voorkom dat de reactor te heet wordt.</span>
+    <b>Combo</b><span>Correcte leveringen op rij vermenigvuldigen je punten. Bij ×5 komt de lijn in flow.</span>
+  </div>
+  <button class="cta" id="startBtn">Start de lijn</button>
+  <div class="partners">Enversed Studios in samenwerking met Chemelot en Sioux</div>
+</div></div>
+<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+
+<script>
+// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now()) {
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  return { mount };
+})();
+
+</script>
+<script>
+const COLORS = {blauw:'#3A86FF', groen:'#2EC4B6', oranje:'#FF8C1A', paars:'#A06CF0', rood:'#E63946'};
+const W = 1000, H = 440, BAND_Y = 280;
+const STATIONS = [
+  {key:'grond', n:'Grondstof', x:90},
+  {key:'meng', n:'Mengen', x:320},
+  {key:'reactor', n:'Reactor', x:550},
+  {key:'vul', n:'Vullen', x:780}
+];
+const DELIVER_X = 960, ROUND = 90, SPEEDS = [{n:'langzaam',v:70},{n:'normaal',v:110},{n:'snel',v:160}];
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+let S, last, raf, scale=1, offX=0, offY=0;
+
+function resize(){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio||1;
+  cv.width = r.width*dpr; cv.height = r.height*dpr;
+  scale = Math.min(r.width/W, r.height/H); offX=(r.width-W*scale)/2; offY=(r.height-H*scale)/2;
+  ctx.setTransform(dpr*scale,0,0,dpr*scale,dpr*offX,dpr*offY);
+}
+addEventListener('resize', resize);
+
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.08,t='square',v=.05){const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+
+function newOrder(rush=false){
+  const pool = ['blauw','groen','oranje','paars'].sort(()=>Math.random()-.5).slice(0, rush?1:2);
+  S.order = {items: pool.map(c=>({c, need: rush?3:2+Math.floor(Math.random()*3)})), rush, t: rush?15:null};
+  renderOrder();
+}
+function renderOrder(){
+  const o = S.order;
+  document.getElementById('order').className = o.rush ? 'rush' : '';
+  document.getElementById('order').innerHTML = `<h2>${o.rush?`Spoedorder · ×2 · ${Math.ceil(o.t)}s`:'Order'}</h2>` +
+    o.items.map(i=>`<span class="oi ${i.need<=0?'done':''}"><i style="background:${COLORS[i.c]}"></i>${Math.max(0,i.need)}×</span>`).join('');
+}
+
+function reset(){
+  S = {t:0, score:0, combo:1, best:1, items:[], speed:1, spawnT:0, material:100, temp:40,
+       st: Object.fromEntries(STATIONS.map(s=>[s.key,{broken:0, taps:0, down:0}])),
+       nextBreak:9, dip:0, events:[], fx:[], stats:{del:0, bad:0, swept:0, orders:0, idle:0},
+       changed:false, rushDone:false, over:false, flow:false};
+  newOrder();
+}
+
+function needed(c){ return S.order.items.some(i=>i.c===c && i.need>0) }
+
+function spawn(){
+  if(S.material<=0 || S.st.grond.broken) return;
+  const q = S.items.filter(i=>i.x < STATIONS[0].x+40).length; if(q) return;
+  let c;
+  const r = Math.random();
+  const open = S.order.items.filter(i=>i.need>0).map(i=>i.c);
+  if(r < .64 && open.length) c = open[Math.floor(Math.random()*open.length)];
+  else { const all = Object.keys(COLORS); c = all[Math.floor(Math.random()*all.length)]; }
+  S.items.push({x:STATIONS[0].x, c, defect:false, wobble:0, id:Math.random()});
+  S.material = Math.max(0, S.material - 7);
+}
+
+function blocking(x){
+  // returns x limit due to broken station ahead
+  for(const s of STATIONS){ if(S.st[s.key].broken && x < s.x - 30) return s.x - 30; }
+  return Infinity;
+}
+
+function update(dt){
+  S.t += dt;
+  const left = ROUND - S.t, rush = left < 20;
+  const v = (S.dip>0 ? 0 : SPEEDS[S.speed].v) * (S.flow?1.25:1) * (rush?1.15:1);
+  if(S.dip>0) S.dip -= dt;
+  // spawn
+  S.spawnT -= dt;
+  if(S.spawnT<=0){ spawn(); S.spawnT = (rush?.75:1.05) * (140/SPEEDS[S.speed].v) * (0.8+Math.random()*.4); }
+  // temperature
+  S.temp = Math.min(120, S.temp + dt*(3 + S.t/30));
+  // breakdowns
+  S.nextBreak -= dt;
+  if(S.nextBreak<=0){
+    const ok = STATIONS.filter(s=>!S.st[s.key].broken);
+    if(ok.length){ const s = ok[Math.floor(Math.random()*ok.length)]; S.st[s.key].broken = 1; S.st[s.key].taps=0; S.fx.push({t:'txt', x:s.x, y:150, s:'Storing!', c:'#FF4D4D', life:1.4}); tone(110,.3,'sawtooth',.06); }
+    S.nextBreak = Math.max(3.5, 10 - S.t/12) * (0.7 + Math.random()*.6);
+  }
+  for(const s of STATIONS) if(S.st[s.key].broken) S.st[s.key].down += dt;
+  // events
+  if(!S.changed && S.t > 42){ S.changed = true; const it = S.order.items.find(i=>i.need>0);
+    if(it){ const others = ['blauw','groen','oranje','paars'].filter(c=>!S.order.items.some(i=>i.c===c)); it.c = others[0]; it.need = Math.max(2,it.need); renderOrder(); banner('Orderwijziging! De klant wil iets anders.'); } }
+  if(!S.rushDone && S.t > 60 && !S.order.rush){ S.rushDone = true; S.prevOrder = S.order; newOrder(true); banner('Spoedorder: dubbele punten, 15 seconden'); }
+  if(Math.random() < dt*0.025 && S.t>20 && S.dip<=0){ S.dip = 2.5; banner('Stroomdip: de band staat even stil'); tone(80,.5,'sine',.08); }
+  if(S.order.rush){ S.order.t -= dt; if(S.order.t<=0){ banner('Spoedorder verlopen'); S.order = S.prevOrder || S.order; S.order.rush=false; if(!S.prevOrder) newOrder(); renderOrder(); } else if(Math.floor(S.order.t*4)%4===0) renderOrder(); }
+  // move items with spacing
+  S.items.sort((a,b)=>b.x-a.x);
+  let front = Infinity;
+  for(const it of S.items){
+    let limit = Math.min(front - 46, blocking(it.x));
+    const before = it.x;
+    it.x = Math.min(it.x + v*dt, limit);
+    if(it.x < before) it.x = before;
+    // reactor effect
+    const rx = STATIONS[2].x;
+    if(before < rx && it.x >= rx && S.temp > 85){ it.defect = true; S.fx.push({t:'txt',x:rx,y:200,s:'Te heet!',c:'#FF8C1A',life:1}); }
+    front = it.x;
+    if(it.wobble>0) it.wobble -= dt;
+  }
+  // delivery
+  for(const it of [...S.items]) if(it.x >= DELIVER_X){ deliver(it); }
+  S.fx = S.fx.filter(f=>(f.life-=dt)>0);
+  S.flow = S.combo>=5;
+  if(left<=0) end();
+}
+
+function deliver(it){
+  S.items = S.items.filter(x=>x!==it);
+  const need = S.order.items.find(i=>i.c===it.c && i.need>0);
+  if(need && !it.defect){
+    need.need--; S.stats.del++;
+    const pts = 20 * S.combo * (S.flow?2:1) * (S.order.rush?2:1);
+    S.score += pts; S.combo = Math.min(5,S.combo+1); S.best=Math.max(S.best,S.combo);
+    S.fx.push({t:'txt',x:DELIVER_X-10,y:210,s:'+'+pts,c:'#3DDC84',life:1});
+    S.fx.push({t:'ring',x:DELIVER_X,y:BAND_Y,c:'#3DDC84',life:.5});
+    tone(660+S.combo*110,.1,'triangle',.07);
+    const cEl=document.getElementById('combo'); cEl.classList.add('pop'); setTimeout(()=>cEl.classList.remove('pop'),150);
+    if(S.order.items.every(i=>i.need<=0)){
+      const bonus = S.order.rush?300:150; S.score += bonus; S.stats.orders++;
+      banner(`Order compleet! +${bonus}`); tone(1320,.2,'triangle',.07);
+      if(S.order.rush && S.prevOrder && S.prevOrder.items.some(i=>i.need>0)){ S.order = S.prevOrder; S.order.rush=false; S.prevOrder=null; renderOrder(); }
+      else newOrder();
+    } else renderOrder();
+  } else {
+    S.stats.bad++; S.score = Math.max(0, S.score-30); S.combo = 1;
+    S.fx.push({t:'txt',x:DELIVER_X-10,y:210,s:it.defect?'Afgekeurd: beschadigd':'Afgekeurd: niet besteld',c:'#FF4D4D',life:1.3});
+    tone(140,.25,'sawtooth',.06);
+  }
+}
+
+function banner(s){ S.fx.push({t:'banner',s,life:2.2}); }
+
+function click(ev){
+  if(!S || S.over) return;
+  const r = cv.getBoundingClientRect();
+  const x = (ev.clientX - r.left - offX)/scale, y = (ev.clientY - r.top - offY)/scale;
+  // items first
+  for(const it of S.items){
+    if(Math.hypot(it.x-x, BAND_Y-y) < 26){
+      S.items = S.items.filter(i=>i!==it);
+      if(it.defect || !needed(it.c)){ S.score += 10; S.stats.swept++; S.fx.push({t:'txt',x:it.x,y:BAND_Y-40,s:'Goed gesorteerd +10',c:'#3DDC84',life:.8}); tone(900,.05); }
+      else { S.score = Math.max(0,S.score-15); S.fx.push({t:'txt',x:it.x,y:BAND_Y-40,s:'Dat was een goed product −15',c:'#FF4D4D',life:1}); tone(200,.15,'sawtooth'); }
+      return;
+    }
+  }
+  for(const s of STATIONS){
+    if(Math.abs(x-s.x)<70 && y>120 && y<BAND_Y+10){
+      const st = S.st[s.key];
+      if(st.broken){ st.taps++; tone(300+st.taps*150,.05); S.fx.push({t:'ring',x:s.x,y:200,c:'#FFC914',life:.3});
+        if(st.taps>=3){ st.broken=0; S.score+=15; S.fx.push({t:'txt',x:s.x,y:140,s:'Gerepareerd +15',c:'#3DDC84',life:1}); tone(990,.1,'triangle'); } return; }
+      if(s.key==='grond'){ S.material = 100; S.fx.push({t:'txt',x:s.x,y:140,s:'Bijgevuld',c:'#3DDC84',life:.8}); tone(700,.08,'triangle'); }
+      if(s.key==='reactor'){ S.temp = Math.max(30,S.temp-35); S.fx.push({t:'txt',x:s.x,y:140,s:'Gekoeld',c:'#6EC1FF',life:.8}); tone(500,.12,'sine'); }
+      return;
+    }
+  }
+}
+cv.addEventListener('pointerdown', click);
+
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+function draw(){
+  ctx.clearRect(-offX/scale,-offY/scale,W+2*offX/scale,H+2*offY/scale);
+  // floor
+  ctx.fillStyle = S.flow ? '#12406A' : '#1B3B5C'; rr(10,40,W-20,H-60,18); ctx.fill();
+  // pipes
+  ctx.strokeStyle='#2D5378'; ctx.lineWidth=10;
+  ctx.beginPath(); ctx.moveTo(20,80); ctx.lineTo(W-20,80); ctx.stroke();
+  // band
+  ctx.fillStyle='#0B1B2B'; rr(30,BAND_Y-26,W-60,52,14); ctx.fill();
+  const off = (S.t * (S.dip>0?0:SPEEDS[S.speed].v)) % 40;
+  ctx.strokeStyle = S.flow ? '#6EC1FF' : '#223A52'; ctx.lineWidth=3;
+  for(let x=40+off; x<W-40; x+=40){ ctx.beginPath(); ctx.moveTo(x,BAND_Y-22); ctx.lineTo(x-10,BAND_Y+22); ctx.stroke(); }
+  // stations
+  for(const s of STATIONS){
+    const st = S.st[s.key];
+    const shake = st.broken ? (Math.random()-.5)*4 : 0;
+    ctx.save(); ctx.translate(shake,0);
+    ctx.fillStyle = st.broken ? '#5A2A34' : '#2E5D86'; rr(s.x-62,120,124,BAND_Y-150,14); ctx.fill();
+    ctx.fillStyle = '#EAF2FA'; ctx.font='800 18px Rubik, sans-serif'; ctx.textAlign='center'; ctx.fillText(s.n, s.x, 146);
+    // lamp
+    ctx.fillStyle = st.broken ? '#FF4D4D' : (s.key==='reactor'&&S.temp>85?'#FF8C1A':'#3DDC84'); ctx.beginPath(); ctx.arc(s.x+46,108,8,0,7); ctx.fill();
+    if(s.key==='grond'){ ctx.fillStyle='#0B1B2B'; rr(s.x-44,166,88,16,8); ctx.fill(); ctx.fillStyle=S.material<25?'#FF4D4D':'#FFC914'; rr(s.x-44,166,88*S.material/100,16,8); ctx.fill(); ctx.fillStyle='#8FA9C2'; ctx.font='600 13px Rubik, sans-serif'; ctx.fillText(S.material<=0?'Leeg! Tik om bij te vullen':'grondstof',s.x,202); }
+    if(s.key==='reactor'){ const hot=S.temp>85; ctx.fillStyle='#0B1B2B'; rr(s.x-44,166,88,16,8); ctx.fill(); ctx.fillStyle=hot?'#FF4D4D':S.temp>70?'#FF8C1A':'#6EC1FF'; rr(s.x-44,166,88*Math.min(1,S.temp/120),16,8); ctx.fill(); ctx.fillStyle=hot?'#FF8C1A':'#8FA9C2'; ctx.font='600 13px Rubik, sans-serif'; ctx.fillText(`${Math.round(S.temp)} °C${hot?' · koelen!':''}`,s.x,202); }
+    if(s.key==='meng'){ ctx.strokeStyle='#6EC1FF'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(s.x,185,18,S.t*4,S.t*4+4); ctx.stroke(); }
+    if(s.key==='vul'){ ctx.fillStyle='#6EC1FF'; ctx.fillRect(s.x-4,160,8,20+Math.sin(S.t*6)*6); }
+    if(st.broken){
+      ctx.fillStyle='#FFC914'; ctx.font='900 30px Rubik, sans-serif'; ctx.fillText('⚠',s.x,112);
+      for(let i=0;i<5;i++){ ctx.fillStyle=['#FFC914','#FF8C1A','#FFF'][i%3]; ctx.fillRect(s.x-50+Math.random()*100,125+Math.random()*100,4,4); }
+      ctx.fillStyle='#FFD6D6'; ctx.font='800 14px Rubik, sans-serif'; ctx.fillText(`Tik ${3-st.taps}× om te repareren`, s.x, 232);
+    }
+    ctx.restore();
+  }
+  // delivery
+  ctx.fillStyle='#FFC914'; rr(DELIVER_X-18,BAND_Y-60,40,120,8); ctx.fill();
+  ctx.save(); ctx.translate(DELIVER_X+34,BAND_Y); ctx.rotate(-Math.PI/2); ctx.fillStyle='#FFC914'; ctx.font='800 14px Rubik, sans-serif'; ctx.textAlign='center'; ctx.fillText('KLANT',0,0); ctx.restore();
+  // items
+  for(const it of S.items){
+    ctx.save(); ctx.translate(it.x, BAND_Y);
+    ctx.fillStyle = COLORS[it.c]; rr(-18,-18,36,36,9); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.3)'; rr(-12,-14,24,7,3); ctx.fill();
+    if(it.defect){ ctx.strokeStyle='#0B1B2B'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-10,-14); ctx.lineTo(0,-2); ctx.lineTo(-4,4); ctx.lineTo(8,16); ctx.stroke(); }
+    if(!needed(it.c) && !it.defect){ ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.setLineDash([4,3]); rr(-22,-22,44,44,11); ctx.stroke(); ctx.setLineDash([]); }
+    ctx.restore();
+  }
+  // fx
+  for(const f of S.fx){
+    ctx.globalAlpha = Math.min(1,f.life*2);
+    if(f.t==='txt'){ ctx.fillStyle=f.c; ctx.font='800 18px Rubik, sans-serif'; ctx.textAlign='center'; ctx.fillText(f.s,f.x,f.y-(1.4-f.life)*30); }
+    if(f.t==='ring'){ ctx.strokeStyle=f.c; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(f.x,f.y,30+(0.5-f.life)*80,0,7); ctx.stroke(); }
+    if(f.t==='banner'){ ctx.fillStyle='rgba(255,201,20,.95)'; rr(W/2-300,52,600,44,12); ctx.fill(); ctx.fillStyle='#0E2236'; ctx.font='900 20px Rubik, sans-serif'; ctx.textAlign='center'; ctx.fillText(f.s,W/2,81); }
+    ctx.globalAlpha=1;
+  }
+  if(S.dip>0){ ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fillRect(10,40,W-20,H-60); }
+  if(S.flow){ ctx.fillStyle='#6EC1FF'; ctx.font='900 16px Rubik, sans-serif'; ctx.textAlign='left'; ctx.fillText('FLOW · dubbele punten',30,H-34); }
+}
+
+function loop(now){
+  const dt = Math.min(.05,(now-last)/1000); last = now;
+  update(dt); if(S.over) return;
+  draw();
+  document.getElementById('score').textContent = S.score;
+  document.getElementById('combo').textContent = '×'+S.combo;
+  const left = Math.max(0,Math.ceil(ROUND-S.t)); const tEl=document.getElementById('timer'); tEl.textContent = left; tEl.className = left<=20?'low':'';
+  raf = requestAnimationFrame(loop);
+}
+
+function setSpeed(d){ if(!S) return; S.speed = Math.max(0,Math.min(2,S.speed+d)); document.getElementById('speedLbl').textContent = 'Band: '+SPEEDS[S.speed].n; }
+document.getElementById('slower').onclick=()=>setSpeed(-1);
+document.getElementById('faster').onclick=()=>setSpeed(1);
+addEventListener('keydown',e=>{ if(e.key==='ArrowLeft') setSpeed(-1); if(e.key==='ArrowRight') setSpeed(1); });
+
+function end(){
+  S.over = true; cancelAnimationFrame(raf);
+  const downs = STATIONS.map(s=>({n:s.n, d:S.st[s.key].down}));
+  const worst = downs.reduce((a,b)=>b.d>a.d?b:a);
+  const maxD = Math.max(1,...downs.map(d=>d.d));
+  let tip;
+  if(worst.d > 8) tip = `${worst.n} stond ${Math.round(worst.d)} seconden stil. Alles erachter wachtte mee: een lijn is zo snel als de traagste stap. Repareer storingen direct, ook als je druk bent met sorteren.`;
+  else if(S.stats.bad > S.stats.del/3) tip = 'Veel producten werden bij de klant afgekeurd. Fouten vroeg in de lijn vangen is goedkoper dan aan het eind. Probeer de band langzamer te zetten als het druk wordt.';
+  else tip = 'Je hield de lijn goed draaiende. Volgende keer: koel de reactor preventief voordat hij rood wordt, dan voorkom je beschadigde producten.';
+  document.getElementById('endBox').innerHTML = `<h2>Dienst voorbij</h2><div class="big">${S.score}</div>
+    <p>${S.stats.del} producten geleverd · ${S.stats.orders} orders compleet · ${S.stats.swept} keer goed gesorteerd · ${S.stats.bad} afgekeurd · hoogste combo ×${S.best}</p>
+    <h3>Procesrapport: stilstand per station</h3>
+    <div class="bars">${downs.map(d=>`<div class="bar ${d===worst&&d.d>2?'worst':''}"><span>${d.n}</span><div><em style="width:${d.d/maxD*100}%"></em></div><span>${Math.round(d.d)} s</span></div>`).join('')}</div>
+    <p>${tip}</p><button class="cta" id="again">Nieuwe ronde</button><div id="rsSlot"></div>`;
+  document.getElementById('end').hidden = false;
+  document.getElementById('again').onclick = start;
+  RESULTS.mount(document.getElementById('rsSlot'), {score:S.score, lines:[`${S.stats.del} producten geleverd`, `${S.stats.orders} orders compleet`, `${S.stats.bad} afgekeurd`, `Hoogste combo ×${S.best}`, `Grootste knelpunt: ${worst.n} (${Math.round(worst.d)} s stilstand)`], tip});
+}
+
+function start(){
+  document.getElementById('intro').hidden = true; document.getElementById('end').hidden = true;
+  reset(); ac(); resize(); setSpeed(0); last = performance.now(); raf = requestAnimationFrame(loop);
+}
+document.getElementById('startBtn').onclick = start;
+reset(); resize(); draw();
+</script>
+</body>
+</html>

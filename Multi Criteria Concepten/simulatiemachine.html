@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="nl" data-game="simulatiemachine">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulatiemachine — Enversed Studios × Philips × Summa × BHVR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EEF0FB;--ink:#1E1B3A;--mut:#6A6887;--card:#FFFFFF;--acc:#2F80ED;--good:#1FA971;--bad:#E0533D;--mid:#C9A227;font-family:Nunito,system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink)}
+.disp{font-family:Fraunces,Georgia,serif}
+header{display:flex;align-items:center;gap:16px;padding:16px 28px}
+header h1{margin:0;font-size:28px;font-weight:800}
+header .sc{color:var(--mut);font-size:17px}
+header button{margin-left:auto}
+main{max-width:1180px;margin:0 auto;padding:0 28px 40px}
+.btn{font:inherit;font-weight:800;font-size:17px;border:2px solid var(--ink);background:transparent;color:var(--ink);border-radius:30px;padding:9px 20px;cursor:pointer}
+.btn:hover{background:var(--ink);color:#fff}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+/* picker */
+#picker h2{font-size:clamp(34px,5vw,58px);line-height:1.02;margin:10px 0 8px;max-width:760px}
+#picker p{font-size:19px;color:var(--mut);max-width:640px;line-height:1.5}
+.scen{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px}
+.scen button{font:inherit;text-align:left;background:var(--card);border:0;border-radius:22px;padding:22px;cursor:pointer;color:var(--ink);border-top:10px solid var(--c);transition:transform .15s}
+.scen button:hover{transform:translateY(-4px)}
+.scen b{display:block;font-family:Fraunces,serif;font-size:26px;margin:6px 0}
+.scen span{color:var(--mut);font-size:15px}
+.scen .ctx{font-weight:800;color:var(--c);font-size:14px}
+/* play */
+#play{display:grid;grid-template-columns:1.1fr 1fr;gap:26px;align-items:start}
+#sceneWrap{background:var(--card);border-radius:24px;overflow:hidden;position:relative}
+#scene{display:block;width:100%;height:auto;transition:filter .4s}
+#clock{position:absolute;top:14px;right:14px;background:rgba(30,27,58,.85);color:#fff;border-radius:16px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+#clock svg{width:30px;height:30px}
+#freeze{position:absolute;left:16px;right:16px;bottom:16px;background:#fff;border-radius:16px;padding:12px 16px;font-size:17px;font-weight:600;box-shadow:0 10px 30px rgba(30,27,58,.18);border-left:8px solid var(--mut)}
+#freeze[hidden]{display:none}
+#freeze small{display:block;color:var(--mut);font-weight:800;font-size:13px}
+.inds{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;padding:16px 18px}
+.ind{font-size:15px;font-weight:800}
+.ind .bar{height:12px;background:#E6E7F2;border-radius:6px;overflow:hidden;margin-top:4px}
+.ind .bar em{display:block;height:100%;width:50%;border-radius:6px;background:var(--acc);transition:width .7s cubic-bezier(.3,1.3,.5,1),background .4s}
+#panel{background:var(--card);border-radius:24px;padding:24px 26px}
+#situ{font-size:18px;line-height:1.5;margin:0 0 14px}
+.step{color:var(--mut);font-weight:800;font-size:14px}
+#q{font-family:Fraunces,serif;font-size:26px;margin:4px 0 14px;line-height:1.15}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{font:inherit;text-align:left;border:2px solid #E0E1EE;background:#FAFAFE;border-radius:16px;padding:14px 16px;cursor:pointer;color:var(--ink);font-size:17px;font-weight:600;display:flex;gap:12px;align-items:center}
+.opt:hover{border-color:var(--acc)}
+.opt .ic{font-size:26px}
+.opt.ghost{border-style:dashed;opacity:.72}
+.opt.ghost::after{content:"al geprobeerd";margin-left:auto;font-size:12px;color:var(--mut);font-weight:800}
+.slots{display:flex;gap:8px;margin:18px 0 0;flex-wrap:wrap}
+.slot{flex:1;min-width:120px;border:2px dashed #D6D7E6;border-radius:12px;padding:8px 10px;font-size:14px;min-height:46px;color:var(--mut)}
+.slot.f{border-style:solid;border-color:var(--acc);color:var(--ink);font-weight:700;background:#F4F7FE}
+#simBtn{display:block;margin:22px auto 0;width:190px;height:190px;border-radius:50%;border:0;background:var(--bad);color:#fff;font:800 22px Nunito,sans-serif;letter-spacing:.04em;cursor:pointer;box-shadow:0 0 0 10px #F5C9C0,0 14px 0 #A83A28;transition:transform .08s,box-shadow .08s}
+#simBtn:active{transform:translateY(10px);box-shadow:0 0 0 10px #F5C9C0,0 4px 0 #A83A28}
+#simBtn.ready{animation:ring 1.4s infinite}
+@keyframes ring{50%{box-shadow:0 0 0 22px rgba(245,201,192,.35),0 14px 0 #A83A28}}
+#simBtn:disabled{background:#C9C8D8;box-shadow:0 0 0 10px #E6E6EF,0 14px 0 #9E9DB3;cursor:not-allowed;animation:none}
+#simBtn small{display:block;font-weight:600;font-size:13px;opacity:.85}
+/* outcome */
+#outcome h3{font-family:Fraunces,serif;font-size:34px;margin:0}
+.impact{font-family:Fraunces,serif;font-size:72px;font-weight:800;line-height:1}
+.chain{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+.lnk{display:flex;align-items:center;gap:10px;font-size:15px}
+.lnk .a{flex:1;background:#F4F4FA;border-radius:10px;padding:8px 10px}
+.lnk .b{flex:1.4;border-radius:10px;padding:8px 10px}
+.lnk .b.p{background:#E1F5EC}.lnk .b.n{background:#FCE6E2}.lnk .b.m{background:#F7F0D7}
+.lnk i{font-style:normal;color:var(--mut)}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.badge{background:var(--ink);color:#fff;border-radius:20px;padding:5px 12px;font-weight:800;font-size:14px}
+.msgk{font-size:18px;line-height:1.45;border-left:6px solid var(--acc);padding-left:14px;margin:16px 0}
+#compare{margin-top:26px}
+#compare h3{font-family:Fraunces,serif;font-size:26px;margin:0 0 12px}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.cmp .c{background:var(--card);border-radius:18px;padding:16px}
+.cmp .c.best{outline:3px solid var(--good)}
+.cmp .c b{font-family:Fraunces,serif;font-size:34px}
+.cmp ul{padding-left:18px;margin:8px 0;font-size:14px;color:var(--mut)}
+.mini{display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:12px;align-items:center}
+.mini div{height:7px;background:#E6E7F2;border-radius:4px;overflow:hidden}.mini em{display:block;height:100%}
+.rewind #scene{filter:hue-rotate(160deg) saturate(.5) blur(1px)}
+[hidden]{display:none!important}
+.partners{color:var(--mut);font-size:14px;margin-top:22px}
+@media (max-width:920px){#play{grid-template-columns:1fr}.scen{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:root{--rs-acc:var(--acc);--rs-on:#fff}
+</style>
+</head>
+<body>
+<header><h1 class="disp">Simulatiemachine</h1><span class="sc" id="scName"></span><button class="btn" id="homeBtn" hidden>Ander scenario</button></header>
+<main>
+  <section id="picker">
+    <h2 class="disp">Maak een keuze. Druk op simuleren. Zie wat er gebeurt.</h2>
+    <p>Kies een situatie uit de zorg, het onderwijs of de veiligheid. Na je keuzes speelt de wereld versneld af en zie je wat jouw aanpak veroorzaakt. Daarna probeer je het anders.</p>
+    <div class="scen" id="scenList"></div>
+    <div class="partners">Enversed Studios in samenwerking met Philips, Summa en BHVR</div>
+  </section>
+
+  <section id="play" hidden>
+    <div>
+      <div id="sceneWrap">
+        <svg id="scene" viewBox="0 0 600 380" role="img" aria-label="Scène"></svg>
+        <div id="clock"><svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="13" fill="none" stroke="#fff" stroke-width="2.5"/><line id="hand" x1="15" y1="15" x2="15" y2="5" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><line x1="15" y1="15" x2="21" y2="15" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg><span id="clockTxt"></span></div>
+        <div id="freeze" hidden></div>
+      </div>
+      <div class="inds" id="inds"></div>
+    </div>
+    <div id="panel">
+      <div id="choose">
+        <p id="situ"></p>
+        <div class="step" id="stepTxt"></div>
+        <div id="q"></div>
+        <div class="opts" id="opts"></div>
+        <div class="slots" id="slots"></div>
+        <button id="simBtn" disabled>SIMULEREN<small>spatiebalk</small></button>
+      </div>
+      <div id="outcome" hidden></div>
+    </div>
+  </section>
+  <section id="compare" hidden></section>
+</main>
+
+<script>
+// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now()) {
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  return { mount };
+})();
+
+</script>
+<script>
+const IND = [{k:'welzijn',n:'❤️ Welzijn'},{k:'veiligheid',n:'🛡️ Veiligheid'},{k:'tijd',n:'⏱️ Tijd'},{k:'vertrouwen',n:'🔗 Vertrouwen'}];
+const SCEN = [
+{ id:'zorg', ctx:'Zorg · Philips', c:'#2F80ED', n:'De onrustige nacht', sub:'Een verwarde patiënt probeert uit bed te komen.',
+  situ:'Mevrouw De Vries (84) is sinds vanavond verward en probeert steeds uit bed te stappen. Jij en één collega hebben twaalf patiënten.',
+  clock:['21:00','07:00'], span:'10 uur',
+  steps:[
+   {q:'Wat doe je als eerste?', o:[
+    {i:'🛏️',t:'Bedhekken omhoog en verder met de ronde',e:{welzijn:-15,veiligheid:-10,tijd:12,vertrouwen:-8},ev:{at:.18,t:'Na 1 uur',s:'De patiënt voelt zich opgesloten en wordt onrustiger.',v:'n'}},
+    {i:'📡',t:'Koppelen aan slimme bewegingsmonitoring',e:{welzijn:5,veiligheid:22,tijd:6,vertrouwen:6},ev:{at:.22,t:'Na 2 uur',s:'De monitor signaleert beweging. De verpleegkundige is binnen een minuut bij het bed.',v:'p'}},
+    {i:'📞',t:'De familie bellen en vragen of iemand kan komen',e:{welzijn:20,veiligheid:5,tijd:-10,vertrouwen:22},ev:{at:.16,t:'Na 1,5 uur',s:'De dochter zit aan het bed. Mevrouw wordt merkbaar rustiger.',v:'p'}}]},
+   {q:'Later in de nacht wordt ze opnieuw onrustig. Wat nu?', o:[
+    {i:'💊',t:'Kalmerende medicatie laten voorschrijven',e:{welzijn:-10,veiligheid:-6,tijd:10,vertrouwen:-10},ev:{at:.55,t:'Na 5 uur',s:'Ze is suf en wankel als ze naar het toilet wil.',v:'n'}},
+    {i:'💡',t:'Nachtlampje en vaste oriëntatiepunten inzetten',e:{welzijn:16,veiligheid:10,tijd:0,vertrouwen:6},ev:{at:.6,t:'Na 6 uur',s:'Ze herkent haar kamer, ziet de klok en slaapt door.',v:'p'}},
+    {i:'🚶',t:'Haar dichter bij de verpleegpost leggen',e:{welzijn:4,veiligheid:15,tijd:-10,vertrouwen:4},ev:{at:.5,t:'Na 4 uur',s:'Het verplaatsen kost tijd, maar ze is nu goed in zicht.',v:'m'}}]}
+  ],
+  combos:[{m:[0,0],e:{veiligheid:-15,welzijn:-5},ev:{at:.78,t:'04:30',s:'Ze probeert over de bedhekken te klimmen en valt bijna.',v:'n'}},
+          {m:[1,1],e:{welzijn:5},ev:{at:.9,t:'06:30',s:'Ze wordt uitgerust wakker. De monitor heeft de hele nacht meegekeken.',v:'p'}}],
+  msg:'Slimme technologie en menselijke aandacht versterken elkaar. Vrijheidsbeperking lost onrust zelden op.'},
+{ id:'onderwijs', ctx:'Onderwijs · Summa', c:'#1FA971', n:'Conflict in de klas', sub:'Twee studenten maken ruzie tijdens een groepsopdracht.',
+  situ:'Je bent stagiair-docent. Tijdens een groepsopdracht maken Daan en Yara steeds harder ruzie. De rest van de klas kijkt toe.',
+  clock:['Week 1','Week 3'], span:'2 weken',
+  steps:[
+   {q:'Hoe grijp je direct in?', o:[
+    {i:'📣',t:'Beide studenten voor de klas aanspreken',e:{welzijn:-10,veiligheid:10,tijd:12,vertrouwen:-15},ev:{at:.15,t:'Direct',s:'De ruzie stopt, maar Daan en Yara voelen zich publiekelijk te kijk gezet.',v:'m'}},
+    {i:'⏸️',t:'Groep laten pauzeren en de twee apart nemen',e:{welzijn:12,veiligheid:12,tijd:0,vertrouwen:14},ev:{at:.15,t:'Direct',s:'De rust keert terug. Buiten het lokaal vertellen ze allebei hun kant.',v:'p'}},
+    {i:'🙈',t:'Negeren en hopen dat het overwaait',e:{welzijn:-12,veiligheid:-18,tijd:6,vertrouwen:-10},ev:{at:.2,t:'Volgende les',s:'Het conflict laait op en een derde student raakt erbij betrokken.',v:'n'}}]},
+   {q:'Wat doe je na de les?', o:[
+    {i:'📨',t:'Een melding maken bij de mentor',e:{welzijn:0,veiligheid:6,tijd:4,vertrouwen:-4},ev:{at:.55,t:'Week 2',s:'De mentor plant een gesprek, maar pas over tien dagen.',v:'m'}},
+    {i:'🤝',t:'Een kort herstelgesprek met beide studenten',e:{welzijn:16,veiligheid:8,tijd:-6,vertrouwen:18},ev:{at:.6,t:'Week 2',s:'Er blijkt een misverstand over de taakverdeling achter te zitten. Ze maken nieuwe afspraken.',v:'p'}},
+    {i:'🔀',t:'De groepsindeling voor de volgende les aanpassen',e:{welzijn:4,veiligheid:10,tijd:8,vertrouwen:-2},ev:{at:.5,t:'Week 2',s:'Ze zitten niet meer samen. Het probleem is uit het zicht, niet opgelost.',v:'m'}}]}
+  ],
+  combos:[{m:[1,1],e:{vertrouwen:8,welzijn:6},ev:{at:.88,t:'Week 3',s:'Daan en Yara presenteren samen hun groepsopdracht.',v:'p'}},
+          {m:[2,2],e:{veiligheid:-8},ev:{at:.8,t:'Week 3',s:'De sfeer in de klas blijft gespannen. Andere studenten mijden de twee.',v:'n'}}],
+  msg:'Vroeg en persoonlijk ingrijpen voorkomt escalatie en bouwt vertrouwen op.'},
+{ id:'veiligheid', ctx:'Veiligheid · BHVR', c:'#E0533D', n:'Rook op de derde verdieping', sub:'Er is rook geroken, het alarm is nog stil.',
+  situ:'Een collega ruikt rook op de derde verdieping. Het brandalarm is nog niet afgegaan. Jij bent de dienstdoende BHV\'er.',
+  clock:['10:00','10:15'], span:'15 minuten',
+  steps:[
+   {q:'Wat is je eerste actie?', o:[
+    {i:'🔍',t:'Zelf gaan kijken waar de rook vandaan komt',e:{welzijn:-6,veiligheid:-16,tijd:-12,vertrouwen:0},ev:{at:.14,t:'10:02',s:'Je loopt de rook in. Kostbare minuten gaan verloren.',v:'n'}},
+    {i:'🚨',t:'Direct handmatig het brandalarm activeren',e:{welzijn:6,veiligheid:22,tijd:16,vertrouwen:8},ev:{at:.08,t:'10:01',s:'Het alarm gaat af. Iedereen weet meteen dat het menens is.',v:'p'}},
+    {i:'☎️',t:'Eerst de ploegleider bellen voor overleg',e:{welzijn:0,veiligheid:-8,tijd:-10,vertrouwen:4},ev:{at:.16,t:'10:03',s:'De ploegleider neemt pas na vier keer overgaan op.',v:'n'}}]},
+   {q:'Hoe laat je iedereen het pand uit?', o:[
+    {i:'🛗',t:'De lift gebruiken, dat gaat sneller',e:{welzijn:-12,veiligheid:-24,tijd:4,vertrouwen:-6},ev:{at:.42,t:'10:06',s:'De lift valt uit. Twee collega\'s zitten vast tussen verdieping 2 en 3.',v:'n'}},
+    {i:'🪜',t:'Via de trappen ontruimen en per verdieping controleren',e:{welzijn:8,veiligheid:20,tijd:4,vertrouwen:10},ev:{at:.42,t:'10:06',s:'De ontruiming verloopt ordelijk. Elke verdieping wordt afgevinkt.',v:'p'}},
+    {i:'🏢',t:'Iedereen laten verzamelen bij de receptie',e:{welzijn:-4,veiligheid:-14,tijd:2,vertrouwen:-4},ev:{at:.45,t:'10:07',s:'Tachtig mensen staan in de hal, binnen, terwijl de rook zich verspreidt.',v:'n'}}]},
+   {q:'De brandweer komt aan. Wat doe je?', o:[
+    {i:'🗣️',t:'Brandweer informeren over locatie en vermiste personen',e:{welzijn:6,veiligheid:16,tijd:10,vertrouwen:12},ev:{at:.72,t:'10:11',s:'De brandweer gaat gericht naar binnen en vindt de bron binnen twee minuten.',v:'p'}},
+    {i:'🏃',t:'Zelf terug naar binnen om de laatste ruimtes te checken',e:{welzijn:-8,veiligheid:-20,tijd:-4,vertrouwen:-4},ev:{at:.7,t:'10:11',s:'De brandweer moet nu ook naar jou zoeken.',v:'n'}},
+    {i:'⏳',t:'Wachten op instructies van de ploegleider',e:{welzijn:0,veiligheid:-6,tijd:-12,vertrouwen:-4},ev:{at:.75,t:'10:12',s:'De brandweer krijgt pas laat te horen dat er nog iemand mist.',v:'n'}}]}
+  ],
+  combos:[{m:[1,1,0],e:{veiligheid:6,vertrouwen:6},ev:{at:.92,t:'10:15',s:'Iedereen staat veilig bij het verzamelpunt. De brand blijft beperkt tot één ruimte.',v:'p'}},
+          {m:[0,0,1],e:{veiligheid:-10,welzijn:-8},ev:{at:.9,t:'10:14',s:'Je raakt zelf bevangen door de rook en moet worden weggedragen.',v:'n'}}],
+  msg:'Bij brand geldt: alarmeren, ontruimen via veilige routes en de brandweer goed informeren. Nooit zelf terug naar binnen.'}
+];
+
+let SC, picks=[], attempts=[], running=false, RUN_ID;
+const $=id=>document.getElementById(id);
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.12,t='sine',v=.07){const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+const wait=ms=>new Promise(r=>setTimeout(r,matchMedia('(prefers-reduced-motion:reduce)').matches?ms/4:ms));
+const clamp=v=>Math.max(0,Math.min(100,v));
+
+$('scenList').innerHTML = SCEN.map((s,i)=>`<button data-i="${i}" style="--c:${s.c}"><span class="ctx">${s.ctx}</span><b>${s.n}</b><span>${s.sub}</span></button>`).join('');
+$('scenList').onclick = e=>{ const b=e.target.closest('button'); if(b) openScen(+b.dataset.i); };
+$('homeBtn').onclick = ()=>{ if(running) return; $('picker').hidden=false; $('play').hidden=true; $('compare').hidden=true; $('homeBtn').hidden=true; $('scName').textContent=''; };
+
+function openScen(i){
+  SC=SCEN[i]; attempts=[]; RUN_ID=SC.id+'-'+Date.now(); document.documentElement.style.setProperty('--acc',SC.c);
+  $('picker').hidden=true; $('play').hidden=false; $('homeBtn').hidden=false; $('compare').hidden=true;
+  $('scName').textContent = SC.ctx + ' · ' + SC.n;
+  reset();
+}
+function reset(){
+  picks=[]; $('choose').hidden=false; $('outcome').hidden=true; $('freeze').hidden=true;
+  $('situ').textContent = SC.situ; $('clockTxt').textContent = SC.clock[0];
+  setInds({welzijn:50,veiligheid:50,tijd:50,vertrouwen:50}); drawScene(0,{welzijn:50,veiligheid:50,tijd:50,vertrouwen:50});
+  renderStep();
+}
+function setInds(v){
+  $('inds').innerHTML = IND.map(x=>`<div class="ind">${x.n}<div class="bar"><em id="b-${x.k}" style="width:${v[x.k]}%;background:${col(v[x.k])}"></em></div></div>`).join('');
+}
+function updInds(v){ IND.forEach(x=>{ const e=$('b-'+x.k); e.style.width=v[x.k]+'%'; e.style.background=col(v[x.k]); }); }
+function col(v){ return v>=65?'var(--good)':v>=40?'var(--mid)':'var(--bad)'; }
+
+function renderStep(){
+  const k = picks.length, done = k>=SC.steps.length;
+  $('stepTxt').textContent = done ? 'Klaar om te simuleren' : `Keuze ${k+1} van ${SC.steps.length}`;
+  $('q').textContent = done ? 'Druk op SIMULEREN en kijk wat jouw aanpak doet.' : SC.steps[k].q;
+  const tried = new Set(attempts.map(a=>a.picks.slice(0,k+1).join('-')));
+  $('opts').innerHTML = done ? '' : SC.steps[k].o.map((o,j)=>`<button class="opt ${tried.has([...picks,j].join('-'))?'ghost':''}" data-j="${j}"><span class="ic">${o.i}</span>${o.t}</button>`).join('');
+  $('slots').innerHTML = SC.steps.map((s,j)=>`<div class="slot ${picks[j]!==undefined?'f':''}">${picks[j]!==undefined?SC.steps[j].o[picks[j]].i+' '+SC.steps[j].o[picks[j]].t:'Keuze '+(j+1)}</div>`).join('');
+  $('simBtn').disabled = !done; $('simBtn').classList.toggle('ready', done);
+  if(done) $('simBtn').focus();
+}
+$('opts').onclick = e=>{ const b=e.target.closest('.opt'); if(!b||running) return; picks.push(+b.dataset.j); tone(520+picks.length*120,.08,'triangle'); renderStep(); };
+$('slots').onclick = e=>{ if(running) return; const i=[...$('slots').children].indexOf(e.target.closest('.slot')); if(i>=0 && i<picks.length){ picks=picks.slice(0,i); renderStep(); } };
+$('simBtn').onclick = simulate;
+addEventListener('keydown', e=>{ if(e.code==='Space' && !$('simBtn').disabled && !running && document.activeElement.tagName!=='BUTTON'){ e.preventDefault(); simulate(); } });
+
+function outcome(p){
+  const v={welzijn:50,veiligheid:50,tijd:50,vertrouwen:50}; const evs=[];
+  p.forEach((j,k)=>{ const o=SC.steps[k].o[j]; evs.push({...o.ev,e:o.e,from:o}); });
+  for(const c of SC.combos) if(c.m.every((j,k)=>p[k]===j)) evs.push({...c.ev,e:c.e,combo:true});
+  evs.sort((a,b)=>a.at-b.at);
+  const steps=[]; for(const ev of evs){ for(const k in ev.e) v[k]=clamp(v[k]+ev.e[k]); steps.push({...ev,vals:{...v}}); }
+  const impact=Math.round((v.welzijn+v.veiligheid+v.tijd+v.vertrouwen)/4);
+  return {evs:steps, vals:v, impact};
+}
+
+async function simulate(){
+  if(running) return; running=true; ac();
+  const res = outcome(picks);
+  $('simBtn').disabled=true; $('simBtn').classList.remove('ready');
+  tone(180,.3,'square',.05); await wait(200);
+  const T=6500; let t0=performance.now(), idx=0, paused=0, cur={welzijn:50,veiligheid:50,tijd:50,vertrouwen:50};
+  await new Promise(done=>{
+    function frame(now){
+      const p=Math.min(1,(now-t0-paused)/T);
+      $('hand').setAttribute('transform',`rotate(${p*360*6} 15 15)`);
+      $('clockTxt').textContent = clockAt(p);
+      drawScene(p,cur);
+      if(idx<res.evs.length && p>=res.evs[idx].at){
+        const ev=res.evs[idx++]; cur=ev.vals; updInds(cur); drawScene(p,cur);
+        const f=$('freeze'); f.hidden=false; f.style.borderLeftColor = ev.v==='p'?'var(--good)':ev.v==='n'?'var(--bad)':'var(--mid)';
+        f.innerHTML=`<small>${ev.t}</small>${ev.s}`; tone(ev.v==='p'?880:ev.v==='n'?220:520,.18,'triangle');
+        const ps=performance.now(); setTimeout(()=>{ paused+=performance.now()-ps; requestAnimationFrame(frame); }, matchMedia('(prefers-reduced-motion:reduce)').matches?400:1500);
+        return;
+      }
+      if(p<1) requestAnimationFrame(frame); else done();
+    }
+    requestAnimationFrame(frame);
+  });
+  $('clockTxt').textContent=SC.clock[1];
+  await wait(500); $('freeze').hidden=true;
+  const prevBest = attempts.length ? Math.max(...attempts.map(a=>a.impact)) : null;
+  attempts.push({picks:[...picks], ...res});
+  showOutcome(res, prevBest);
+  running=false;
+}
+function clockAt(p){
+  const [a,b]=SC.clock;
+  if(a.includes(':')){ const toM=s=>{const[h,m]=s.split(':').map(Number);return h*60+m}; let s=toM(a), e=toM(b); if(e<s) e+=1440; const m=Math.round(s+(e-s)*p)%1440; return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
+  const s=+a.split(' ')[1], e=+b.split(' ')[1]; const d=Math.floor(p*(e-s)*5); return `Week ${s+Math.floor(d/5)}, dag ${d%5+1}`;
+}
+
+function showOutcome(res, prevBest){
+  $('choose').hidden=true; const o=$('outcome'); o.hidden=false;
+  const v=res.vals, badges=[];
+  if(v.tijd>=72) badges.push('Snelle beslisser'); if(v.vertrouwen>=78) badges.push('Teamspeler');
+  if(v.veiligheid>=85 && v.welzijn>=70) badges.push('De stille held');
+  if(prevBest!==null && res.impact>prevBest) badges.push('Tweede kans benut');
+  if(new Set(attempts.map(a=>a.picks.join('-'))).size>=3) badges.push('Ontdekkingsreiziger');
+  const verdict = res.impact>=75?'Sterke aanpak':res.impact>=55?'Werkt, maar het kan beter':'Dit liep niet goed af';
+  o.innerHTML = `<div class="step">Resultaat na ${SC.span}</div><h3>${verdict}</h3><div class="impact">${res.impact}<span style="font-size:22px;color:var(--mut)"> / 100 impact</span></div>
+    ${badges.length?`<div class="badges">${badges.map(b=>`<span class="badge">🏅 ${b}</span>`).join('')}</div>`:''}
+    <div class="chain">${res.evs.map(ev=>`<div class="lnk"><div class="a">${ev.combo?'<i>jouw combinatie van keuzes</i>':ev.from.i+' '+ev.from.t}</div><i>→</i><div class="b ${ev.v}">${ev.s}</div></div>`).join('')}</div>
+    <div class="msgk">${SC.msg}</div>
+    <button class="btn" id="retry">⟲ Probeer een andere aanpak</button> <button class="btn" id="saveRes">Resultaat opslaan of mailen</button><div id="rsSlot"></div>`;
+  $('retry').onclick = rewind;
+  $('saveRes').onclick = ()=>{ $('saveRes').remove(); const best=attempts.reduce((a,b)=>b.impact>a.impact?b:a);
+    RESULTS.mount($('rsSlot'), {score:best.impact, lines:[`Scenario: ${SC.n} (${SC.ctx})`, `${attempts.length} ${attempts.length===1?'poging':'pogingen'}, beste impact ${best.impact}/100`, ...attempts.map((a,i)=>`Poging ${i+1} (${a.impact}): ${a.picks.map((j,k)=>SC.steps[k].o[j].t).join(' → ')}`)], tip:SC.msg}, RUN_ID); };
+  renderCompare();
+}
+async function rewind(){
+  if(running) return; running=true;
+  $('sceneWrap').classList.add('rewind');
+  const T=900, t0=performance.now();
+  await new Promise(d=>{ (function f(now){ const p=Math.min(1,(now-t0)/T); $('hand').setAttribute('transform',`rotate(${-p*720} 15 15)`); $('clockTxt').textContent=clockAt(1-p); if(p<1) requestAnimationFrame(f); else d(); })(t0); });
+  tone(300,.2,'sine'); $('sceneWrap').classList.remove('rewind'); running=false; reset();
+}
+function renderCompare(){
+  if(attempts.length<2){ $('compare').hidden=true; return; }
+  const best=Math.max(...attempts.map(a=>a.impact));
+  $('compare').hidden=false;
+  $('compare').innerHTML = `<h3 class="disp">Jouw aanpakken naast elkaar</h3><div class="cmp">${attempts.slice(-4).map((a,i,arr)=>`<div class="c ${a.impact===best?'best':''}"><div class="step">Poging ${attempts.length-arr.length+i+1}</div><b>${a.impact}</b><ul>${a.picks.map((j,k)=>`<li>${SC.steps[k].o[j].t}</li>`).join('')}</ul><div class="mini">${IND.map(x=>`<span>${x.n}</span><div><em style="width:${a.vals[x.k]}%;background:${col(a.vals[x.k])}"></em></div>`).join('')}</div></div>`).join('')}</div>`;
+}
+
+// Scene illustrations react to progress (p) and current indicator values (v)
+function face(cx,cy,mood,skin='#F2C7A5'){ const m=(mood-50)/50; return `<circle cx="${cx}" cy="${cy}" r="22" fill="${skin}"/><circle cx="${cx-7}" cy="${cy-4}" r="2.6" fill="#1E1B3A"/><circle cx="${cx+7}" cy="${cy-4}" r="2.6" fill="#1E1B3A"/><path d="M${cx-9} ${cy+8} Q${cx} ${cy+8+m*9} ${cx+9} ${cy+8}" stroke="#1E1B3A" stroke-width="2.4" fill="none" stroke-linecap="round"/>`; }
+function drawScene(p,v){
+  const s=$('scene'); let h='';
+  if(SC.id==='zorg'){
+    const night = Math.sin(Math.min(1,p)*Math.PI); const sky = `hsl(${220-night*10},${40+night*20}%,${78-night*62}%)`;
+    const pulse=[...Array(12)].map((_,i)=>`${360+i*14},${118-(i%4===1?(v.veiligheid>45?22:6):0)+(i%4===2?8:0)}`).join(' ');
+    h=`<rect width="600" height="380" fill="#E9EEF7"/><rect x="40" y="40" width="170" height="140" rx="8" fill="${sky}" stroke="#C7D0E0" stroke-width="6"/><circle cx="${80+p*100}" cy="${90-night*20}" r="14" fill="${night>.3?'#F4F1C9':'#FFD66B'}"/>
+      <rect x="350" y="80" width="190" height="100" rx="12" fill="#1E2A44"/><polyline points="${pulse}" fill="none" stroke="${v.veiligheid>45?'#4ADE80':'#F87171'}" stroke-width="3"/>
+      <rect x="120" y="230" width="360" height="70" rx="14" fill="#fff" stroke="#C7D0E0" stroke-width="4"/><rect x="120" y="300" width="14" height="50" fill="#9AA6BD"/><rect x="466" y="300" width="14" height="50" fill="#9AA6BD"/>
+      <rect x="150" y="214" width="80" height="30" rx="12" fill="#DDE7F7"/>${face(190,206,v.welzijn)}
+      <rect x="230" y="218" width="220" height="30" rx="12" fill="#BFD3F2"/>
+      ${picks[0]===0?'<rect x="120" y="196" width="360" height="12" rx="6" fill="#9AA6BD"/>':''}
+      ${picks[0]===2&&p>.15?`<g>${face(530,238,Math.max(v.welzijn,60),'#D9A67E')}<rect x="506" y="262" width="48" height="70" rx="16" fill="#7B61FF"/></g>`:''}
+      ${picks[1]===1&&p>.55?'<circle cx="80" cy="300" r="26" fill="#FFE9A8" opacity=".75"/><rect x="72" y="310" width="16" height="30" fill="#C9B77A"/>':''}
+      <rect x="0" y="350" width="600" height="30" fill="#D5DDEA"/><rect width="600" height="380" fill="#0B1330" opacity="${night*.28}"/>`;
+  } else if(SC.id==='onderwijs'){
+    const tense = Math.max(0,(50-v.welzijn)/50), calm=Math.max(0,(v.vertrouwen-50)/50);
+    h=`<rect width="600" height="380" fill="#EAF6EF"/><rect x="60" y="30" width="480" height="120" rx="8" fill="#2F4F3F"/><text x="90" y="80" font-family="Nunito, Arial, sans-serif" font-weight="800" font-size="22" fill="#E8F5EC">Groepsopdracht: marketingplan</text>
+      <line x1="90" y1="104" x2="${90+300*Math.min(1,p+.1)}" y2="104" stroke="#E8F5EC" stroke-width="3" stroke-dasharray="10 8"/>
+      <rect x="140" y="250" width="320" height="24" rx="6" fill="#C9A77C"/><rect x="160" y="274" width="12" height="60" fill="#8E7556"/><rect x="428" y="274" width="12" height="60" fill="#8E7556"/>
+      <g transform="translate(${picks[1]===2&&p>.5?-60:0},0)">${face(220,210,v.welzijn,'#F2C7A5')}<rect x="196" y="232" width="48" height="60" rx="16" fill="#FF8A5B"/></g>
+      <g transform="translate(${picks[1]===2&&p>.5?60:0},0)">${face(380,210,v.welzijn,'#8D5B3E')}<rect x="356" y="232" width="48" height="60" rx="16" fill="#4E7CF5"/></g>
+      ${tense>.05?`<g stroke="#E0533D" stroke-width="4" stroke-linecap="round" opacity="${Math.min(1,tense*1.6)}"><path d="M290 180 l10 -14 l6 12 l10 -14"/><path d="M270 200 l-16 -8"/><path d="M330 200 l16 -8"/></g>`:''}
+      ${calm>.1?`<path d="M280 196 q20 -24 40 0" stroke="#1FA971" stroke-width="5" fill="none" opacity="${Math.min(1,calm*1.8)}"/>`:''}
+      ${[80,520].map((x,i)=>`${face(x,300,55+(i?5:-5)+ (v.vertrouwen-50)/2,'#E7B994')}<rect x="${x-24}" y="322" width="48" height="50" rx="16" fill="#9AC7A8"/>`).join('')}`;
+  } else {
+    const smoke = Math.max(0, Math.min(1, (60 - v.veiligheid)/50 + p*.35));
+    const alarm = picks[0]===1 && p>.08 && Math.floor(p*40)%2===0;
+    const floors=[0,1,2,3].map(f=>{ const y=280-f*62; const evac = p>.4 && picks[1]===1; return `<rect x="170" y="${y}" width="260" height="58" fill="${f===2?'#F2E2DE':'#F6F4F2'}" stroke="#B9A9A4" stroke-width="3"/>${[0,1,2,3].map(w=>`<rect x="${188+w*60}" y="${y+14}" width="40" height="30" rx="3" fill="${f===2&&smoke>.2?'#B8B0AE':'#BFD9F2'}"/>`).join('')}${!evac||f===0?`<circle cx="${200+((f*37)%180)}" cy="${y+40}" r="6" fill="#1E1B3A" opacity="${evac&&f>0?0:1}"/>`:''}`; }).join('');
+    const people = p>.45 && picks[1]===1 ? [...Array(8)].map((_,i)=>`<circle cx="${470+(i%4)*22}" cy="${318+Math.floor(i/4)*18}" r="7" fill="#1E1B3A"/>`).join('') : picks[1]===2 && p>.45 ? [...Array(8)].map((_,i)=>`<circle cx="${210+i*24}" cy="${326}" r="6" fill="#1E1B3A"/>`).join('') : '';
+    h=`<rect width="600" height="380" fill="#DDE6F0"/><rect x="0" y="340" width="600" height="40" fill="#A7B3BF"/>${floors}
+      <rect x="170" y="30" width="260" height="30" fill="#8C7A75"/>
+      ${[0,1,2,3,4].map(k=>`<circle cx="${240+k*30+Math.sin(p*9+k)*8}" cy="${150-k*18-p*40}" r="${18+k*5}" fill="#6E6A70" opacity="${smoke*(0.55-k*.08)}"/>`).join('')}
+      <circle cx="400" cy="46" r="10" fill="${alarm?'#E0533D':'#7A6F6B'}"/>
+      <rect x="450" y="290" width="110" height="46" rx="6" fill="none" stroke="#1FA971" stroke-width="3" stroke-dasharray="6 5"/><text x="505" y="284" text-anchor="middle" font-family="Nunito, Arial, sans-serif" font-weight="800" font-size="14" fill="#1FA971">verzamelpunt</text>${people}
+      ${p>.68?`<rect x="${600-Math.min(1,(p-.68)*5)*140}" y="300" width="120" height="42" rx="8" fill="#E0533D"/><circle cx="${620-Math.min(1,(p-.68)*5)*140}" cy="344" r="9" fill="#1E1B3A"/><circle cx="${690-Math.min(1,(p-.68)*5)*140}" cy="344" r="9" fill="#1E1B3A"/>`:''}`;
+  }
+  s.innerHTML=h;
+}
+</script>
+</body>
+</html>
