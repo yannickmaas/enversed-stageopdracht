@@ -386,7 +386,7 @@ function loadZone(i){
 function inRect(x,y,[rx,ry,rw,rh]){ return x>=rx&&x<=rx+rw&&y>=ry&&y<=ry+rh; }
 function onPlank(x,y){ return blocks.some(b=>{ if(b.t!=='bridge') return false; const a=rad(b.a), dx=x-b.x, dy=y-b.y; const u=dx*Math.cos(a)+dy*Math.sin(a), v=-dx*Math.sin(a)+dy*Math.cos(a); return Math.abs(u)<=PLANK_L/2 && Math.abs(v)<=PLANK_W/2; }); }
 function inWater(x,y){ return Z.water.some(r=>inRect(x,y,r)) && !onPlank(x,y); }
-function blockAt(x,y){ return [...blocks].reverse().find(b=> b.t==='bridge' ? (()=>{ const a=rad(b.a), dx=x-b.x, dy=y-b.y; return Math.abs(dx*Math.cos(a)+dy*Math.sin(a))<=PLANK_L/2 && Math.abs(-dx*Math.sin(a)+dy*Math.cos(a))<=PLANK_W/2+6; })() : Math.hypot(x-b.x,y-b.y)<38); }
+function blockAt(x,y){ return [...blocks].reverse().find(b=> !b.cam && b.t==='bridge' ? (()=>{ const a=rad(b.a), dx=x-b.x, dy=y-b.y; return Math.abs(dx*Math.cos(a)+dy*Math.sin(a))<=PLANK_L/2 && Math.abs(-dx*Math.sin(a)+dy*Math.cos(a))<=PLANK_W/2+6; })() : !b.cam && Math.hypot(x-b.x,y-b.y)<38); } // camera chips (b.cam) are moved by hand, not by mouse
 
 function renderTray(){
   const L={arrow:['Driehoek','wijst de weg'],bridge:['Plank','loopbrug over afzetting'],split:['Rol','splitst de stroom'],cube:['Blokje','keert de stroom'],erase:['Oppakken','blok terug']};
@@ -443,8 +443,9 @@ function update(dt){
     const a=rad(pp.a); pp.x+=Math.cos(a)*pp.v*dt; pp.y+=Math.sin(a)*pp.v*dt; pp.ph+=dt*pp.v/9;
     for(const b of blocks){
       const d=Math.hypot(pp.x-b.x,pp.y-b.y);
-      if(b.t==='arrow' && d<R_TRI && pp.hit[b.id]!==1){ steer(pp,b.a,b); pp.hit={}; pp.hit[b.id]=1; }
-      if(b.t==='split' && d<R_ROL && pp.hit[b.id]!==1){ b.alt^=1; steer(pp,pp.a+(b.alt?-90:90),b); pp.hit={}; pp.hit[b.id]=1; }
+      // b.R: trigger radius of a physical chip (its size on the screen); b.cam split: configurable branches
+      if(b.t==='arrow' && d<(b.R||R_TRI) && pp.hit[b.id]!==1){ steer(pp,b.a,b); pp.hit={}; pp.hit[b.id]=1; }
+      if(b.t==='split' && d<(b.R||R_ROL) && pp.hit[b.id]!==1){ const turn=b.cam?CAM.splitTurn(b,pp):((b.alt^=1)?-90:90); steer(pp,pp.a+turn,b); pp.hit={}; pp.hit[b.id]=1; }
       if(b.t==='cube' && d<R_CUBE && pp.hit[b.id]!==1){ pp.a+=180; const n=Math.atan2(pp.y-b.y,pp.x-b.x); pp.x=b.x+Math.cos(n)*(R_CUBE+2); pp.y=b.y+Math.sin(n)*(R_CUBE+2); pp.hit={}; pp.hit[b.id]=1; }
     }
     for(const [k,cp] of Object.entries(cps)) if(!pp.seen[k] && Math.hypot(pp.x-cp.x,pp.y-cp.y)<R_CP){ pp.seen[k]=1; if(!cp.done){ cp.n++; if(cp.n%4===0) renderCases(); if(cp.n>=NEED) caseDone(k); } }
@@ -501,7 +502,7 @@ function draw(t){
   for(const b of blocks) if(b.t==='bridge'){ let l=0; if(b.drop>0){ b.drop=Math.max(0,b.drop-.08); l=b.drop*b.drop*40; } wood(b.t,b.x,b.y-l,b.a,l); }
   endpoint(t);
   for(const pp of people){ if(pp.fall>0){ ctx.globalAlpha=Math.max(0,1-pp.fall*1.2); ctx.fillStyle='#22252B'; ctx.font='800 20px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('?',pp.x,pp.y-10-pp.fall*20); pp.alpha=1-pp.fall; person(pp); ctx.globalAlpha=1; } else person(pp); }
-  for(const b of blocks) if(b.t!=='bridge'){ let l=0; if(b.drop>0){ b.drop=Math.max(0,b.drop-.08); l=b.drop*b.drop*40; } if(drag&&drag.b===b&&drag.moved) l=14; wood(b.t,b.x,b.y-l,b.a,l); }
+  for(const b of blocks) if(b.t!=='bridge'&&!b.cam){ let l=0; if(b.drop>0){ b.drop=Math.max(0,b.drop-.08); l=b.drop*b.drop*40; } if(drag&&drag.b===b&&drag.moved) l=14; wood(b.t,b.x,b.y-l,b.a,l); }
   plant(24,24); plant(W-24,24); plant(24,H-24); plant(W-24,H-24);
   entrance(t);
   if(celebrate>0){ const a=Math.min(1,celebrate*.8,(3-celebrate)*3), by=freeY(W,140); ctx.globalAlpha=a; ctx.fillStyle='rgba(58,42,26,.55)'; ctx.fillRect(0,by-70,W,140); ctx.fillStyle='#fff'; ctx.font='800 72px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('Arena voltooid!',W/2,by-6); ctx.font='600 26px "Baloo 2",sans-serif'; ctx.fillText('Op naar '+ZONES[(zi+1)%ZONES.length].n.split(' · ')[1].toLowerCase(),W/2,by+44); ctx.globalAlpha=1; }
@@ -525,7 +526,7 @@ window.__pm={place:(x,y,t,a=90)=>{ blocks.push({id:++bid,t,x,y,a,alt:0}); }, sta
 <script>
 // ===== Camera link: Python/OpenCV (camera_bridge.py) -> WebSocket -> canvas =====
 // Optional: if the bridge is not running, the game plays normally and reconnects in the background.
-// Phase 1 only shows a cursor; the game state is not changed.
+// The white test object drives a cursor; the red and green chips act as blocks in the simulation.
 //
 // Coordinates: the bridge sends nx/ny as a fraction of the *camera frame*, not of the canvas. The canvas
 // is only part of the monitor and the monitor only part of the camera frame, so nx*W squeezes the cursor
@@ -540,11 +541,26 @@ window.CAM=(()=>{
   const RING_PX=Math.min(400,Math.max(30,+(location.search.match(/[?&]camring=(\d+)/)||[])[1]||150));
   let ws=null, retryT=null, retryMs=RETRY_MIN, connected=false, lastMsg=0, lastSeen=0, objs=[], cur=null, lastDraw=0, failed=false, warned=false, raw=null;
   let cal=null, calib=null, ringR=100;
+
+  // ---- Physical chips (fiches) ----
+  // The bridge reports each chip with kind, position, rim point (size) and, for the red chip, the yellow
+  // segment as heading point. Each chip becomes a real block in the existing simulation:
+  //   redirect (red)  -> 'arrow' block: people walk on in the direction of the yellow segment
+  //   split    (green)-> 'split' block: people turn into one of two branches, relative to their own walking
+  //                       direction (same rule as the wooden roll). Edit turns/ratio below to change it.
+  const CHIPS={
+    redirect:{t:'arrow', name:'rode fiche'},
+    split:{t:'split', name:'groene fiche', turns:[-90,90], ratio:.5}, // turns: degrees relative to walking direction (negative = left); ratio: share of people taking turns[0]
+  };
+  const CHIP_GRACE=300, CHIP_PAD=6, CHIP_POS_DB=4, CHIP_ANG_DB=4; // ms kept after loss; trigger margin; dead bands (canvas px / degrees)
+  const chips=new Map(); // bridge id -> {kind, b (block in the simulation), seen, held, wet}
+  const angDiff=(a,b)=>Math.abs(((a-b)%360+540)%360-180);
   let debug=/[?&]camdebug\b/.test(location.search); // open index.html?camdebug to show raw coordinates on the canvas
   const listeners=new Set(), el=$('camStatus');
   const LABEL={off:'Camera niet verbonden',on:'Camera verbonden',seen:'Camera verbonden · object in beeld',cal:'Camera kalibreren…'};
   const LABEL_UNCAL={on:'Camera verbonden · niet gekalibreerd (K)',seen:'Object in beeld · niet gekalibreerd (K)'};
-  function status(s){ const txt=(!cal&&LABEL_UNCAL[s])||LABEL[s]; if(el&&(el.dataset.s!==s||el.lastChild.textContent!==txt)){ el.dataset.s=s; el.lastChild.textContent=txt; } }
+  function status(s){ let txt=(!cal&&LABEL_UNCAL[s])||LABEL[s];
+    if(s==='seen'&&chips.size) txt=[...new Set([...chips.values()].map(c=>CHIPS[c.kind].name))].join(' + ')+' in beeld'+(cal?'':' · niet gekalibreerd (K)'); if(el&&(el.dataset.s!==s||el.lastChild.textContent!==txt)){ el.dataset.s=s; el.lastChild.textContent=txt; } }
   const num=v=>typeof v==='number'&&Number.isFinite(v), c01=v=>Math.min(1,Math.max(0,v));
   // Only accept normalized values (0..1). Do not silently clamp values outside that range (e.g. pixels):
   // that would leave the cursor stuck in a corner and hide the real error.
@@ -589,6 +605,8 @@ window.CAM=(()=>{
     return [Math.min(W,Math.max(0,p[0])), Math.min(H,Math.max(0,p[1]))];
   }
 
+  function mapRaw(nx,ny){ return cal?applyH(cal,nx,ny):[nx*W,ny*H]; } // helper points (rim, heading): no clamping
+
   // ---- Calibration: hold the object still on each target; the averaged raw position is recorded ----
   function startCal(){ calib={pts:[],buf:[],seen:false,near:false}; cur=null; console.info('[camera] kalibratie gestart'); }
   function stopCal(){ calib=null; }
@@ -632,16 +650,72 @@ window.CAM=(()=>{
     lastMsg=performance.now(); raw=m;
     let list=[];
     if(m.detected){
-      if(Array.isArray(m.objects)) list=m.objects.filter(o=>o&&inRange(o.nx,o.ny)).map((o,i)=>({id:String(o.id??i),color:String(o.color??''),nx:c01(o.nx),ny:c01(o.ny),angle:num(o.angle)?o.angle:null,area:num(o.area)?o.area:0}));
+      const pt=v=>Array.isArray(v)&&v.length===2&&num(v[0])&&num(v[1])&&Math.abs(v[0]-.5)<1&&Math.abs(v[1]-.5)<1?[v[0],v[1]]:null;
+      if(Array.isArray(m.objects)) list=m.objects.filter(o=>o&&inRange(o.nx,o.ny)).map((o,i)=>({id:String(o.id??i),color:String(o.color??''),nx:c01(o.nx),ny:c01(o.ny),angle:num(o.angle)?o.angle:null,area:num(o.area)?o.area:0,
+        kind:CHIPS[o.kind]?o.kind:'probe', rim:pt(o.rim), head:pt(o.head), held:o.held===true}));
       else if(inRange(m.nx,m.ny)) list=[{id:'0',color:'',nx:c01(m.nx),ny:c01(m.ny),angle:null,area:0}];
     }
-    if(calib) calSample(list[0]||null);
+    if(calib) calSample(list.find(o=>o.kind==='probe')||list[0]||null);
     setObjs(list);
   }
   function setObjs(list){
-    objs=list.map(o=>{ const p=toCanvas(o.nx,o.ny); return p&&{...o,x:p[0],y:p[1]}; }).filter(Boolean);
-    if(objs.length) lastSeen=performance.now();
+    objs=list.map(o=>{ const p=toCanvas(o.nx,o.ny); if(!p) return null; const q={...o,x:p[0],y:p[1]};
+      if(CHIPS[o.kind]){ // size and heading via the same calibration as the position (covers perspective and mirroring)
+        const c=mapRaw(o.nx,o.ny), rim=o.rim&&mapRaw(o.rim[0],o.rim[1]), hd=o.head&&mapRaw(o.head[0],o.head[1]);
+        q.r=c&&rim?Math.min(160,Math.max(12,Math.hypot(rim[0]-c[0],rim[1]-c[1]))):34;
+        q.a=c&&hd&&Math.hypot(hd[0]-c[0],hd[1]-c[1])>1?(Math.atan2(hd[1]-c[1],hd[0]-c[0])*180/Math.PI+360)%360:null; }
+      return q; }).filter(Boolean);
+    if(objs.some(o=>o.kind==='probe')) lastSeen=performance.now();
+    syncChips(performance.now());
     listeners.forEach(f=>{ try{ f(objs); }catch(e){ console.error(e); } });
+  }
+
+  // ---- Chips -> blocks in the simulation ----
+  function syncChips(now){
+    if(calib) return; // positions are not reliable during calibration
+    for(const o of objs){ if(!CHIPS[o.kind]) continue;
+      let c=chips.get(o.id);
+      if(!c){ c={kind:o.kind,b:{id:++bid,t:CHIPS[o.kind].t,x:o.x,y:o.y,a:o.a??90,alt:0,cam:o.kind,R:o.r+CHIP_PAD,inA:90,acc:0}}; chips.set(o.id,c); touch(); }
+      const b=c.b; let moved=false;
+      if(Math.hypot(o.x-b.x,o.y-b.y)>CHIP_POS_DB){ b.x=o.x; b.y=o.y; moved=true; }
+      if(o.a!=null&&angDiff(o.a,b.a)>CHIP_ANG_DB){ b.a=o.a; moved=true; }
+      b.R=o.r+CHIP_PAD; c.r=o.r; c.seen=now; c.held=o.held;
+      if(moved) touch(); // physical play counts as activity (no idle reset)
+    }
+  }
+  function updateChips(now){
+    for(const [id,c] of chips){
+      const b=c.b, gone=now-c.seen>CHIP_GRACE;
+      c.wet=Z.water.some(r=>inRect(b.x,b.y,r)); // the existing rule: in the construction zone only a plank works
+      const on=!gone&&!c.wet&&!calib, i=blocks.indexOf(b);
+      if(on&&i<0) blocks.push(b); else if(!on&&i>=0) blocks.splice(i,1); // blocks is replaced on a new zone: re-added here
+      if(gone) chips.delete(id);
+    }
+  }
+  // Split branch for a chip, called by the simulation when a person reaches it.
+  function splitTurn(b,pp){
+    const cfg=CHIPS.split, d=((pp.a-b.inA)%360+540)%360-180; b.inA+=d*.2; // smoothed incoming direction, for the visual
+    b.acc+=cfg.ratio; if(b.acc>=1){ b.acc-=1; return cfg.turns[0]; } return cfg.turns[1];
+  }
+  // Visuals: blue/navy only. Red, yellow, green and white are detection colors and could be seen as a chip.
+  function chevrons(c,x,y,ang,from,len,t,alpha){
+    const a=ang*Math.PI/180, ca=Math.cos(a), sa=Math.sin(a), gap=26, off=(t/22)%gap;
+    for(let s=from+off; s<from+len; s+=gap){ const px=x+ca*s, py=y+sa*s, f=Math.min(1,(s-from)/18,(from+len-s)/30);
+      c.save(); c.globalAlpha=alpha*f; c.translate(px,py); c.rotate(a); c.lineCap='round'; c.lineJoin='round';
+      c.beginPath(); c.moveTo(-6,-8); c.lineTo(3,0); c.lineTo(-6,8);
+      c.lineWidth=8; c.strokeStyle='rgba(34,52,79,.55)'; c.stroke(); c.lineWidth=4; c.strokeStyle='#2F7FD1'; c.stroke(); c.restore(); }
+  }
+  function drawChips(c,t){
+    for(const ch of chips.values()){ const b=ch.b, r=ch.r+10, live=!ch.held&&!ch.wet;
+      c.save();
+      c.lineWidth=6; c.strokeStyle='rgba(34,52,79,.4)'; c.beginPath(); c.arc(b.x,b.y,r,0,7); c.stroke();
+      c.lineWidth=2.5; c.strokeStyle=live?'#2F7FD1':'#9AA3AF'; if(!live) c.setLineDash([7,7]); c.beginPath(); c.arc(b.x,b.y,r,0,7); c.stroke(); c.setLineDash([]);
+      if(ch.wet){ const y=b.y+r+34<H?b.y+r+28:b.y-r-28; pill(c,'In de afgezette zone werkt alleen een plank',Math.min(W-220,Math.max(220,b.x)),y); }
+      else if(ch.kind==='redirect') chevrons(c,b.x,b.y,b.a,r+4,120,t,.9);
+      else { const inA=b.inA, cfg=CHIPS.split;
+        { const a=(inA+180)*Math.PI/180; chevrons(c,b.x+Math.cos(a)*(r+70),b.y+Math.sin(a)*(r+70),inA,0,60,t,.3); } // where people come from (fainter, pointing at the chip)
+        cfg.turns.forEach((tr,i)=>{ const share=i?1-cfg.ratio:cfg.ratio; if(share>0) chevrons(c,b.x,b.y,inA+tr,r+4,110,t,.35+.55*Math.min(1,share*2)); }); }
+      c.restore(); }
   }
 
   // Thin ring just outside the physical object. No white: the bridge detects white, so a white ring
@@ -683,7 +757,7 @@ window.CAM=(()=>{
 
   function debugInfo(c){ // raw input: helps verify mirroring/scaling
     const p=objs[0], txt=!connected?'camdebug: niet verbonden':!raw?'camdebug: nog geen bericht':
-      `camdebug: detected=${raw.detected} nx=${num(raw.nx)?raw.nx.toFixed(3):raw.nx} ny=${num(raw.ny)?raw.ny.toFixed(3):raw.ny}`+(p?` → canvas ${Math.round(p.x)}, ${Math.round(p.y)} van ${W}×${H}`:'')+` · kalibratie ${cal?'aan':'uit'}`;
+      `camdebug: detected=${raw.detected} nx=${num(raw.nx)?raw.nx.toFixed(3):raw.nx} ny=${num(raw.ny)?raw.ny.toFixed(3):raw.ny}`+(p?` → canvas ${Math.round(p.x)}, ${Math.round(p.y)} van ${W}×${H}`:'')+` · kalibratie ${cal?'aan':'uit'}`+[...chips.values()].map(ch=>` · ${ch.kind==='split'?'splits':'stroom '+Math.round(ch.b.a)+'°'} r=${Math.round(ch.r)}${ch.held?' (vast)':''}`).join('');
     c.save(); c.font='700 16px "Baloo 2",sans-serif'; c.textAlign='left'; c.textBaseline='middle';
     const w=c.measureText(txt).width+24; c.fillStyle='rgba(34,52,79,.85)'; c.beginPath(); c.roundRect(52,10,w,34,10); c.fill(); c.fillStyle='#fff'; c.fillText(txt,64,28);
     if(p){ c.fillStyle='#23A99A'; c.beginPath(); c.arc(p.x,p.y,5,0,7); c.fill(); } // unsmoothed position
@@ -693,11 +767,13 @@ window.CAM=(()=>{
     try{
       const dt=Math.min(.1,Math.max(0,(t-(lastDraw||t))/1000)), now=performance.now(); lastDraw=t;
       if(now-lastMsg>STALE){ if(connected&&objs.length) setObjs([]); if(calib) calSample(null); } // bridge stalled: show nothing
+      updateChips(now);
       status(calib?'cal':!connected?'off':objs.length?'seen':'on');
       ringR=RING_PX*W/Math.max(1,cv.getBoundingClientRect().width); // screen px -> canvas units (CSS scaling)
       if(debug) debugInfo(c);
       if(calib){ drawCal(c,now); return; }
-      const p=objs[0]; // phase 1: one object drives the cursor
+      drawChips(c,t);
+      const p=objs.find(o=>o.kind==='probe'); // the white test object drives the cursor; chips act on the simulation
       if(p){
         if(!cur||Math.hypot(p.x-cur.x,p.y-cur.y)>ringR*2) cur={x:p.x,y:p.y,a:cur?cur.a:0}; // big jump: no gliding across the board
         else { const k=1-Math.exp(-dt*18); cur.x+=(p.x-cur.x)*k; cur.y+=(p.y-cur.y)*k; }
@@ -710,17 +786,19 @@ window.CAM=(()=>{
     }catch(e){ if(!failed){ failed=true; console.error('[camera] overlay-fout, game loopt door:',e); } }
   }
   // Does the object (cursor ring) cover this area? Used to keep game texts out from under the object.
-  const overlaps=(x,y,w,h)=>!!cur&&cur.a>.1&&cur.x+ringR>x&&cur.x-ringR<x+w&&cur.y+ringR>y&&cur.y-ringR<y+h;
-  function coversScreen(r){ if(!cur||cur.a<=.1) return false; const b=cv.getBoundingClientRect(), sx=b.width/W, sy=b.height/H;
+  const hitBox=(cx,cy,rr,x,y,w,h)=>cx+rr>x&&cx-rr<x+w&&cy+rr>y&&cy-rr<y+h;
+  const overlaps=(x,y,w,h)=>(!!cur&&cur.a>.1&&hitBox(cur.x,cur.y,ringR,x,y,w,h))||[...chips.values()].some(ch=>hitBox(ch.b.x,ch.b.y,ch.r+16,x,y,w,h));
+  function coversScreen(r){ if((!cur||cur.a<=.1)&&!chips.size) return false; const b=cv.getBoundingClientRect(), sx=b.width/W, sy=b.height/H;
     return overlaps((r.left-b.left)/sx,(r.top-b.top)/sy,r.width/sx,r.height/sy); }
 
   cal=loadCal(); // after all helpers above are defined
   connect();
   if(/[?&]camcal\b/.test(location.search)) startCal(); // index.html?camcal starts calibration right away
   return {
-    draw, toCanvas, overlaps, coversScreen, setDebug:v=>{ debug=!!v; },
+    draw, toCanvas, overlaps, coversScreen, splitTurn, setDebug:v=>{ debug=!!v; },
     calibrate:startCal, resetCalibration:()=>{ cal=null; saveCal(); },
-    state:()=>({connected, calibrated:!!cal, calibrating:!!calib, objects:objs.map(o=>({...o})), cursor:cur?{x:cur.x,y:cur.y,live:!!cur.live,a:cur.a}:null, ringR}),
+    state:()=>({connected, calibrated:!!cal, calibrating:!!calib, objects:objs.map(o=>({...o})), cursor:cur?{x:cur.x,y:cur.y,live:!!cur.live,a:cur.a}:null, ringR,
+      chips:[...chips.entries()].map(([id,ch])=>({id,kind:ch.kind,x:ch.b.x,y:ch.b.y,angle:ch.b.a,r:ch.r,held:!!ch.held,active:blocks.includes(ch.b)}))}),
     onUpdate:f=>{ listeners.add(f); return ()=>listeners.delete(f); }
   };
 })();
