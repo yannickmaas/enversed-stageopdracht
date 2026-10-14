@@ -71,6 +71,8 @@ button:focus-visible,a:focus-visible{outline:5px solid #fff;outline-offset:3px}
 #camStatus[data-s=on] i{background:#23A99A}
 #camStatus[data-s=seen] i{background:#FFC93C;box-shadow:0 0 0 3px rgba(255,201,60,.35)}
 #camStatus[data-s=off]{opacity:.7}
+#camStatus[data-s=cal] i{background:#FF6B5B;box-shadow:0 0 0 3px rgba(255,107,91,.35)}
+#toast.cam-low,.cp.cam-low{top:auto;bottom:32px} /* moved away from the physical object on the screen */
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -296,10 +298,13 @@ function tone(f,d=.08,t='triangle',v=.06){const c=ac(); if(!c||c.state!=='runnin
 function casePop(c){ // clear explanation card for a completed stand
   const el=document.createElement('div'); el.className='cp';
   el.innerHTML=`<div class="cp-k">Je ontdekte een project van Enversed Studios</div><div class="cp-h"><span>${c.ic}</span>${c.n}</div><p>${c.wat}</p><p class="cp-w">${c.waarom}</p>`;
-  document.body.appendChild(el); setTimeout(()=>el.classList.add('out'),5600); setTimeout(()=>el.remove(),6200);
+  document.body.appendChild(el); camAvoid(el); setTimeout(()=>el.classList.add('out'),5600); setTimeout(()=>el.remove(),6200);
   document.querySelectorAll('.cp').forEach((o,i,a)=>{ if(i<a.length-1) o.remove(); });
 }
-function toast(html){ const t=document.createElement('div'); t.className='t'; t.innerHTML=html; $('toast').appendChild(t); setTimeout(()=>t.remove(),2700); while($('toast').children.length>3) $('toast').firstChild.remove(); }
+// Keep messages out from under the physical object lying on the screen (camera cursor).
+function camAvoid(el){ el.classList.remove('cam-low'); if(window.CAM&&CAM.coversScreen(el.getBoundingClientRect())) el.classList.add('cam-low'); }
+function freeY(w,h){ if(window.CAM) for(const y of [H/2,H*.25,H*.75]) if(!CAM.overlaps(W/2-w/2,y-h/2,w,h)) return y; return H/2; }
+function toast(html){ const t=document.createElement('div'); t.className='t'; t.innerHTML=html; $('toast').appendChild(t); camAvoid($('toast')); setTimeout(()=>t.remove(),2700); while($('toast').children.length>3) $('toast').firstChild.remove(); }
 // ---- Wooden toy blocks ----
 const WOOD={arrow:['#E8453C','#B8322B','#F26B62'],split:['#2F7FD1','#225F9E','#5C9DE0'],cube:['#F2B705','#C08F00','#F8CD45'],bridge:['#D9A86C','#B5874F','#E8C390']};
 function grain(c,x,y,w,h,col){ c.save(); c.beginPath(); c.rect(x,y,w,h); c.clip(); c.strokeStyle=col; c.globalAlpha=.35; c.lineWidth=1.5; for(let i=0;i<5;i++){ c.beginPath(); c.moveTo(x,y+6+i*(h/5)); c.bezierCurveTo(x+w*.3,y+2+i*(h/5),x+w*.6,y+10+i*(h/5),x+w,y+5+i*(h/5)); c.stroke(); } c.restore(); }
@@ -499,8 +504,8 @@ function draw(t){
   for(const b of blocks) if(b.t!=='bridge'){ let l=0; if(b.drop>0){ b.drop=Math.max(0,b.drop-.08); l=b.drop*b.drop*40; } if(drag&&drag.b===b&&drag.moved) l=14; wood(b.t,b.x,b.y-l,b.a,l); }
   plant(24,24); plant(W-24,24); plant(24,H-24); plant(W-24,H-24);
   entrance(t);
-  if(celebrate>0){ const a=Math.min(1,celebrate*.8,(3-celebrate)*3); ctx.globalAlpha=a; ctx.fillStyle='rgba(58,42,26,.55)'; ctx.fillRect(0,H/2-70,W,140); ctx.fillStyle='#fff'; ctx.font='800 72px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('Arena voltooid!',W/2,H/2-6); ctx.font='600 26px "Baloo 2",sans-serif'; ctx.fillText('Op naar '+ZONES[(zi+1)%ZONES.length].n.split(' · ')[1].toLowerCase(),W/2,H/2+44); ctx.globalAlpha=1; }
-  if(performance.now()-lastTouch>12000 && !blocks.length && celebrate<=0){ ctx.fillStyle='rgba(58,42,26,.6)'; ctx.beginPath(); ctx.roundRect(W/2-360,H/2-32,720,64,32); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='700 26px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(`Leg blokken: langs de Enversed-stands naar ${Z.end.ic} ${Z.end.n}`,W/2,H/2); }
+  if(celebrate>0){ const a=Math.min(1,celebrate*.8,(3-celebrate)*3), by=freeY(W,140); ctx.globalAlpha=a; ctx.fillStyle='rgba(58,42,26,.55)'; ctx.fillRect(0,by-70,W,140); ctx.fillStyle='#fff'; ctx.font='800 72px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('Arena voltooid!',W/2,by-6); ctx.font='600 26px "Baloo 2",sans-serif'; ctx.fillText('Op naar '+ZONES[(zi+1)%ZONES.length].n.split(' · ')[1].toLowerCase(),W/2,by+44); ctx.globalAlpha=1; }
+  if(performance.now()-lastTouch>12000 && !blocks.length && celebrate<=0 && !(window.CAM&&CAM.state().calibrating)){ const hy=freeY(720,64); ctx.fillStyle='rgba(58,42,26,.6)'; ctx.beginPath(); ctx.roundRect(W/2-360,hy-32,720,64,32); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='700 26px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(`Leg blokken: langs de Enversed-stands naar ${Z.end.ic} ${Z.end.n}`,W/2,hy); }
 }
 function loop(now){ const dt=Math.min(.05,(now-last)/1000); last=now; update(dt); draw(now); if(window.CAM) CAM.draw(ctx,now); if(Math.floor(now/200)!==loop.h){ loop.h=Math.floor(now/200); hud(); } raf=requestAnimationFrame(loop); }
 $('resBtn').onclick=()=>{ touch();
@@ -521,19 +526,94 @@ window.__pm={place:(x,y,t,a=90)=>{ blocks.push({id:++bid,t,x,y,a,alt:0}); }, sta
 // ===== Camera link: Python/OpenCV (camera_bridge.py) -> WebSocket -> canvas =====
 // Optional: if the bridge is not running, the game plays normally and reconnects in the background.
 // Phase 1 only shows a cursor; the game state is not changed.
+//
+// Coordinates: the bridge sends nx/ny as a fraction of the *camera frame*, not of the canvas. The canvas
+// is only part of the monitor and the monitor only part of the camera frame, so nx*W squeezes the cursor
+// into a small region. A 4-point calibration (press K, place the object on the four targets) yields a
+// perspective transform camera (nx,ny) -> canvas (x,y) that also covers mirroring and rotation.
 window.CAM=(()=>{
-  const URL_='ws://127.0.0.1:8765', RETRY_MIN=1000, RETRY_MAX=8000, STALE=1500, LOST_GRACE=250;
+  const URL_='ws://127.0.0.1:8765', RETRY_MIN=1000, RETRY_MAX=8000, STALE=1500, LOST_GRACE=250, FADE_MS=1200;
+  // Calibration targets are inset so the whole object fits on the canvas; the transform extrapolates to the edges.
+  const CAL_KEY='pm-camera-calibration-v1', CAL_INSET=.15, CAL_HOLD=900, CAL_STILL=.012, CAL_MOVE=.05, OFF_CANVAS=60;
+  // Cursor ring radius in screen pixels. It must lie just outside the physical object, otherwise the object
+  // hides it. The default fits an AirPods case on a ~24" monitor; override with index.html?camring=180.
+  const RING_PX=Math.min(400,Math.max(30,+(location.search.match(/[?&]camring=(\d+)/)||[])[1]||150));
   let ws=null, retryT=null, retryMs=RETRY_MIN, connected=false, lastMsg=0, lastSeen=0, objs=[], cur=null, lastDraw=0, failed=false, warned=false, raw=null;
+  let cal=null, calib=null, ringR=100;
   let debug=/[?&]camdebug\b/.test(location.search); // open index.html?camdebug to show raw coordinates on the canvas
   const listeners=new Set(), el=$('camStatus');
-  const LABEL={off:'Camera niet verbonden',on:'Camera verbonden',seen:'Camera verbonden · object in beeld'};
-  function status(s){ if(el&&el.dataset.s!==s){ el.dataset.s=s; el.lastChild.textContent=LABEL[s]; } }
+  const LABEL={off:'Camera niet verbonden',on:'Camera verbonden',seen:'Camera verbonden · object in beeld',cal:'Camera kalibreren…'};
+  const LABEL_UNCAL={on:'Camera verbonden · niet gekalibreerd (K)',seen:'Object in beeld · niet gekalibreerd (K)'};
+  function status(s){ const txt=(!cal&&LABEL_UNCAL[s])||LABEL[s]; if(el&&(el.dataset.s!==s||el.lastChild.textContent!==txt)){ el.dataset.s=s; el.lastChild.textContent=txt; } }
   const num=v=>typeof v==='number'&&Number.isFinite(v), c01=v=>Math.min(1,Math.max(0,v));
   // Only accept normalized values (0..1). Do not silently clamp values outside that range (e.g. pixels):
   // that would leave the cursor stuck in a corner and hide the real error.
   const inRange=(nx,ny)=>{ const ok=num(nx)&&num(ny)&&nx>=-.02&&nx<=1.02&&ny>=-.02&&ny<=1.02;
     if(!ok&&num(nx)&&num(ny)&&!warned){ warned=true; console.warn('[camera] coördinaten buiten 0..1 genegeerd (pixels in plaats van genormaliseerd?):',nx,ny); } return ok; };
-  const toCanvas=(nx,ny)=>[c01(nx)*W, c01(ny)*H];
+
+  // ---- Perspective transform (4 point pairs, h33 = 1) ----
+  function solveH(src,dst){
+    const A=[], b=[];
+    for(let i=0;i<4;i++){ const [x,y]=src[i], [u,v]=dst[i];
+      A.push([x,y,1,0,0,0,-u*x,-u*y]); b.push(u); A.push([0,0,0,x,y,1,-v*x,-v*y]); b.push(v); }
+    for(let c=0;c<8;c++){ // Gauss-Jordan with partial pivoting
+      let p=c; for(let r=c+1;r<8;r++) if(Math.abs(A[r][c])>Math.abs(A[p][c])) p=r;
+      if(Math.abs(A[p][c])<1e-12) return null;
+      [A[c],A[p]]=[A[p],A[c]]; [b[c],b[p]]=[b[p],b[c]];
+      for(let r=0;r<8;r++) if(r!==c&&A[r][c]){ const f=A[r][c]/A[c][c]; for(let k=c;k<8;k++) A[r][k]-=f*A[c][k]; b[r]-=f*b[c]; }
+    }
+    return [...b.map((v,i)=>v/A[i][i]),1];
+  }
+  const hw=(h,x,y)=>h[6]*x+h[7]*y+h[8];
+  function applyH(c,x,y){ const w=hw(c.h,x,y); if(!(w*c.sign>1e-9)) return null; // behind the transform's horizon
+    return [(c.h[0]*x+c.h[1]*y+c.h[2])/w,(c.h[3]*x+c.h[4]*y+c.h[5])/w]; }
+  const targets=()=>[[CAL_INSET*W,CAL_INSET*H],[(1-CAL_INSET)*W,CAL_INSET*H],[(1-CAL_INSET)*W,(1-CAL_INSET)*H],[CAL_INSET*W,(1-CAL_INSET)*H]];
+  function makeCal(pts){ // null if the four camera points do not form a usable (convex, large enough) quad
+    const cross=[0,1,2,3].map(i=>{ const [a,b,c]=[pts[i],pts[(i+1)%4],pts[(i+2)%4]]; return (b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]); });
+    if(!(cross.every(v=>v>0)||cross.every(v=>v<0))) return null;
+    const area=Math.abs(pts.reduce((s,p,i)=>{ const q=pts[(i+1)%4]; return s+p[0]*q[1]-q[0]*p[1]; },0))/2;
+    if(area<.002) return null;
+    const h=solveH(pts,targets()); if(!h||!h.every(Number.isFinite)) return null;
+    const sign=Math.sign(hw(h,pts[0][0],pts[0][1]));
+    if(!sign||!pts.every(([x,y])=>hw(h,x,y)*sign>0)) return null;
+    return {h,sign,pts};
+  }
+  function loadCal(){ try{ const c=JSON.parse(localStorage.getItem(CAL_KEY)||'null');
+    return c&&Array.isArray(c.pts)&&c.pts.length===4&&c.pts.every(p=>Array.isArray(p)&&p.length===2&&p.every(num))?makeCal(c.pts):null; }catch(e){ return null; } }
+  function saveCal(){ try{ if(cal) localStorage.setItem(CAL_KEY,JSON.stringify({pts:cal.pts,at:new Date().toISOString()})); else localStorage.removeItem(CAL_KEY); }catch(e){} }
+
+  function toCanvas(nx,ny){
+    if(!cal) return [c01(nx)*W, c01(ny)*H]; // uncalibrated: whole camera frame = canvas
+    const p=applyH(cal,nx,ny);
+    if(!p||p[0]<-OFF_CANVAS||p[0]>W+OFF_CANVAS||p[1]<-OFF_CANVAS||p[1]>H+OFF_CANVAS) return null; // object lies next to the playfield
+    return [Math.min(W,Math.max(0,p[0])), Math.min(H,Math.max(0,p[1]))];
+  }
+
+  // ---- Calibration: hold the object still on each target; the averaged raw position is recorded ----
+  function startCal(){ calib={pts:[],buf:[],seen:false,near:false}; cur=null; console.info('[camera] kalibratie gestart'); }
+  function stopCal(){ calib=null; }
+  function calSample(o){
+    const s=calib, now=performance.now();
+    if(!o){ s.buf=[]; s.seen=false; return; }
+    s.seen=true;
+    s.near=s.pts.some(([x,y])=>Math.hypot(o.nx-x,o.ny-y)<CAL_MOVE); // still on the previous target
+    if(s.near){ s.buf=[]; return; }
+    s.buf.push([o.nx,o.ny,now]);
+    let i=s.buf.length-1; while(i>0&&Math.hypot(s.buf[i-1][0]-o.nx,s.buf[i-1][1]-o.ny)<=CAL_STILL) i--; // moving restarts the countdown
+    s.buf=s.buf.slice(i);
+    if(now-s.buf[0][2]<CAL_HOLD) return;
+    const n=s.buf.length; s.pts.push([s.buf.reduce((a,p)=>a+p[0],0)/n, s.buf.reduce((a,p)=>a+p[1],0)/n]); s.buf=[];
+    if(typeof tone==='function') tone(660+s.pts.length*90,.1);
+    if(s.pts.length<4) return;
+    const c=makeCal(s.pts); calib=null;
+    if(c){ cal=c; saveCal(); setObjs(objs); console.info('[camera] kalibratie opgeslagen',c.pts); if(typeof toast==='function') toast('<i>🎯</i>Camera gekalibreerd'); }
+    else if(typeof toast==='function') toast('<i>⚠️</i><div>Kalibratie mislukt<small>De vier punten waren niet goed te onderscheiden. Druk K om opnieuw te beginnen.</small></div>');
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.ctrlKey||e.metaKey||e.altKey||(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]'))) return;
+    if(e.key==='k'||e.key==='K'){ e.preventDefault(); startCal(); }
+    else if(e.key==='Escape'&&calib){ e.preventDefault(); stopCal(); }
+  });
 
   function connect(){
     if(ws||retryT) return; // never two connections or retry attempts at the same time
@@ -555,22 +635,43 @@ window.CAM=(()=>{
       if(Array.isArray(m.objects)) list=m.objects.filter(o=>o&&inRange(o.nx,o.ny)).map((o,i)=>({id:String(o.id??i),color:String(o.color??''),nx:c01(o.nx),ny:c01(o.ny),angle:num(o.angle)?o.angle:null,area:num(o.area)?o.area:0}));
       else if(inRange(m.nx,m.ny)) list=[{id:'0',color:'',nx:c01(m.nx),ny:c01(m.ny),angle:null,area:0}];
     }
+    if(calib) calSample(list[0]||null);
     setObjs(list);
   }
   function setObjs(list){
-    objs=list.map(o=>{ const [x,y]=toCanvas(o.nx,o.ny); return {...o,x,y}; });
+    objs=list.map(o=>{ const p=toCanvas(o.nx,o.ny); return p&&{...o,x:p[0],y:p[1]}; }).filter(Boolean);
     if(objs.length) lastSeen=performance.now();
     listeners.forEach(f=>{ try{ f(objs); }catch(e){ console.error(e); } });
   }
 
-  function cursor(c,x,y,a,t){
-    const p=(Math.sin(t/220)+1)/2, r=24+p*3;
-    c.save(); c.globalAlpha=a; c.setLineDash([]);
-    c.lineWidth=9; c.strokeStyle='rgba(34,52,79,.55)'; c.beginPath(); c.arc(x,y+2,r,0,7); c.stroke();
-    c.lineWidth=8; c.strokeStyle='#fff'; c.beginPath(); c.arc(x,y,r,0,7); c.stroke();
-    c.lineWidth=4; c.strokeStyle='#FF6B5B'; c.beginPath(); c.arc(x,y,r,0,7); c.stroke();
-    c.lineCap='round'; [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{ c.lineWidth=7; c.strokeStyle='#fff'; c.beginPath(); c.moveTo(x+dx*(r+5),y+dy*(r+5)); c.lineTo(x+dx*(r+15),y+dy*(r+15)); c.stroke(); c.lineWidth=3; c.strokeStyle='#FF6B5B'; c.stroke(); });
-    c.fillStyle='#fff'; c.beginPath(); c.arc(x,y,6,0,7); c.fill(); c.fillStyle='#FF6B5B'; c.beginPath(); c.arc(x,y,3.5,0,7); c.fill();
+  // Thin ring just outside the physical object. No white: the bridge detects white, so a white ring
+  // next to the object would merge with it. Teal = live detection, grey dashed = detection lost (fading out).
+  function cursor(c,x,y,a,live){
+    c.save(); c.globalAlpha=a;
+    c.lineWidth=6; c.strokeStyle='rgba(34,52,79,.45)'; c.beginPath(); c.arc(x,y,ringR,0,7); c.stroke();
+    c.lineWidth=2.5; c.strokeStyle=live?'#23A99A':'#9AA3AF'; if(!live) c.setLineDash([8,8]); c.beginPath(); c.arc(x,y,ringR,0,7); c.stroke();
+    c.restore();
+  }
+  function pill(c,txt,x,y){
+    c.font='700 18px "Baloo 2",sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+    const w=c.measureText(txt).width+32; c.fillStyle='rgba(34,52,79,.88)'; c.beginPath(); c.roundRect(x-w/2,y-20,w,40,20); c.fill(); c.fillStyle='#fff'; c.fillText(txt,x,y+1);
+  }
+  function drawCal(c,now){
+    const tg=targets(), i=calib.pts.length;
+    c.save();
+    tg.forEach(([x,y],k)=>{
+      if(k<i){ c.fillStyle='#23A99A'; c.beginPath(); c.arc(x,y,14,0,7); c.fill(); c.fillStyle='#fff'; c.font='800 16px sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('✓',x,y+1); return; }
+      const on=k===i;
+      c.globalAlpha=on?1:.45; c.lineWidth=on?3:2;
+      c.strokeStyle='rgba(34,52,79,.5)'; c.lineWidth+=3; c.beginPath(); c.arc(x,y,ringR,0,7); c.stroke(); c.lineWidth-=3;
+      c.strokeStyle='#FF6B5B'; c.setLineDash([10,8]); c.beginPath(); c.arc(x,y,ringR,0,7); c.stroke(); c.setLineDash([]);
+      c.beginPath(); c.moveTo(x-18,y); c.lineTo(x+18,y); c.moveTo(x,y-18); c.lineTo(x,y+18); c.stroke();
+      c.fillStyle='#FF6B5B'; c.font='800 22px "Baloo 2",sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(k+1,x+ringR*.72,y-ringR*.72);
+      if(on&&calib.buf.length){ const p=Math.min(1,(now-calib.buf[0][2])/CAL_HOLD); c.strokeStyle='#23A99A'; c.lineWidth=6; c.beginPath(); c.arc(x,y,ringR,-Math.PI/2,-Math.PI/2+p*Math.PI*2); c.stroke(); }
+      c.globalAlpha=1;
+    });
+    const step=`Kalibratie ${i+1}/4: `;
+    pill(c,(!connected?'Kalibratie: wacht op camera_bridge.py…':calib.near?step+'verplaats het doosje naar doel '+(i+1):calib.buf.length?step+'stil houden…':step+'leg het doosje op doel '+(i+1))+'  ·  Esc = stoppen',W/2,H/2);
     c.restore();
   }
   function hover(c,b,a){ // phase 2 preparation: show which game block is under the cursor (visual only)
@@ -582,7 +683,7 @@ window.CAM=(()=>{
 
   function debugInfo(c){ // raw input: helps verify mirroring/scaling
     const p=objs[0], txt=!connected?'camdebug: niet verbonden':!raw?'camdebug: nog geen bericht':
-      `camdebug: detected=${raw.detected} nx=${num(raw.nx)?raw.nx.toFixed(3):raw.nx} ny=${num(raw.ny)?raw.ny.toFixed(3):raw.ny}`+(p?` → canvas ${Math.round(p.x)}, ${Math.round(p.y)} van ${W}×${H}`:'');
+      `camdebug: detected=${raw.detected} nx=${num(raw.nx)?raw.nx.toFixed(3):raw.nx} ny=${num(raw.ny)?raw.ny.toFixed(3):raw.ny}`+(p?` → canvas ${Math.round(p.x)}, ${Math.round(p.y)} van ${W}×${H}`:'')+` · kalibratie ${cal?'aan':'uit'}`;
     c.save(); c.font='700 16px "Baloo 2",sans-serif'; c.textAlign='left'; c.textBaseline='middle';
     const w=c.measureText(txt).width+24; c.fillStyle='rgba(34,52,79,.85)'; c.beginPath(); c.roundRect(52,10,w,34,10); c.fill(); c.fillStyle='#fff'; c.fillText(txt,64,28);
     if(p){ c.fillStyle='#23A99A'; c.beginPath(); c.arc(p.x,p.y,5,0,7); c.fill(); } // unsmoothed position
@@ -590,23 +691,36 @@ window.CAM=(()=>{
   }
   function draw(c,t){
     try{
-      const dt=Math.min(.1,Math.max(0,(t-(lastDraw||t))/1000)); lastDraw=t;
-      if(connected&&objs.length&&performance.now()-lastMsg>STALE) setObjs([]); // bridge stalled: show nothing
-      status(!connected?'off':objs.length?'seen':'on');
-      const p=objs[0]; // phase 1: one object drives the cursor
-      if(p){ if(!cur) cur={x:p.x,y:p.y,a:0}; const k=1-Math.exp(-dt*18); cur.x+=(p.x-cur.x)*k; cur.y+=(p.y-cur.y)*k; cur.a=Math.min(1,cur.a+dt*8); }
-      else if(cur&&performance.now()-lastSeen>LOST_GRACE){ cur.a-=dt*6; if(cur.a<=0) cur=null; }
+      const dt=Math.min(.1,Math.max(0,(t-(lastDraw||t))/1000)), now=performance.now(); lastDraw=t;
+      if(now-lastMsg>STALE){ if(connected&&objs.length) setObjs([]); if(calib) calSample(null); } // bridge stalled: show nothing
+      status(calib?'cal':!connected?'off':objs.length?'seen':'on');
+      ringR=RING_PX*W/Math.max(1,cv.getBoundingClientRect().width); // screen px -> canvas units (CSS scaling)
       if(debug) debugInfo(c);
+      if(calib){ drawCal(c,now); return; }
+      const p=objs[0]; // phase 1: one object drives the cursor
+      if(p){
+        if(!cur||Math.hypot(p.x-cur.x,p.y-cur.y)>ringR*2) cur={x:p.x,y:p.y,a:cur?cur.a:0}; // big jump: no gliding across the board
+        else { const k=1-Math.exp(-dt*18); cur.x+=(p.x-cur.x)*k; cur.y+=(p.y-cur.y)*k; }
+        cur.a=Math.min(1,cur.a+dt*8); cur.live=true;
+      }
+      else if(cur&&now-lastSeen>LOST_GRACE){ cur.live=false; cur.a-=dt*1000/FADE_MS; if(cur.a<=0) cur=null; }
       if(!cur) return;
       const b=blockAt(cur.x,cur.y); if(b) hover(c,b,cur.a);
-      cursor(c,cur.x,cur.y,cur.a,t);
+      cursor(c,cur.x,cur.y,cur.a,cur.live);
     }catch(e){ if(!failed){ failed=true; console.error('[camera] overlay-fout, game loopt door:',e); } }
   }
+  // Does the object (cursor ring) cover this area? Used to keep game texts out from under the object.
+  const overlaps=(x,y,w,h)=>!!cur&&cur.a>.1&&cur.x+ringR>x&&cur.x-ringR<x+w&&cur.y+ringR>y&&cur.y-ringR<y+h;
+  function coversScreen(r){ if(!cur||cur.a<=.1) return false; const b=cv.getBoundingClientRect(), sx=b.width/W, sy=b.height/H;
+    return overlaps((r.left-b.left)/sx,(r.top-b.top)/sy,r.width/sx,r.height/sy); }
 
+  cal=loadCal(); // after all helpers above are defined
   connect();
+  if(/[?&]camcal\b/.test(location.search)) startCal(); // index.html?camcal starts calibration right away
   return {
-    draw, toCanvas, setDebug:v=>{ debug=!!v; },
-    state:()=>({connected, objects:objs.map(o=>({...o})), cursor:cur?{x:cur.x,y:cur.y}:null}),
+    draw, toCanvas, overlaps, coversScreen, setDebug:v=>{ debug=!!v; },
+    calibrate:startCal, resetCalibration:()=>{ cal=null; saveCal(); },
+    state:()=>({connected, calibrated:!!cal, calibrating:!!calib, objects:objs.map(o=>({...o})), cursor:cur?{x:cur.x,y:cur.y,live:!!cur.live,a:cur.a}:null, ringR}),
     onUpdate:f=>{ listeners.add(f); return ()=>listeners.delete(f); }
   };
 })();
