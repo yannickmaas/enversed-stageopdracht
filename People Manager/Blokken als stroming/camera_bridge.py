@@ -48,6 +48,11 @@ SOLIDITY_MIN = 0.70
 # so a block may lie at any angle.
 BLOCK_ASPECT_MAX = 8.0     # long side / short side
 BLOCK_RECT_MIN = 0.75      # area / area of the rotated bounding rectangle (it must be rectangular)
+BLOCK_CONTRAST_MIN = 40    # a block must be this much brighter (V, 0..255) than the screen right around it
+BLOCK_CLIPPED_MAX = 0.30   # more overexposed pixels than this: a reflection of a lamp/window, not paper
+CLIP_LEVEL = 245           # a pixel counts as overexposed from this value (some webcams top out below 255)
+REFERENCE_DIFF_MIN = 35    # with a reference image (key B): a block must differ this much from the empty field
+REFERENCE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "camera_reference.png")
 
 # Contours touching the edge of the camera frame are ignored.
 # Cause of the "cursor stuck in a corner": a bright window, lamp, light wall or
@@ -171,6 +176,7 @@ class CameraReader:
         self.size = None
         self.api = ""             # OpenCV backend name (DSHOW, MSMF, V4L2, ...)
         self.controls = {}        # exposure/gain as reported back by the webcam
+        self.report = None        # message about the last control change, printed by the main loop
         self._pending = {}
         self._ctl_lock = threading.Lock()
         self._thread = threading.Thread(target=self._run, name="camera", daemon=True)
@@ -278,6 +284,15 @@ class CameraReader:
         self.controls["accepted"] = res
         self.controls["exposure"] = cap.get(cv2.CAP_PROP_EXPOSURE)
         self.controls["gain"] = cap.get(cv2.CAP_PROP_GAIN)
+        if "exposure" in p and not self.controls.get("auto", False):
+            want = self._exposure_value(p["exposure"])
+            got = self.controls["exposure"]
+            if res.get("exposure") is False:
+                self.report = f"webcam WEIGERT belichting {p['exposure']:g} (druk S voor het instellingenvenster van de webcam)"
+            elif got not in (0, -1) and abs(got - want) > 0.5:
+                self.report = f"webcam meldt belichting {got:g} in plaats van {want:g}: de driver past de waarde niet (volledig) toe"
+            else:
+                self.report = f"webcam meldt belichting {got:g}"
 
     def _publish(self, frame):
         with self._cond:
@@ -322,7 +337,7 @@ def profile_mask(hsv, profile):
     return mask
 
 
-def find_candidates(mask, rejected=None):
+def find_candidates(mask, rejected=None, context=None):
     """Same contour filters as the original detect_case(),
     plus a check against the frame border."""
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -367,6 +382,13 @@ def find_candidates(mask, rejected=None):
         else:
             cx, cy = x + w / 2.0, y + h / 2.0
 
+        if context is not None:
+            why = _block_context_check(contour, (x, y, w, h), context)
+            if why:
+                if rejected is not None:
+                    rejected.append({"box": (int(x), int(y), int(w), int(h)), "reason": f"wit: {why}"})
+                continue
+
         # Orientation of the long side (0..180 degrees; a rectangle has no front or back).
         theta = float(np.degrees(np.arctan2(long_vec[1], long_vec[0])) % 180.0)
         rcx, rcy = rect[0]
@@ -382,15 +404,53 @@ def find_candidates(mask, rejected=None):
     return candidates
 
 
-def detect_objects(frame, rejected=None):
-    """Returns (objects, combined mask), largest first per profile."""
+def _block_context_check(contour, box, ctx):
+    """Why a white candidate is not a paper block, or None. Paper lies on the screen and
+    is lit by the room: it is clearly brighter than the screen around it, not burnt out
+    like a reflection, and it was not there in the reference image of the empty field."""
+    x, y, w, h = box
+    H_, W_ = ctx["v"].shape[:2]
+    pad = max(6, int(0.25 * min(w, h)))
+    x0, y0, x1, y1 = max(0, x - pad), max(0, y - pad), min(W_, x + w + pad), min(H_, y + h + pad)
+    inside = np.zeros((y1 - y0, x1 - x0), np.uint8)
+    cv2.drawContours(inside, [contour - (x0, y0)], -1, 255, -1)
+    grown = cv2.dilate(inside, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * pad + 1, 2 * pad + 1)))
+    ring = (grown > 0) & (inside == 0)
+    ins = inside > 0
+    if not ins.any():
+        return "leeg"
+    v = ctx["v"][y0:y1, x0:x1]
+    if ring.any():
+        contrast = float(np.median(v[ins])) - float(np.median(v[ring]))
+        if contrast < BLOCK_CONTRAST_MIN:
+            return f"niet lichter dan omgeving ({contrast:.0f})"
+    clipped = float(np.mean(ctx["clipped"][y0:y1, x0:x1][ins]))
+    if clipped > BLOCK_CLIPPED_MAX:
+        return f"reflectie ({clipped:.0%} overbelicht)"
+    ref = ctx.get("ref")
+    if ref is not None:
+        diff = float(np.mean(np.abs(ctx["v_sensor"][y0:y1, x0:x1][ins].astype(np.int16) - ref[y0:y1, x0:x1][ins].astype(np.int16))))
+        if diff < REFERENCE_DIFF_MIN:
+            return f"hoort bij het lege speelveld ({diff:.0f})"
+    return None
+
+
+def detect_objects(frame, rejected=None, sensor=None, reference=None):
+    """Returns (objects, combined mask), largest first per profile. `sensor` (the unprocessed
+    camera image) and `reference` (V channel of the empty field) make the white-block checks
+    stricter: contrast with the surroundings, no reflections, not part of the empty field."""
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    context = None
+    if sensor is not None:
+        context = {"v": hsv[..., 2], "clipped": sensor.max(axis=2) >= CLIP_LEVEL,
+                   "v_sensor": cv2.cvtColor(sensor, cv2.COLOR_BGR2HSV)[..., 2],
+                   "ref": reference if reference is not None and reference.shape == sensor.shape[:2] else None}
     combined = None
     objects = []
     for profile in PROFILES:
         mask = profile_mask(hsv, profile)
         combined = mask if combined is None else cv2.bitwise_or(combined, mask)
-        found = sorted(find_candidates(mask, rejected), key=lambda c: c["area"], reverse=True)
+        found = sorted(find_candidates(mask, rejected, context), key=lambda c: c["area"], reverse=True)
         for c in found[: profile.get("max_objects", 1)]:
             c["color"] = profile["color"]
             objects.append(c)
@@ -538,7 +598,7 @@ def circle_candidates(mask, colored, rejected=None, label=""):
     found = []
     for _ in range(12):
         _, r, _, (px, py) = cv2.minMaxLoc(dt)
-        if r < _px(CHIP_MIN_RADIUS) * 0.8:
+        if r < _px(CHIP_MIN_RADIUS):
             break
         # refine the center: centroid of the top of the distance transform
         x0, x1, y0, y1 = max(0, int(px - r)), min(w_img, int(px + r + 1)), max(0, int(py - r)), min(h_img, int(py + r + 1))
@@ -948,6 +1008,9 @@ class Mapper:
         return min(1.0, max(0.0, float(nx))), min(1.0, max(0.0, float(ny)))
 
 
+exposure_text = {"value": ""}  # current exposure description, sent along to the game
+
+
 def build_payload(blocks, mapper, frame_w, frame_h, chips=()):
     items = []
     # White blocks (walls): center plus the four corners, mapped by the browser with its
@@ -995,6 +1058,7 @@ def build_payload(blocks, mapper, frame_w, frame_h, chips=()):
         items.append(item)
     primary = items[0] if items else None
     return {
+        "exposure": exposure_text["value"],
         "type": "camera",
         "v": 1,
         "ts": int(time.time() * 1000),
@@ -1010,6 +1074,9 @@ def build_payload(blocks, mapper, frame_w, frame_h, chips=()):
 # ============================================================
 clients = set()
 last_message = None
+remote_keys = []          # keys sent by the game (the browser has focus, not the camera window)
+remote_cal = []           # automatic screen calibration requests from the game
+REMOTE_KEYS = "[]-=+,.bBaA"
 
 
 async def websocket_handler(websocket, *args):
@@ -1019,8 +1086,16 @@ async def websocket_handler(websocket, *args):
     try:
         if last_message is not None:
             await websocket.send(last_message)  # send the current state right away
-        async for _ in websocket:  # ignore incoming messages (for now)
-            pass
+        async for raw in websocket:  # control keys pressed in the game window
+            try:
+                msg = json.loads(raw)
+            except (TypeError, ValueError):
+                continue
+            if isinstance(msg, dict) and msg.get("type") == "key" and isinstance(msg.get("key"), str) \
+                    and len(msg["key"]) == 1 and msg["key"] in REMOTE_KEYS:
+                remote_keys.append(ord(msg["key"]))
+            elif isinstance(msg, dict) and msg.get("type") == "cal" and msg.get("cmd") in ("ref", "point", "cancel"):
+                remote_cal.append(msg)
     except websockets.exceptions.ConnectionClosed:
         pass
     finally:
@@ -1033,6 +1108,13 @@ async def _send(client, message):
         await asyncio.wait_for(client.send(message), timeout=0.5)
     except (websockets.exceptions.ConnectionClosed, asyncio.TimeoutError, OSError):
         clients.discard(client)
+
+
+async def send_all(data):
+    """Send a message to all browsers without making it the 'current state' for new clients."""
+    message = json.dumps(data, separators=(",", ":"))
+    if clients:
+        await asyncio.gather(*(_send(c, message) for c in list(clients)))
 
 
 async def broadcast(data):
@@ -1163,6 +1245,65 @@ def window_closed():
 
 
 # ============================================================
+# Automatic screen calibration (key K in the game)
+# ============================================================
+# The game blacks out the playing field and shows one bright square at a time at a known
+# position. The bridge finds that square as the difference with the black screen and reports
+# its camera position. From many such points the game computes the exact camera -> screen
+# mapping, including perspective and lens curvature.
+CAL_SETTLE_S = 0.3       # minimum wait after a screen change (display + camera delay)
+CAL_REF_S = 1.0          # the black reference is the darkest value per pixel over this period
+CAL_STABLE = 3           # a marker counts when it is at the same spot in this many frames in a row
+CAL_MOVED_PX = 20        # ... and not at the spot of the previous marker (the screen has not changed yet)
+CAL_POINT_TIMEOUT_S = 4.0
+CAL_DIFF_MIN = 35        # minimum brightness increase of the marker (0..255)
+
+
+def measure_marker(ref, cur):
+    """Centroid (camera px) of the brightest new spot in `cur` compared with `ref`, or a reason."""
+    diff = cv2.GaussianBlur(cur - ref, (0, 0), 1.5)
+    peak = float(diff.max())
+    if peak < CAL_DIFF_MIN:
+        return None, f"markering niet gezien (helderheidsverschil {peak:.0f})"
+    mask = (diff >= max(CAL_DIFF_MIN * 0.6, 0.5 * peak)).astype(np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    n, lab, stats, _ = cv2.connectedComponentsWithStats(mask)
+    if n < 2:
+        return None, "markering niet gezien"
+    order = np.argsort(stats[1:, cv2.CC_STAT_AREA])[::-1] + 1
+    big = order[0]
+    area = int(stats[big, cv2.CC_STAT_AREA])
+    if area < 12:
+        return None, "markering te klein"
+    if len(order) > 1 and stats[order[1], cv2.CC_STAT_AREA] > 0.5 * area:
+        return None, "meerdere oplichtende plekken (beweegt er iets, of staat de game niet op het volle scherm?)"
+    ys, xs = np.nonzero(lab == big)
+    w = diff[ys, xs] - diff[ys, xs].min() + 1e-3
+    return (float((xs * w).sum() / w.sum()), float((ys * w).sum() / w.sum())), None
+
+
+# ============================================================
+# Reference image of the empty playing field (key B)
+# ============================================================
+def load_reference():
+    if not os.path.exists(REFERENCE_FILE):
+        print("Geen referentiebeeld. Haal alle blokken weg en druk B in het cameravenster: reflecties en\n"
+              "  vaste speelelementen tellen daarna niet meer als blok.")
+        return None
+    ref = cv2.imread(REFERENCE_FILE, cv2.IMREAD_GRAYSCALE)
+    print(f"Referentiebeeld van het lege speelveld geladen ({os.path.basename(REFERENCE_FILE)}).")
+    return ref
+
+
+def save_reference(sensor):
+    ref = cv2.cvtColor(sensor, cv2.COLOR_BGR2HSV)[..., 2]
+    ok = cv2.imwrite(REFERENCE_FILE, ref)
+    print("Referentiebeeld vastgelegd: alles wat nu in beeld is, telt niet als blok." if ok
+          else "Referentiebeeld opslaan mislukt.")
+    return ref
+
+
+# ============================================================
 # Exposure settings: load / save / keys
 # ============================================================
 def load_exposure(args):
@@ -1206,6 +1347,20 @@ def describe_exposure(st, reader):
     if st["gain"] is not None:
         txt += f' | gain {st["gain"]:g}'
     return txt + f' | helderheid x{st["brightness"]:.1f}'.replace(".", ",")
+
+
+def handle_key(key, st, reader, sensor, state):
+    """Keys from the camera window or the game. Returns True to stop."""
+    if key in (ord("q"), 27):
+        return True
+    if key in (ord("b"), ord("B")) and sensor is not None:
+        state["reference"] = save_reference(sensor)
+    elif key in (ord("f"), ord("F")) and sensor is not None:
+        path = os.path.join(os.path.dirname(SETTINGS_FILE), time.strftime("camerabeeld_%Y%m%d_%H%M%S.png"))
+        print(f"Camerabeeld opgeslagen: {path}" if cv2.imwrite(path, sensor) else "Opslaan mislukt.")
+    else:
+        handle_exposure_key(key, st, reader)
+    return False
 
 
 def handle_exposure_key(key, st, reader):
@@ -1257,8 +1412,9 @@ async def main(args):
     if not exposure["auto"] and acc.get("exposure") is False:
         print("  Let op: de webcam weigert handmatige belichting via OpenCV. Druk S in het cameravenster voor het\n"
               "  instellingenvenster van de webcam, of verlaag de helderheid van de monitor.")
-    print("Belichting: [ / ] = grote stap donkerder/lichter, , / . = fijn (10%), A = automatisch aan/uit, S = webcaminstellingen.\n"
-          "F = camerabeeld opslaan (onbewerkt, voor het afstellen).")
+    print("Toetsen werken in het cameravenster én in de game (behalve S, F en Q: alleen in het cameravenster).\n"
+          "Belichting: [ / ] = grote stap donkerder/lichter, , / . = fijn (10%), A = automatisch aan/uit, S = webcaminstellingen.\n"
+          "F = camerabeeld opslaan (onbewerkt, voor het afstellen). B = referentie van het lege speelveld vastleggen.")
     if (FRAME_WIDTH, FRAME_HEIGHT) != reader.size:
         print("  Let op: de camera levert een andere resolutie dan gevraagd. "
               "MIN_AREA/MAX_AREA en TABLE_CORNERS gelden voor de werkelijke resolutie.")
@@ -1291,6 +1447,9 @@ async def main(args):
     print(f"Fiche-detectie: {'aan (rood = stroming wijzigen, groen = splitsen)' if CHIP_DETECTION else 'uit'}.")
     tracker = ChipTracker()
     block_tracker = BlockTracker()
+    keystate = {"reference": load_reference()}
+    sensor = None
+    cal_job, cal_ref, cal_prev = None, None, None
     detect_scale, last_chip_t = 1.0, 0.0
     send_interval = 1.0 / SEND_HZ
     last_debug = 0.0
@@ -1307,12 +1466,26 @@ async def main(args):
                 print("FOUT:", reader.error or "camerathread gestopt.")
                 exit_code = 1
                 break
+            # keys pressed in the game window arrive via the WebSocket (also without the camera window)
+            while remote_keys:
+                k = remote_keys.pop(0)
+                print(f"Toets uit de game: {chr(k)}")
+                handle_key(k, exposure, reader, sensor, keystate)  # q/Esc are never sent by the game
+            if reader.report:
+                print(reader.report)
+                reader.report = None
+            exposure_text["value"] = describe_exposure(exposure, reader)
+            while remote_cal:
+                req = remote_cal.pop(0)
+                if req["cmd"] == "cancel":
+                    cal_job, cal_ref, cal_prev = None, None, None
+                else:
+                    cal_job = {"cmd": req["cmd"], "i": req.get("i"), "t": time.perf_counter(), "seen": [], "why": ""}
             if frame is None or new_seq == seq:
                 if preview:
                     key = cv2.waitKey(1) & 0xFF
-                    if key in (ord("q"), 27):
+                    if key != 255 and handle_key(key, exposure, reader, sensor, keystate):
                         break
-                    handle_exposure_key(key, exposure, reader)
                 continue  # no new frame yet
             seq = new_seq
             if args.mirror and args.flip_y:
@@ -1331,8 +1504,47 @@ async def main(args):
             rejected = []
             hsv = cv2.cvtColor(sensor, cv2.COLOR_BGR2HSV)
             _last_hsv["img"] = hsv  # click in the camera window: HSV as the chip detection sees it
-            objects, mask = detect_objects(frame, rejected)
+            objects, mask = detect_objects(frame, rejected, sensor, keystate["reference"])
             chips, chip_masks = [], None
+            if cal_job is not None:
+                elapsed = time.perf_counter() - cal_job["t"]
+                v = hsv[..., 2].astype(np.float32)
+                if cal_job["cmd"] == "ref":
+                    # darkest value per pixel: correct even if the black screen appears late, and moving
+                    # things (people in the game) disappear from it
+                    if elapsed >= CAL_SETTLE_S:
+                        cal_job["img"] = v if "img" not in cal_job else np.minimum(cal_job["img"], v)
+                    if elapsed >= CAL_SETTLE_S + CAL_REF_S:
+                        cal_ref, cal_prev = cal_job["img"], None
+                        await send_all({"type": "cal", "ref": True})
+                        print("Kalibratie: zwart scherm vastgelegd.")
+                        cal_job = None
+                elif cal_ref is None:
+                    await send_all({"type": "cal", "i": cal_job["i"], "ok": False, "reason": "geen referentie"})
+                    cal_job = None
+                elif elapsed >= CAL_SETTLE_S:
+                    pt, why = measure_marker(cal_ref, v)
+                    if pt is not None and cal_prev is not None and np.hypot(pt[0] - cal_prev[0], pt[1] - cal_prev[1]) < CAL_MOVED_PX:
+                        pt, why = None, "scherm nog niet ververst"  # still the previous marker (delay)
+                    seen = cal_job["seen"]
+                    if pt is None:
+                        seen.clear()
+                        cal_job["why"] = why
+                    else:
+                        if seen and np.hypot(pt[0] - seen[-1][0], pt[1] - seen[-1][1]) > 2.5:
+                            seen.clear()
+                        seen.append(pt)
+                    if len(seen) >= CAL_STABLE:
+                        cx_, cy_ = float(np.mean([q[0] for q in seen])), float(np.mean([q[1] for q in seen]))
+                        cal_prev = (cx_, cy_)
+                        nx, ny = mapper.raw(cx_, cy_, frame_w, frame_h)
+                        await send_all({"type": "cal", "i": cal_job["i"], "ok": True, "nx": round(nx, 5), "ny": round(ny, 5),
+                                        "fw": frame_w, "fh": frame_h})  # frame size: the game models the lens with it
+                        cal_job = None
+                    elif elapsed >= CAL_POINT_TIMEOUT_S:
+                        await send_all({"type": "cal", "i": cal_job["i"], "ok": False, "reason": cal_job["why"] or "markering niet stabiel"})
+                        print(f"Kalibratie punt {cal_job['i'] + 1}: {cal_job['why'] or 'markering niet stabiel'}")
+                        cal_job = None
             if CHIP_DETECTION:
                 found, chip_masks = detect_chips(hsv, rejected, sensor, detect_scale)
                 now_t = time.perf_counter()
@@ -1394,12 +1606,8 @@ async def main(args):
                 cv2.imshow(WINDOW_CAMERA, frame)
                 cv2.imshow(WINDOW_MASK, mask_preview(mask, chip_masks))
                 key = cv2.waitKey(1) & 0xFF
-                if key in (ord("q"), 27) or window_closed():
+                if window_closed() or (key != 255 and handle_key(key, exposure, reader, sensor, keystate)):
                     break
-                if key in (ord("f"), ord("F")):  # save the unprocessed camera image (to share when tuning)
-                    path = os.path.join(os.path.dirname(SETTINGS_FILE), time.strftime("camerabeeld_%Y%m%d_%H%M%S.png"))
-                    print(f"Camerabeeld opgeslagen: {path}" if cv2.imwrite(path, sensor) else "Opslaan mislukt.")
-                handle_exposure_key(key, exposure, reader)
             else:
                 await asyncio.sleep(0)
     finally:

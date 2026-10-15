@@ -66,6 +66,19 @@ button:focus-visible,a:focus-visible{outline:5px solid #fff;outline-offset:3px}
 .fin{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
 .fin div{background:rgba(255,255,255,.12);border-radius:18px;padding:12px;font-size:15px}.fin b{display:block;font-size:34px}
 @media (max-width:1000px){main{grid-template-columns:1fr}aside{flex-direction:row;flex-wrap:wrap}.tray{flex-direction:row;flex-wrap:wrap}#cases{display:none}.fin{grid-template-columns:1fr 1fr}body{overflow:auto}}
+/* Dark mode (default; index.html?light for the old look): the white paper blocks need a dark
+   playing field to stand out, and no large white surfaces may be on screen (they would look like paper). */
+body.dark{--ink:#E3E8EF}
+body.dark .tool:not(.t-erase):not(.t-res){background:#2B3445;color:#E3E8EF;box-shadow:0 7px 0 #151B26}
+body.dark .tool .cnt{background:#C9D1DB;color:#1B2230}
+body.dark .tool.sel{box-shadow:0 3px 0 #151B26}
+body.dark #cases{background:rgba(27,34,48,.92);color:#E3E8EF}
+body.dark .goal{border-bottom-color:rgba(227,232,239,.12)}
+body.dark .pb{background:rgba(227,232,239,.15)}
+body.dark .t{background:#2B3445;color:#E3E8EF;box-shadow:0 6px 0 rgba(0,0,0,.35)}
+body.dark .cp{background:#2B3445;color:#E3E8EF}
+body.dark .cp .cp-w{color:#AEB7C3}
+body.dark .t-res{background:#2B3445;color:#FF8A7D;box-shadow:inset 0 0 0 3px #FF6B5B,0 7px 0 #151B26}
 #camStatus{display:flex;align-items:center;gap:8px;background:rgba(58,42,26,.55);border-radius:16px;padding:6px 14px;font-size:15px;font-weight:700;white-space:nowrap;line-height:1.1}
 #camStatus i{flex:none;width:12px;height:12px;border-radius:50%;background:#9AA3AF;box-shadow:0 0 0 3px rgba(255,255,255,.15)}
 #camStatus[data-s=on] i{background:#23A99A}
@@ -343,26 +356,31 @@ document.querySelectorAll('.how .bi').forEach(el=>el.innerHTML=blockSVG(el.datas
 const rad=a=>a*Math.PI/180;
 function newTotals(){ return {score:0,out:0,lost:0,stray:0,cases:[],arenas:0,start:performance.now()}; }
 
+// Dark mode: dark floor, muted light surfaces (no large white areas: those would look like the white paper blocks).
+const DARK=!/[?&]light\b/.test(location.search);
+document.body.classList.toggle('dark',DARK);
+const PAL=DARK?{floor:'#1B2230',grid:'rgba(227,232,239,.06)',speck:'rgba(227,232,239,.04)',pillar:'#4A5466',pillarTop:'#5A6578',card:'#2B3445',stripe:'#8E99A8',fallInk:'#E3E8EF',zone:'#4E483F',leaf:'#5B7088'}
+              :{floor:'#D6DAE0',grid:'rgba(120,130,145,.18)',speck:'rgba(255,255,255,.18)',pillar:'#B7BDC6',pillarTop:'#CED3DA',card:'#fff',stripe:'#fff',fallInk:'#22252B',zone:'#8E8676',leaf:'#4E9A3A'};
 function makeBg(){ // exhibition hall: poured floor with seams, carpet paths, exhibitor stands
   const c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d');
-  g.fillStyle='#D6DAE0'; g.fillRect(0,0,W,H);
-  g.strokeStyle='rgba(120,130,145,.18)'; g.lineWidth=1.5; for(let x=0;x<W;x+=96){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke(); } for(let y=0;y<H;y+=96){ g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); }
-  for(let i=0;i<900;i++){ g.fillStyle='rgba(255,255,255,.18)'; g.fillRect(Math.random()*W,Math.random()*H,2,2); }
+  g.fillStyle=PAL.floor; g.fillRect(0,0,W,H);
+  g.strokeStyle=PAL.grid; g.lineWidth=1.5; for(let x=0;x<W;x+=96){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke(); } for(let y=0;y<H;y+=96){ g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); }
+  for(let i=0;i<900;i++){ g.fillStyle=PAL.speck; g.fillRect(Math.random()*W,Math.random()*H,2,2); }
   // carpet at entrance and destination
   const [sx]=Z.spawn, [ex,ey,ew,eh]=Z.end.r;
   g.fillStyle='#22344F'; g.fillRect(sx-70,0,140,80); g.beginPath(); g.roundRect(ex-26,ey-26,ew+52,eh+52,14); g.fill();
   g.strokeStyle='rgba(255,255,255,.12)'; g.lineWidth=2; g.strokeRect(sx-62,4,124,72);
   return c;
 }
-function pillar(x,y){ ctx.fillStyle='rgba(0,0,0,.2)'; ctx.fillRect(x-12,y-8,34,34); ctx.fillStyle='#B7BDC6'; ctx.fillRect(x-16,y-16,32,32); ctx.fillStyle='#CED3DA'; ctx.fillRect(x-16,y-16,32,8); }
-function plant(x,y){ ctx.fillStyle='#5C6470'; ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.fill(); ctx.fillStyle='#4E9A3A'; for(let i=0;i<6;i++){ const a=i/6*7; ctx.beginPath(); ctx.ellipse(x+Math.cos(a)*9,y+Math.sin(a)*9,9,4,a,0,7); ctx.fill(); } }
+function pillar(x,y){ ctx.fillStyle='rgba(0,0,0,.2)'; ctx.fillRect(x-12,y-8,34,34); ctx.fillStyle=PAL.pillar; ctx.fillRect(x-16,y-16,32,32); ctx.fillStyle=PAL.pillarTop; ctx.fillRect(x-16,y-16,32,8); }
+function plant(x,y){ ctx.fillStyle='#5C6470'; ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.fill(); ctx.fillStyle=PAL.leaf; for(let i=0;i<6;i++){ const a=i/6*7; ctx.beginPath(); ctx.ellipse(x+Math.cos(a)*9,y+Math.sin(a)*9,9,4,a,0,7); ctx.fill(); } }
 function banner(x,y,w,txt,col,t){ const sw=Math.sin(t/1100+x)*1.5; ctx.save(); ctx.translate(x,y); ctx.rotate(sw*.01);
   ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fillRect(-w/2+6,8,w,30); ctx.fillStyle=col; ctx.fillRect(-w/2,0,w,30); ctx.fillStyle='#fff'; ctx.font='800 17px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,0,16); ctx.restore(); }
 function stand(cp,k,t){ // exhibition stand for an Enversed case
   const x=cp.x,y=cp.y, col=cp.done?'#FFC93C':'#FF6B5B';
   ctx.fillStyle=cp.done?'rgba(255,201,60,.28)':'rgba(255,107,91,.16)'; ctx.beginPath(); ctx.roundRect(x-R_CP-10,y-R_CP-10,(R_CP+10)*2,(R_CP+10)*2,12); ctx.fill();
   ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fillRect(x-38,y-30,82,64);
-  ctx.fillStyle='#fff'; ctx.fillRect(x-42,y-34,84,62); ctx.fillStyle=col; ctx.fillRect(x-42,y-34,84,14);
+  ctx.fillStyle=PAL.card; ctx.fillRect(x-42,y-34,84,62); ctx.fillStyle=col; ctx.fillRect(x-42,y-34,84,14);
   ctx.fillStyle='#fff'; ctx.font='800 10px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('ENVERSED',x,y-27);
   if(cp.done){ ctx.font='26px sans-serif'; ctx.fillText(CASES[k].ic,x,y+2); } else { ctx.fillStyle='#FF6B5B'; ctx.beginPath(); ctx.arc(x,y+2,14,0,7); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='800 18px "Baloo 2",sans-serif'; ctx.fillText(Object.keys(cps).indexOf(k)+1,x,y+3); }
   ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fillRect(x-36,y+19,72,6); ctx.fillStyle=cp.done?'#C99418':'#23A99A'; ctx.fillRect(x-36,y+19,72*Math.min(1,cp.n/NEED),6);
@@ -370,7 +388,7 @@ function stand(cp,k,t){ // exhibition stand for an Enversed case
 function endpoint(t){ const [x,y,w,h]=Z.end.r, n=Math.min(GOAL,zoneArrived), done=n>=GOAL;
   ctx.fillStyle='rgba(0,0,0,.18)'; ctx.beginPath(); ctx.roundRect(x+5,y+8,w,h,16); ctx.fill();
   ctx.fillStyle=done?'#FFC93C':'#22344F'; ctx.beginPath(); ctx.roundRect(x,y,w,h,16); ctx.fill();
-  for(let i=0;i<Math.ceil(w/24);i++){ ctx.fillStyle=i%2?'#fff':'#FF6B5B'; ctx.fillRect(x+i*24,y,Math.min(24,w-i*24),12); }
+  for(let i=0;i<Math.ceil(w/24);i++){ ctx.fillStyle=i%2?PAL.stripe:'#FF6B5B'; ctx.fillRect(x+i*24,y,Math.min(24,w-i*24),12); }
   ctx.fillStyle=done?'#22344F':'#fff'; ctx.font='800 26px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(`${Z.end.ic} ${Z.end.n}`,x+w/2,y+h/2+2);
   ctx.font='700 16px "Baloo 2",sans-serif'; ctx.fillText(`${n}/${GOAL} bezoekers`,x+w/2,y+h-14);
   const pulse=(Math.sin(t/300)+1)/2; ctx.strokeStyle=`rgba(255,201,60,${.35+pulse*.4})`; ctx.lineWidth=4; ctx.beginPath(); ctx.roundRect(x-8-pulse*4,y-8-pulse*4,w+16+pulse*8,h+16+pulse*8,20); ctx.stroke(); }
@@ -493,7 +511,7 @@ function person(pp){ // little person seen from above: shoulders, head, walking 
 function draw(t){
   ctx.drawImage(bg,0,0);
   for(const [x,y,w,h] of Z.water){ // fenced-off construction zone
-    ctx.fillStyle='#8E8676'; ctx.fillRect(x,y,w,h);
+    ctx.fillStyle=PAL.zone; ctx.fillRect(x,y,w,h);
     ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
     for(let i=0;i<w+h;i+=26){ ctx.fillStyle=(i/26)%2?'rgba(0,0,0,.06)':'rgba(255,255,255,.05)'; ctx.beginPath(); ctx.moveTo(x+i,y); ctx.lineTo(x+i+13,y); ctx.lineTo(x+i+13-h,y+h); ctx.lineTo(x+i-h,y+h); ctx.fill(); }
     const big=w>h; for(let k=0;k<(big?w:h)/140;k++){ const px=big?x+60+k*140:x+w/2, py=big?y+h/2:y+60+k*140; ctx.fillStyle='#B58A55'; ctx.fillRect(px-16,py-10,32,20); ctx.fillStyle='#FF8A00'; ctx.beginPath(); ctx.moveTo(px+28,py+10); ctx.lineTo(px+36,py-12); ctx.lineTo(px+44,py+10); ctx.fill(); }
@@ -502,7 +520,7 @@ function draw(t){
   for(const [k,cp] of Object.entries(cps)) stand(cp,k,t);
   for(const b of blocks) if(b.t==='bridge'){ let l=0; if(b.drop>0){ b.drop=Math.max(0,b.drop-.08); l=b.drop*b.drop*40; } wood(b.t,b.x,b.y-l,b.a,l); }
   endpoint(t);
-  for(const pp of people){ if(pp.fall>0){ ctx.globalAlpha=Math.max(0,1-pp.fall*1.2); ctx.fillStyle='#22252B'; ctx.font='800 20px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('?',pp.x,pp.y-10-pp.fall*20); pp.alpha=1-pp.fall; person(pp); ctx.globalAlpha=1; } else person(pp); }
+  for(const pp of people){ if(pp.fall>0){ ctx.globalAlpha=Math.max(0,1-pp.fall*1.2); ctx.fillStyle=PAL.fallInk; ctx.font='800 20px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('?',pp.x,pp.y-10-pp.fall*20); pp.alpha=1-pp.fall; person(pp); ctx.globalAlpha=1; } else person(pp); }
   for(const b of blocks) if(b.t!=='bridge'&&!b.cam){ let l=0; if(b.drop>0){ b.drop=Math.max(0,b.drop-.08); l=b.drop*b.drop*40; } if(drag&&drag.b===b&&drag.moved) l=14; wood(b.t,b.x,b.y-l,b.a,l); }
   plant(24,24); plant(W-24,24); plant(24,H-24); plant(W-24,H-24);
   entrance(t);
@@ -549,6 +567,8 @@ window.CAM=(()=>{
   //   redirect (red)  -> 'arrow' block: people walk on in the direction of the yellow segment
   //   split    (green)-> 'split' block: people turn into one of two branches, relative to their own walking
   //                       direction (same rule as the wooden roll). Edit turns/ratio below to change it.
+  // Colors of the camera visuals: saturated blue (never white/red/yellow/green: those are detection colors).
+  const VIS=DARK?{line:'#3D8BFF',shade:'rgba(5,10,20,.6)',held:'#6B7686'}:{line:'#2F7FD1',shade:'rgba(34,52,79,.45)',held:'#9AA3AF'};
   const CHIPS={
     redirect:{t:'arrow', name:'rode fiche'},
     split:{t:'split', name:'groene fiche', turns:[-90,90], ratio:.5}, // turns: degrees relative to walking direction (negative = left); ratio: share of people taking turns[0]
@@ -561,11 +581,15 @@ window.CAM=(()=>{
   const WALL={pad:6, name:'wit blok'}; // pad: half the width of a person (canvas units)
   const walls=new Map(); // bridge id -> {x, y, hw, hh, ar (radians), cs, sn, seen, held}
   const angDiff=(a,b)=>Math.abs(((a-b)%360+540)%360-180);
+  // [ ] exposure, , . fine brightness, A auto exposure, B reference image: also usable from the game window
+  const BRIDGE_KEYS=['[',']','-','=','+',',','.','a','A','b','B'];
+  let expoAsked=0, expoShown='';
   let debug=/[?&]camdebug\b/.test(location.search); // open index.html?camdebug to show raw coordinates on the canvas
   const listeners=new Set(), el=$('camStatus');
   const LABEL={off:'Camera niet verbonden',on:'Camera verbonden',seen:'Camera verbonden · object in beeld',cal:'Camera kalibreren…'};
   const LABEL_UNCAL={on:'Camera verbonden · niet gekalibreerd (K)',seen:'Object in beeld · niet gekalibreerd (K)'};
   function status(s){ let txt=(!cal&&LABEL_UNCAL[s])||LABEL[s];
+    if(s==='cal'&&calib&&calib.auto) txt=`Camera kalibreren ${Math.min(calib.i+1,ACAL_GRID.length)}/${ACAL_GRID.length} · Esc = stoppen`;
     if(s==='seen'&&(chips.size||walls.size)) txt=[...new Set([...chips.values()].map(c=>CHIPS[c.kind].name).concat(walls.size?[WALL.name+(walls.size>1?'en':'')]:[]))].join(' + ')+' in beeld'+(cal?'':' · niet gekalibreerd (K)'); if(el&&(el.dataset.s!==s||el.lastChild.textContent!==txt)){ el.dataset.s=s; el.lastChild.textContent=txt; } }
   const num=v=>typeof v==='number'&&Number.isFinite(v), c01=v=>Math.min(1,Math.max(0,v));
   // Only accept normalized values (0..1). Do not silently clamp values outside that range (e.g. pixels):
@@ -600,22 +624,104 @@ window.CAM=(()=>{
     if(!sign||!pts.every(([x,y])=>hw(h,x,y)*sign>0)) return null;
     return {h,sign,pts};
   }
+  // ---- Multi-point calibration (automatic, K): least-squares perspective + correction for lens curvature ----
+  function solveLin(A,b){ const n=b.length, M=A.map((r,i)=>[...r,b[i]]);
+    for(let c=0;c<n;c++){ let p=c; for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[p][c])) p=r;
+      if(Math.abs(M[p][c])<1e-12) return null; [M[c],M[p]]=[M[p],M[c]];
+      for(let r=0;r<n;r++) if(r!==c){ const f=M[r][c]/M[c][c]; for(let k=c;k<=n;k++) M[r][k]-=f*M[c][k]; } }
+    return M.map((r,i)=>r[n]/r[i]); }
+  function lsq(rows,rhs,ridge=0){ const n=rows[0].length, A=Array.from({length:n},()=>Array(n).fill(0)), b=Array(n).fill(0);
+    rows.forEach((r,k)=>{ for(let i=0;i<n;i++){ b[i]+=r[i]*rhs[k]; for(let j=0;j<n;j++) A[i][j]+=r[i]*r[j]; } });
+    for(let i=0;i<n;i++) A[i][i]+=ridge; return solveLin(A,b); }
+  // Lens curvature (barrel distortion of a wide-angle webcam): camera points are first "straightened" around
+  // the image center (radial model, k1/k2), then the perspective transform is applied. k1/k2 are found from the
+  // calibration points themselves.
+  function undist(c,x,y){ if(!c.k) return [x,y]; const A=c.aspect||16/9, u=(x-.5)*A, v=y-.5, r2=u*u+v*v, f=1+c.k[0]*r2+c.k[1]*r2*r2; return [.5+u*f/A,.5+v*f]; }
+  function applyCal(c,x,y){ const p=undist(c,x,y); return applyH(c,p[0],p[1]); }
+  function fitH(cam,canv){ // least-squares perspective transform (more than 4 points)
+    const rows=[], rhs=[];
+    cam.forEach(([x,y],k)=>{ const X=canv[k][0]/W, Y=canv[k][1]/H;
+      rows.push([x,y,1,0,0,0,-X*x,-X*y]); rhs.push(X); rows.push([0,0,0,x,y,1,-Y*x,-Y*y]); rhs.push(Y); });
+    const g=lsq(rows,rhs); if(!g||!g.every(Number.isFinite)) return null;
+    const h=[g[0]*W,g[1]*W,g[2]*W,g[3]*H,g[4]*H,g[5]*H,g[6],g[7],1];
+    const sign=Math.sign(hw(h,cam[0][0],cam[0][1])); if(!sign||!cam.every(([x,y])=>hw(h,x,y)*sign>0)) return null;
+    return {h,sign};
+  }
+  function fitCal(cam,canv,aspect){
+    if(!cam||cam.length<4) return null;
+    const A=aspect||16/9;
+    const tryK=k=>{ const c0={k,aspect:A}, pts=cam.map(p=>undist(c0,p[0],p[1])), f=fitH(pts,canv); if(!f) return null;
+      const c={...f,k,aspect:A}, e=Math.sqrt(cam.reduce((s,p,i)=>{ const q=applyCal(c,p[0],p[1]); return s+(q?(q[0]-canv[i][0])**2+(q[1]-canv[i][1])**2:1e6); },0)/cam.length);
+      c.rms=e; return c; };
+    let best=tryK([0,0]); if(!best) return null; const noLens=best.rms;
+    if(cam.length>=8){ // search the lens curvature (golden-section search on k1 for a few k2 values)
+      const g=(1+Math.sqrt(5))/2;
+      const search=k2=>{ let a=-1, b=1, c=b-(b-a)/g, d=a+(b-a)/g; const f=k1=>{ const r=tryK([k1,k2]); return r?r.rms:1e9; };
+        let fc=f(c), fd=f(d); for(let i=0;i<40;i++){ if(fc<fd){ b=d; d=c; fd=fc; c=b-(b-a)/g; fc=f(c); } else { a=c; c=d; fc=fd; d=a+(b-a)/g; fd=f(d); } }
+        return tryK([(a+b)/2,k2]); };
+      for(let k2=-.4;k2<=.401;k2+=.1){ const r=search(+k2.toFixed(2)); if(r&&r.rms<best.rms) best=r; }
+      for(let k2=best.k[1]-.08;k2<=best.k[1]+.081;k2+=.02){ const r=search(+k2.toFixed(3)); if(r&&r.rms<best.rms) best=r; }
+      if(!(best.rms<noLens*.9)) best=tryK([0,0]); // only use the lens model when it clearly helps
+    }
+    best.rmsNoLens=noLens; best.auto={cam,canv,aspect:A}; best.lens=!!(best.k[0]||best.k[1]);
+    return best;
+  }
   function loadCal(){ try{ const c=JSON.parse(localStorage.getItem(CAL_KEY)||'null');
+    if(c&&c.auto&&Array.isArray(c.auto.cam)&&Array.isArray(c.auto.canv)) return fitCal(c.auto.cam,c.auto.canv,c.auto.aspect);
     return c&&Array.isArray(c.pts)&&c.pts.length===4&&c.pts.every(p=>Array.isArray(p)&&p.length===2&&p.every(num))?makeCal(c.pts):null; }catch(e){ return null; } }
-  function saveCal(){ try{ if(cal) localStorage.setItem(CAL_KEY,JSON.stringify({pts:cal.pts,at:new Date().toISOString()})); else localStorage.removeItem(CAL_KEY); }catch(e){} }
+  function saveCal(){ try{ if(!cal) localStorage.removeItem(CAL_KEY);
+    else localStorage.setItem(CAL_KEY,JSON.stringify(cal.auto?{auto:cal.auto,rms:cal.rms,at:new Date().toISOString()}:{pts:cal.pts,at:new Date().toISOString()})); }catch(e){} }
 
   function toCanvas(nx,ny){
     if(!cal) return [c01(nx)*W, c01(ny)*H]; // uncalibrated: whole camera frame = canvas
-    const p=applyH(cal,nx,ny);
+    const p=applyCal(cal,nx,ny);
     if(!p||p[0]<-OFF_CANVAS||p[0]>W+OFF_CANVAS||p[1]<-OFF_CANVAS||p[1]>H+OFF_CANVAS) return null; // object lies next to the playfield
     return [Math.min(W,Math.max(0,p[0])), Math.min(H,Math.max(0,p[1]))];
   }
 
-  function mapRaw(nx,ny){ return cal?applyH(cal,nx,ny):[nx*W,ny*H]; } // helper points (rim, heading): no clamping
+  function mapRaw(nx,ny){ return cal?applyCal(cal,nx,ny):[nx*W,ny*H]; } // helper points (rim, heading): no clamping
 
   // ---- Calibration: hold the object still on each target; the averaged raw position is recorded ----
   function startCal(){ calib={pts:[],buf:[],seen:false,near:false}; cur=null; console.info('[camera] kalibratie gestart'); }
-  function stopCal(){ calib=null; }
+  function stopCal(){ if(calib&&calib.auto) sendCal({cmd:'cancel'}); calib=null; }
+  // Automatic: the field turns black, one bright square at a time is shown at a known spot, the bridge
+  // reports where the camera sees it. 12 points over the whole field; no object has to be placed.
+  const ACAL_GRID=[[.06,.08],[.36,.08],[.64,.08],[.94,.08],[.06,.5],[.36,.5],[.64,.5],[.94,.5],[.06,.92],[.36,.92],[.64,.92],[.94,.92]];
+  const ACAL_SIZE=44, ACAL_SHOW=150, ACAL_TIMEOUT=7000;
+  const acalTarget=i=>[ACAL_GRID[i][0]*W, ACAL_GRID[i][1]*H];
+  function sendCal(o){ if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'cal',...o})); }
+  function startAutoCal(){
+    if(!ws||ws.readyState!==1){ if(typeof toast==='function') toast('<i>📷</i>Camera niet verbonden: handmatige kalibratie'); startCal(); return; }
+    calib={auto:true,phase:'black',t:performance.now(),sent:false,i:0,tries:0,cam:[],canv:[],missed:[]}; cur=null;
+    console.info('[camera] automatische kalibratie gestart');
+  }
+  function acalNext(now){ const s=calib; s.i++; s.tries=0; s.t=now; s.sent=false; if(s.i>=ACAL_GRID.length) acalFinish(); }
+  function acalFinish(){ const s=calib; calib=null; sendCal({cmd:'cancel'});
+    console.info('[camera] kalibratiepunten (camera -> scherm)',JSON.stringify(s.cam.map((p,k)=>[p.map(v=>+v.toFixed(3)),s.canv[k].map(Math.round)])));
+    const c=s.cam.length>=6?fitCal(s.cam,s.canv,s.aspect):null;
+    if(c){ cal=c; saveCal(); setObjs(objs);
+      console.info('[camera] automatische kalibratie',s.cam.length,'punten, gemiddelde afwijking',c.rms.toFixed(1),'px',c.lens?`(lenscorrectie k1=${c.k[0].toFixed(3)} k2=${c.k[1].toFixed(3)}; zonder: ${c.rmsNoLens.toFixed(1)} px)`:'',s.missed);
+      if(typeof toast==='function') toast(`<i>🎯</i><div>Camera gekalibreerd<small>${s.cam.length} punten · gemiddelde afwijking ${c.rms.toFixed(1).replace('.',',')} px${c.lens?' · met lenscorrectie':''}</small></div>`); }
+    else if(typeof toast==='function') toast(`<i>⚠️</i><div>Kalibratie mislukt<small>${s.cam.length} van ${ACAL_GRID.length} punten gezien${s.missed[0]?': '+s.missed[0]:''}. Staat de game op het volle scherm en ziet de camera het hele speelveld?</small></div>`);
+  }
+  function acalTick(now){ const s=calib; if(!s||!s.auto) return;
+    if(!connected){ calib=null; if(typeof toast==='function') toast('<i>⚠️</i>Kalibratie gestopt: camera niet verbonden'); return; }
+    if(!s.sent&&now-s.t>(s.phase==='black'?700:ACAL_SHOW)){ s.sent=true; s.sentT=now; sendCal(s.phase==='black'?{cmd:'ref'}:{cmd:'point',i:s.i}); }
+    if(s.sent&&now-s.sentT>ACAL_TIMEOUT){ // no answer
+      if(s.phase==='black'){ calib=null; if(typeof toast==='function') toast('<i>⚠️</i>Kalibratie: geen antwoord van camera_bridge.py (nieuwe versie nodig?)'); }
+      else { s.missed.push('geen antwoord'); acalNext(now); } }
+  }
+  function onCalMsg(m){ const s=calib, now=performance.now(); if(!s||!s.auto) return;
+    if(m.ref&&s.phase==='black'){ s.phase='point'; s.i=0; s.t=now; s.sent=false; return; }
+    if(s.phase!=='point'||m.i!==s.i) return;
+    if(m.ok&&num(m.nx)&&num(m.ny)){ s.cam.push([m.nx,m.ny]); s.canv.push(acalTarget(s.i)); if(num(m.fw)&&num(m.fh)&&m.fh>0) s.aspect=m.fw/m.fh; acalNext(now); }
+    else if(++s.tries<2){ s.t=now; s.sent=false; } // try this point once more
+    else { s.missed.push(String(m.reason||'niet gezien')); acalNext(now); }
+  }
+  function drawAutoCal(c){ const s=calib;
+    c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H); // nothing else may change on the field while measuring
+    if(s.phase==='point'){ const [x,y]=acalTarget(s.i); c.fillStyle='#fff'; c.fillRect(x-ACAL_SIZE/2,y-ACAL_SIZE/2,ACAL_SIZE,ACAL_SIZE); }
+    c.restore(); }
   function calSample(o){
     const s=calib, now=performance.now();
     if(!o){ s.buf=[]; s.seen=false; return; }
@@ -635,8 +741,15 @@ window.CAM=(()=>{
   }
   document.addEventListener('keydown',e=>{
     if(e.ctrlKey||e.metaKey||e.altKey||(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]'))) return;
-    if(e.key==='k'||e.key==='K'){ e.preventDefault(); startCal(); }
+    if(e.key==='k'||e.key==='K'){ e.preventDefault(); if(e.shiftKey) startCal(); else startAutoCal(); } // Shift+K: manual (object on 4 targets)
     else if(e.key==='Escape'&&calib){ e.preventDefault(); stopCal(); }
+    else if(BRIDGE_KEYS.includes(e.key)){ // camera settings from the game window: forwarded to camera_bridge.py
+      e.preventDefault();
+      if(!ws||ws.readyState!==1){ if(typeof toast==='function') toast('<i>📷</i>Camera niet verbonden'); return; }
+      ws.send(JSON.stringify({type:'key',key:e.key}));
+      if(e.key==='b'||e.key==='B'){ if(typeof toast==='function') toast('<i>📷</i><div>Referentie vastgelegd<small>Wat nu in beeld is, telt niet als blok.</small></div>'); }
+      else expoAsked=performance.now(); // the next message shows the new exposure
+    }
   });
 
   function connect(){
@@ -652,8 +765,12 @@ window.CAM=(()=>{
 
   function receive(data){
     let m; try{ m=JSON.parse(data); }catch(e){ return; }
+    if(m&&typeof m==='object'&&m.type==='cal'){ lastMsg=performance.now(); onCalMsg(m); return; } // calibration reply
     if(!m||typeof m!=='object'||typeof m.detected!=='boolean') return;
     lastMsg=performance.now(); raw=m;
+    if(typeof m.exposure==='string'&&expoAsked&&m.exposure!==expoShown&&performance.now()-expoAsked<3000){
+      expoShown=m.exposure; expoAsked=0; if(typeof toast==='function') toast(`<i>📷</i>${m.exposure.replace(/[<>&]/g,'')}`); }
+    else if(typeof m.exposure==='string'&&!expoShown) expoShown=m.exposure;
     let list=[];
     if(m.detected){
       const pt=v=>Array.isArray(v)&&v.length===2&&num(v[0])&&num(v[1])&&Math.abs(v[0]-.5)<1&&Math.abs(v[1]-.5)<1?[v[0],v[1]]:null;
@@ -662,7 +779,7 @@ window.CAM=(()=>{
         corners:Array.isArray(o.corners)&&o.corners.length===4&&o.corners.every(c=>pt(c))?o.corners.map(pt):null}));
       else if(inRange(m.nx,m.ny)) list=[{id:'0',color:'',nx:c01(m.nx),ny:c01(m.ny),angle:null,area:0}];
     }
-    if(calib) calSample(list.find(o=>o.kind==='block'||o.kind==='probe')||list[0]||null); // calibrate with the white block
+    if(calib&&!calib.auto) calSample(list.find(o=>o.kind==='block'||o.kind==='probe')||list[0]||null); // manual calibration with the white block
     setObjs(list);
   }
   function setObjs(list){
@@ -764,8 +881,8 @@ window.CAM=(()=>{
     for(const w of walls.values()){
       c.save(); c.translate(w.x,w.y); c.rotate(w.ar);
       const ex=w.hw+8, ey=w.hh+8;
-      c.lineWidth=6; c.strokeStyle='rgba(34,52,79,.4)'; c.beginPath(); c.roundRect(-ex,-ey,2*ex,2*ey,8); c.stroke();
-      c.lineWidth=2.5; c.strokeStyle=w.held?'#9AA3AF':'#2F7FD1'; if(w.held) c.setLineDash([7,7]); c.beginPath(); c.roundRect(-ex,-ey,2*ex,2*ey,8); c.stroke();
+      c.lineWidth=6; c.strokeStyle=VIS.shade; c.beginPath(); c.roundRect(-ex,-ey,2*ex,2*ey,8); c.stroke();
+      c.lineWidth=2.5; c.strokeStyle=w.held?VIS.held:VIS.line; if(w.held) c.setLineDash([7,7]); c.beginPath(); c.roundRect(-ex,-ey,2*ex,2*ey,8); c.stroke();
       c.restore(); }
   }
   // Split branch for a chip, called by the simulation when a person reaches it.
@@ -779,13 +896,13 @@ window.CAM=(()=>{
     for(let s=from+off; s<from+len; s+=gap){ const px=x+ca*s, py=y+sa*s, f=Math.min(1,(s-from)/18,(from+len-s)/30);
       c.save(); c.globalAlpha=alpha*f; c.translate(px,py); c.rotate(a); c.lineCap='round'; c.lineJoin='round';
       c.beginPath(); c.moveTo(-6,-8); c.lineTo(3,0); c.lineTo(-6,8);
-      c.lineWidth=8; c.strokeStyle='rgba(34,52,79,.55)'; c.stroke(); c.lineWidth=4; c.strokeStyle='#2F7FD1'; c.stroke(); c.restore(); }
+      c.lineWidth=8; c.strokeStyle=VIS.shade; c.stroke(); c.lineWidth=4; c.strokeStyle=VIS.line; c.stroke(); c.restore(); }
   }
   function drawChips(c,t){
     for(const ch of chips.values()){ const b=ch.b, r=ch.r+10, live=!ch.held&&!ch.wet;
       c.save();
-      c.lineWidth=6; c.strokeStyle='rgba(34,52,79,.4)'; c.beginPath(); c.arc(b.x,b.y,r,0,7); c.stroke();
-      c.lineWidth=2.5; c.strokeStyle=live?'#2F7FD1':'#9AA3AF'; if(!live) c.setLineDash([7,7]); c.beginPath(); c.arc(b.x,b.y,r,0,7); c.stroke(); c.setLineDash([]);
+      c.lineWidth=6; c.strokeStyle=VIS.shade; c.beginPath(); c.arc(b.x,b.y,r,0,7); c.stroke();
+      c.lineWidth=2.5; c.strokeStyle=live?VIS.line:VIS.held; if(!live) c.setLineDash([7,7]); c.beginPath(); c.arc(b.x,b.y,r,0,7); c.stroke(); c.setLineDash([]);
       if(ch.wet){ const y=b.y+r+34<H?b.y+r+28:b.y-r-28; pill(c,'In de afgezette zone werkt alleen een plank',Math.min(W-220,Math.max(220,b.x)),y); }
       else if(ch.kind==='redirect') chevrons(c,b.x,b.y,b.a,r+4,120,t,.9);
       else { const inA=b.inA, cfg=CHIPS.split;
@@ -842,12 +959,12 @@ window.CAM=(()=>{
   function draw(c,t){
     try{
       const dt=Math.min(.1,Math.max(0,(t-(lastDraw||t))/1000)), now=performance.now(); lastDraw=t;
-      if(now-lastMsg>STALE){ if(connected&&objs.length) setObjs([]); if(calib) calSample(null); } // bridge stalled: show nothing
+      if(now-lastMsg>STALE){ if(connected&&objs.length) setObjs([]); if(calib&&!calib.auto) calSample(null); } // bridge stalled: show nothing
       updateChips(now); updateWalls(now);
       status(calib?'cal':!connected?'off':objs.length?'seen':'on');
       ringR=RING_PX*W/Math.max(1,cv.getBoundingClientRect().width); // screen px -> canvas units (CSS scaling)
       if(debug) debugInfo(c);
-      if(calib){ drawCal(c,now); return; }
+      if(calib){ if(calib.auto){ acalTick(now); if(calib) drawAutoCal(c); } else drawCal(c,now); return; }
       drawWalls(c); drawChips(c,t);
       const p=objs.find(o=>o.kind==='probe'); // the white test object drives the cursor; chips act on the simulation
       if(p){
@@ -872,6 +989,7 @@ window.CAM=(()=>{
   connect();
   if(/[?&]camcal\b/.test(location.search)) startCal(); // index.html?camcal starts calibration right away
   return {
+    _calMath:{fitCal,makeCal,applyCal,acalTarget,ACAL_GRID}, // for tests
     draw, toCanvas, overlaps, coversScreen, splitTurn, collide, physicalCount:()=>chips.size+walls.size, setDebug:v=>{ debug=!!v; },
     calibrate:startCal, resetCalibration:()=>{ cal=null; saveCal(); },
     state:()=>({connected, calibrated:!!cal, calibrating:!!calib, objects:objs.map(o=>({...o})), cursor:cur?{x:cur.x,y:cur.y,live:!!cur.live,a:cur.a}:null, ringR,
