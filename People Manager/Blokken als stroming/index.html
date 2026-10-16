@@ -94,8 +94,8 @@ body.dark .t-res{background:#2B3445;color:#FF8A7D;box-shadow:inset 0 0 0 3px #FF
   <div id="camStatus" data-s="off" role="status" title="Koppeling met camera_bridge.py (ws://127.0.0.1:8765)"><i></i><span>Camera niet verbonden</span></div>
   <div class="hud"><div><b id="inside">0</b><span>onderweg</span></div><div><b id="out">0</b><span>op bestemming</span></div><div><b id="lost">0</b><span>verdwaald</span></div><div><b id="score">0</b><span>score</span></div></div></header>
 <main>
-  <div id="boardWrap"><canvas id="cv" width="1152" height="792" aria-label="Speelveld: leg blokken om de stroom mensen te leiden"></canvas></div>
-  <aside><div class="tray" id="tray"></div><div id="cases"><h2>Doel in deze hal</h2><div id="caseList"></div></div><button class="tool t-res" id="resBtn"><span class="ic">🏁</span><span>Mijn resultaat</span></button></aside>
+  <div id="boardWrap"><canvas id="cv" width="792" height="1152" aria-label="Speelveld: leg blokken om de stroom mensen te leiden"></canvas></div>
+  <aside><div class="tray" id="tray" hidden></div><div id="cases"><h2>Doel in deze hal</h2><div id="caseList"></div></div><button class="tool t-res" id="resBtn"><span class="ic">🏁</span><span>Mijn resultaat</span></button></aside>
 </main>
 <div id="toast"></div>
 <div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
@@ -270,7 +270,7 @@ const RESULTS = (() => {
 })();
 </script>
 <script>
-const W=1152, H=792, T=72;
+const W=792, H=1152, T=72;
 // Texts for the case pop-ups: in plain language, for someone who does not know Enversed Studios yet.
 // wat = what it is, waarom = what it delivers. Edit here if the description needs to be more accurate.
 const CASES={
@@ -286,25 +286,25 @@ const CASES={
  'a':{ic:'✈️',n:'Ervaar Schiphol',wat:'Een 360°-tour waarmee je digitaal rondkijkt bij Schiphol.',waarom:'Zo zie je hoe het is om daar te werken.'},
  'b':{ic:'✨',n:'Jouw organisatie?',wat:'Enversed Studios maakt trainingen, games en belevingen op maat.',waarom:'Het volgende project kan dat van jou zijn.'}
 };
-// Open space: source at the top, water as rectangles, checkpoints as circles. Anyone leaving the edge disappears.
+// Open space (portrait): source at the top, checkpoints as circles. People bounce lightly off the edges.
 const ZONES=[
- {n:'Hal 1 · Entree',inv:{arrow:4,bridge:1,split:0,cube:1},spawn:[600,-10],
-  water:[[60,640,1032,56]],cps:[['1',250,330],['2',760,560]],
-  end:{r:[880,712,200,80],n:'Netwerkcafé',ic:'☕'}},
- {n:'Hal 2 · Beursplein',inv:{arrow:4,bridge:2,split:1,cube:1},spawn:[576,-10],
-  water:[[0,560,1152,62]],cps:[['3',300,400],['4',860,400]],
-  end:{r:[426,700,300,90],n:'Inschrijfbalie',ic:'📝'}},
- {n:'Hal 3 · Innovatiehal',inv:{arrow:7,bridge:1,split:1,cube:1},spawn:[180,-10],
-  water:[[740,0,64,500]],cps:[['5',460,260],['6',980,330],['7',660,640]],
-  end:{r:[720,712,400,80],n:'Keynote-podium',ic:'🎤'}},
- {n:'Hal 4 · Expo-hal',inv:{arrow:4,bridge:2,split:1,cube:1},spawn:[960,-10],
-  water:[[0,250,1152,60],[520,330,60,370]],cps:[['8',960,170],['9',760,500],['a',420,400],['b',420,620]],
-  end:{r:[40,712,260,80],n:'Afsluitborrel',ic:'🥂'}}
+ {n:'Hal 1 · Entree',inv:{},spawn:[396,-10],
+  water:[],cps:[['1',220,320],['2',580,520]],
+  end:{r:[246,1040,300,90],n:'Netwerkcafé',ic:'☕'}},
+ {n:'Hal 2 · Beursplein',inv:{},spawn:[396,-10],
+  water:[],cps:[['3',220,380],['4',580,380]],
+  end:{r:[246,1040,300,90],n:'Inschrijfbalie',ic:'📝'}},
+ {n:'Hal 3 · Innovatiehal',inv:{},spawn:[200,-10],
+  water:[],cps:[['5',220,280],['6',580,360],['7',400,700]],
+  end:{r:[196,1040,400,90],n:'Keynote-podium',ic:'🎤'}},
+ {n:'Hal 4 · Expo-hal',inv:{},spawn:[600,-10],
+  water:[],cps:[['8',580,200],['9',400,480],['a',220,400],['b',220,700]],
+  end:{r:[40,1040,280,90],n:'Afsluitborrel',ic:'🥂'}}
 ];
 const GOAL=30, NEED=25, R_TRI=34, R_ROL=30, R_CUBE=30, R_CP=42, PLANK_L=160, PLANK_W=48;
 const SHIRTS=['#E8453C','#2F7FD1','#23A99A','#F2A100','#7A5CFA','#E8457A','#3A9D4E'];
 const SKIN=['#F2C9A0','#D9A27A','#A8704A','#7A4E2E','#F5D6B8'];
-let zoneArrived=0, Z, zi, blocks, people, spawnT, tool='arrow', inv, cps, raf, last, zoneT=0, totals, celebrate=0, lastTouch=performance.now(), round=1, bid=0, bg=null, drag=null;
+let zoneArrived=0, Z, zi, blocks, people, spawnT, tool=null, inv, cps, raf, last, zoneT=0, totals, celebrate=0, lastTouch=performance.now(), round=1, bid=0, bg=null, drag=null;
 const cv=document.getElementById('cv'), ctx=cv.getContext('2d'), $=id=>document.getElementById(id);
 function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
 function tone(f,d=.08,t='triangle',v=.06){const c=ac(); if(!c||c.state!=='running')return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
@@ -399,18 +399,15 @@ function entrance(t){ const [sx]=Z.spawn;
 function loadZone(i){
   zi=i; Z=ZONES[i]; blocks=[]; people=[]; spawnT=0; inv={...Z.inv}; zoneT=0; cps={}; zoneArrived=0; bg=makeBg();
   for(const [k,x,y] of Z.cps) cps[k]={x,y,n:0,done:false};
-  $('zone').textContent=Z.n+(round>1?` · ronde ${round}`:''); if(!(tool in inv)||inv[tool]<=0) tool='arrow'; renderTray(); renderCases();
+  $('zone').textContent=Z.n+(round>1?` · ronde ${round}`:''); renderTray(); renderCases();
 }
 function inRect(x,y,[rx,ry,rw,rh]){ return x>=rx&&x<=rx+rw&&y>=ry&&y<=ry+rh; }
 function onPlank(x,y){ return blocks.some(b=>{ if(b.t!=='bridge') return false; const a=rad(b.a), dx=x-b.x, dy=y-b.y; const u=dx*Math.cos(a)+dy*Math.sin(a), v=-dx*Math.sin(a)+dy*Math.cos(a); return Math.abs(u)<=PLANK_L/2 && Math.abs(v)<=PLANK_W/2; }); }
 function inWater(x,y){ return Z.water.some(r=>inRect(x,y,r)) && !onPlank(x,y); }
 function blockAt(x,y){ return [...blocks].reverse().find(b=> !b.cam && b.t==='bridge' ? (()=>{ const a=rad(b.a), dx=x-b.x, dy=y-b.y; return Math.abs(dx*Math.cos(a)+dy*Math.sin(a))<=PLANK_L/2 && Math.abs(-dx*Math.sin(a)+dy*Math.cos(a))<=PLANK_W/2+6; })() : !b.cam && Math.hypot(x-b.x,y-b.y)<38); } // camera chips (b.cam) are moved by hand, not by mouse
 
-function renderTray(){
-  const L={arrow:['Driehoek','wijst de weg'],bridge:['Plank','loopbrug over afzetting'],split:['Rol','splitst de stroom'],cube:['Blokje','keert de stroom'],erase:['Oppakken','blok terug']};
-  $('tray').innerHTML=Object.entries(L).filter(([k])=>k==='erase'||Z.inv[k]>0).map(([k,[n,d]])=>`<button class="tool t-${k} ${tool===k?'sel':''}" data-t="${k}" ${k!=='erase'&&inv[k]<=0?'disabled':''}><span class="ic">${k==='erase'?'✋':blockSVG(k)}</span><span>${n}<small>${d}</small></span>${k!=='erase'?`<span class="cnt">${inv[k]}</span>`:''}</button>`).join('');
-}
-$('tray').onclick=e=>{ const b=e.target.closest('.tool'); if(!b||b.disabled) return; touch(); tool=b.dataset.t; renderTray(); tone(500,.05); };
+function renderTray(){ $('tray').innerHTML=''; }
+$('tray').onclick=()=>{};
 function renderCases(){
   const bar=(p,c)=>`<div class="pb"><em style="width:${Math.min(100,p*100)}%;background:${c}"></em></div>`;
   const stands=Object.entries(cps).map(([k,cp],i)=>{ const c=CASES[k];
@@ -424,23 +421,9 @@ function touch(){ lastTouch=performance.now(); const c=ac(); if(c&&c.state==='su
 
 // ---- Free placing, dragging and rotating ----
 function pt(e){ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*W, (e.clientY-r.top)/r.height*H]; }
-cv.addEventListener('pointerdown',e=>{
-  touch(); if(celebrate>0) return; const [x,y]=pt(e); const b=blockAt(x,y);
-  if(tool==='erase'){ if(b){ inv[b.t]++; blocks=blocks.filter(o=>o!==b); tone(330,.07); renderTray(); } return; }
-  if(b){ drag={b,sx:x,sy:y,ox:b.x-x,oy:b.y-y,moved:false}; cv.setPointerCapture(e.pointerId); return; }
-  if(inv[tool]<=0) return;
-  const wet=Z.water.some(r=>inRect(x,y,r));
-  if(tool==='bridge' && !wet){ toast('<i>🚧</i>Een plank leg je over de afgezette zone'); return; }
-  if(tool!=='bridge' && wet){ toast('<i>🚧</i>In de afgezette zone kan alleen een plank'); return; }
-  const r=Z.water.find(r=>inRect(x,y,r));
-  const a = tool==='bridge' ? (r[2]>r[3]?90:0) : tool==='arrow' ? 90 : 0;
-  blocks.push({id:++bid,t:tool,x,y,a,alt:0,drop:1}); inv[tool]--; knock(); renderTray();
-});
-cv.addEventListener('pointermove',e=>{ if(!drag) return; const [x,y]=pt(e); if(Math.hypot(x-drag.sx,y-drag.sy)>8) drag.moved=true; if(drag.moved){ drag.b.x=Math.max(20,Math.min(W-20,x+drag.ox)); drag.b.y=Math.max(20,Math.min(H-20,y+drag.oy)); } });
-cv.addEventListener('pointerup',()=>{ if(!drag) return; const b=drag.b;
-  if(!drag.moved){ if(b.t==='arrow'){ b.a=(b.a+45)%360; tone(620,.05,'square',.03); } else if(b.t==='bridge'){ b.a=(b.a+90)%180; tone(400,.05,'square',.03); } }
-  else { const wet=Z.water.some(r=>inRect(b.x,b.y,r)); if((b.t==='bridge')!==wet){ inv[b.t]++; blocks=blocks.filter(o=>o!==b); renderTray(); toast(b.t==='bridge'?'<i>🚧</i>De plank moet over de afgezette zone liggen':'<i>🚧</i>Dat blok kan niet in de afgezette zone'); } else knock(); }
-  drag=null; });
+cv.addEventListener('pointerdown',e=>{ touch(); }); // geen houten blokken meer plaatsen
+cv.addEventListener('pointermove',e=>{});
+cv.addEventListener('pointerup',()=>{});
 
 // ---- People ----
 function spawn(){
@@ -469,8 +452,12 @@ function update(dt){
     if(window.CAM) CAM.collide(pp); // physical white blocks: walls people walk around
     for(const [k,cp] of Object.entries(cps)) if(!pp.seen[k] && Math.hypot(pp.x-cp.x,pp.y-cp.y)<R_CP){ pp.seen[k]=1; if(!cp.done){ cp.n++; if(cp.n%4===0) renderCases(); if(cp.n>=NEED) caseDone(k); } }
     if(inRect(pp.x,pp.y,Z.end.r)){ pp.gone=true; totals.out++; zoneArrived++; totals.score+=4; if(zoneArrived%5===0) tone(880+Math.random()*300,.05,'sine',.03); if(zoneArrived===GOAL){ toast(`<i>${Z.end.ic}</i><div>${Z.end.n} loopt vol!<small>${GOAL} bezoekers aangekomen</small></div>`); tone(988,.2); } checkGoal(); continue; }
-    if(pp.x<-10||pp.x>W+10||pp.y<-30||pp.y>H+10){ pp.gone=true; totals.stray++; continue; }
-    if(inWater(pp.x,pp.y)){ pp.fall=.01; totals.lost++; if(Math.random()<.3) tone(240,.08,'sine',.02); }
+    // lichte bounce tegen de randen van het speelveld (impact-effect)
+    const m=14;
+    if(pp.x<m){ pp.x=m; pp.a=((180-pp.a)%360+360)%360; pp.v=Math.min(pp.v*1.05,140); if(Math.random()<.15) tone(420+Math.random()*80,.04,'triangle',.025); }
+    else if(pp.x>W-m){ pp.x=W-m; pp.a=((180-pp.a)%360+360)%360; pp.v=Math.min(pp.v*1.05,140); if(Math.random()<.15) tone(420+Math.random()*80,.04,'triangle',.025); }
+    if(pp.y<m){ pp.y=m; pp.a=((-pp.a)%360+360)%360; pp.v=Math.min(pp.v*1.05,140); if(Math.random()<.15) tone(420+Math.random()*80,.04,'triangle',.025); }
+    else if(pp.y>H-m){ pp.y=H-m; pp.a=((-pp.a)%360+360)%360; pp.v=Math.min(pp.v*1.05,140); if(Math.random()<.15) tone(420+Math.random()*80,.04,'triangle',.025); }
   }
   people=people.filter(p=>!p.gone);
   if(celebrate>0){ celebrate-=dt; if(celebrate<=0){ celebrate=0; const n=(zi+1)%ZONES.length; if(n===0) round++; loadZone(n); toast(`<i>🏖️</i>${ZONES[n].n}`); } }
@@ -525,7 +512,7 @@ function draw(t){
   plant(24,24); plant(W-24,24); plant(24,H-24); plant(W-24,H-24);
   entrance(t);
   if(celebrate>0){ const a=Math.min(1,celebrate*.8,(3-celebrate)*3), by=freeY(W,140); ctx.globalAlpha=a; ctx.fillStyle='rgba(58,42,26,.55)'; ctx.fillRect(0,by-70,W,140); ctx.fillStyle='#fff'; ctx.font='800 72px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('Arena voltooid!',W/2,by-6); ctx.font='600 26px "Baloo 2",sans-serif'; ctx.fillText('Op naar '+ZONES[(zi+1)%ZONES.length].n.split(' · ')[1].toLowerCase(),W/2,by+44); ctx.globalAlpha=1; }
-  if(performance.now()-lastTouch>12000 && !blocks.length && !(window.CAM&&CAM.physicalCount()) && celebrate<=0 && !(window.CAM&&CAM.state().calibrating)){ const hy=freeY(720,64); ctx.fillStyle='rgba(58,42,26,.6)'; ctx.beginPath(); ctx.roundRect(W/2-360,hy-32,720,64,32); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='700 26px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(`Leg blokken: langs de Enversed-stands naar ${Z.end.ic} ${Z.end.n}`,W/2,hy); }
+  if(performance.now()-lastTouch>12000 && !(window.CAM&&CAM.physicalCount()) && celebrate<=0 && !(window.CAM&&CAM.state().calibrating)){ const hy=freeY(720,64); ctx.fillStyle='rgba(58,42,26,.6)'; ctx.beginPath(); ctx.roundRect(W/2-360,hy-32,720,64,32); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='700 26px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(`Begeleid de mensen langs de Enversed-stands naar ${Z.end.ic} ${Z.end.n}`,W/2,hy); }
 }
 function loop(now){ const dt=Math.min(.05,(now-last)/1000); last=now; update(dt); draw(now); if(window.CAM) CAM.draw(ctx,now); if(Math.floor(now/200)!==loop.h){ loop.h=Math.floor(now/200); hud(); } raf=requestAnimationFrame(loop); }
 $('resBtn').onclick=()=>{ touch();
@@ -569,10 +556,7 @@ window.CAM=(()=>{
   //                       direction (same rule as the wooden roll). Edit turns/ratio below to change it.
   // Colors of the camera visuals: saturated blue (never white/red/yellow/green: those are detection colors).
   const VIS=DARK?{line:'#3D8BFF',shade:'rgba(5,10,20,.6)',held:'#6B7686'}:{line:'#2F7FD1',shade:'rgba(34,52,79,.45)',held:'#9AA3AF'};
-  const CHIPS={
-    redirect:{t:'arrow', name:'rode fiche'},
-    split:{t:'split', name:'groene fiche', turns:[-90,90], ratio:.5}, // turns: degrees relative to walking direction (negative = left); ratio: share of people taking turns[0]
-  };
+  const CHIPS={}; // fiches uitgeschakeld
   const CHIP_GRACE=2000, CHIP_PAD=6, CHIP_POS_DB=4, CHIP_ANG_DB=4; // ms kept after loss; trigger margin; dead bands (canvas px / degrees)
   const chips=new Map(); // bridge id -> {kind, b (block in the simulation), seen, held, wet}
   // ---- White blocks: walls ----

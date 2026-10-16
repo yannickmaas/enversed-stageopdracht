@@ -94,7 +94,7 @@ TABLE_CORNERS = None
 # HSV ranges measured on photos of the actual chips (red H 2-8, yellow H 19-28,
 # green H 69-82) with margin. Click in the camera window to print the HSV value of
 # a pixel and fine-tune these ranges for your own lighting.
-CHIP_DETECTION = True
+CHIP_DETECTION = False
 # Red chip: first the whole warm chip (red, orange and yellow together) is found with
 # low thresholds; then the yellow segment is the part that is clearly more yellow
 # than the rest of that chip. This is relative, so it keeps working when the webcam
