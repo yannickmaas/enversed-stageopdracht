@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="nl" data-game="zoekpuzzel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zoekpuzzel — Enversed Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--night:#0B1020;--ink:#E9ECF8;--mut:#8D96B8;--beam:#FFE7A3;--uv:#9B6BFF;--ok:#3DDC97;--bad:#FF5C6C;--rs-acc:#FFE7A3;--rs-on:#0B1020;
+  font-family:Manrope,"Segoe UI",sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--night);color:var(--ink);display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none}
+.d{font-family:Unbounded,"Arial Black",sans-serif}
+header{display:flex;align-items:center;gap:22px;padding:12px 24px}
+h1{margin:0;font-size:28px;font-weight:800}
+#caseT{font-size:17px;color:var(--mut)}
+.hud{margin-left:auto;display:flex;gap:22px;align-items:center}
+.hud div{text-align:center;line-height:1}.hud b{display:block;font-family:Unbounded,sans-serif;font-size:26px}.hud span{font-size:13px;color:var(--mut)}
+#bat{width:140px;height:30px;border:3px solid var(--ink);border-radius:8px;position:relative;padding:3px}
+#bat::after{content:"";position:absolute;right:-9px;top:8px;width:6px;height:10px;background:var(--ink);border-radius:0 3px 3px 0}
+#batF{height:100%;border-radius:4px;background:var(--beam);transition:background .3s}
+main{flex:1;display:grid;grid-template-columns:1fr 300px;gap:16px;padding:0 24px 20px;min-height:0}
+#stageWrap{position:relative;min-height:0;border-radius:18px;overflow:hidden;background:#000}
+svg#scene{width:100%;height:100%;display:block;touch-action:none;cursor:none}
+#uvBtn{position:absolute;left:16px;bottom:16px;font:inherit;font-weight:800;font-size:20px;border:3px solid var(--uv);background:rgba(11,16,32,.8);color:#fff;border-radius:40px;padding:12px 22px;cursor:pointer;z-index:3}
+#uvBtn.on{background:var(--uv)}
+#card{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:min(560px,92%);background:#141B33;border:3px solid var(--beam);border-radius:20px;padding:18px 20px;z-index:4}
+#card[hidden]{display:none}
+#card.uv{border-color:var(--uv)}
+#card h3{margin:0 0 4px;font-size:24px}
+#card p{margin:0 0 14px;font-size:18px;line-height:1.35;color:#C9CFE6}
+.acts{display:flex;gap:10px}
+.btn{font:inherit;font-weight:800;font-size:19px;border:0;border-radius:14px;padding:14px 20px;cursor:pointer;flex:1}
+.btn.k{background:var(--bad);color:#fff}.btn.n{background:#2A3358;color:#fff}
+aside{background:#121831;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0}
+aside h2{margin:0;font-size:18px}
+#dossier{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.dz{background:#1B2345;border-radius:12px;padding:9px 12px;font-size:15px;line-height:1.3;border-left:5px solid var(--bad)}
+.dz.uv{border-left-color:var(--uv)}
+.dz small{display:block;color:var(--mut);font-size:13px}
+.empty{color:var(--mut);font-size:15px;line-height:1.4}
+#recon{font:inherit;font-weight:800;font-size:20px;border:0;border-radius:16px;padding:16px;background:var(--beam);color:var(--night);cursor:pointer}
+#recon:disabled{opacity:.3;cursor:not-allowed}
+button:focus-visible,a:focus-visible{outline:4px solid var(--beam);outline-offset:3px}
+.overlay{position:fixed;inset:0;background:rgba(5,8,18,.94);display:grid;place-items:center;z-index:10;padding:24px}
+.overlay[hidden]{display:none}
+.box{max-width:900px;width:100%;max-height:92vh;overflow:auto}
+.box h2{font-family:Unbounded,sans-serif;font-size:clamp(34px,6vw,70px);margin:0;line-height:1.02}
+.box p{font-size:20px;line-height:1.5;color:#C9CFE6;max-width:60ch}
+.go{font:inherit;font-weight:800;font-size:24px;background:var(--beam);color:var(--night);border:0;border-radius:18px;padding:16px 40px;cursor:pointer;margin-top:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.opts button{font:inherit;font-weight:700;font-size:19px;text-align:left;padding:20px;border-radius:16px;border:3px solid #2A3358;background:#141B33;color:var(--ink);cursor:pointer}
+.opts button:hover{border-color:var(--beam)}
+.big{font-family:Unbounded,sans-serif;font-size:84px;line-height:1;margin:6px 0}
+.fin{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.fin div{background:#141B33;border-radius:16px;padding:12px;font-size:15px;color:var(--mut)}.fin b{display:block;font-family:Unbounded,sans-serif;font-size:30px;color:var(--ink)}
+.chain{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0;font-size:15px}
+.chain span{background:#1B2345;border-radius:10px;padding:6px 10px}.chain .root{background:var(--uv);color:#fff;font-weight:800}
+.phys{font-size:15px;color:var(--mut)}
+@media (max-width:1000px){main{grid-template-columns:1fr}aside{max-height:220px}body{overflow:auto}#stageWrap{min-height:420px}.opts,.fin{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><h1 class="d">Zoekpuzzel</h1><span id="caseT">Project Atlas · 6 weken te laat</span>
+  <div class="hud"><div><b id="found">0</b><span>knelpunten</span></div><div><b id="score">0</b><span>score</span></div><div><div id="bat"><div id="batF"></div></div><span>batterij</span></div></div></header>
+<main>
+  <div id="stageWrap">
+    <svg id="scene" viewBox="0 0 1600 900" role="img" aria-label="Donkere werkplek, gebruik de zaklamp">
+      <defs>
+        <radialGradient id="beamG"><stop offset="0" stop-color="#000"/><stop offset=".55" stop-color="#000"/><stop offset="1" stop-color="#fff"/></radialGradient>
+        <mask id="dark"><rect width="1600" height="900" fill="#fff"/><circle id="hole" cx="800" cy="450" r="170" fill="url(#beamG)"/></mask>
+        <clipPath id="uvClip"><circle id="uvHole" cx="800" cy="450" r="120"/></clipPath>
+        <radialGradient id="tint"><stop offset="0" stop-color="#FFE7A3" stop-opacity=".18"/><stop offset="1" stop-color="#FFE7A3" stop-opacity="0"/></radialGradient>
+        <radialGradient id="tintUV"><stop offset="0" stop-color="#9B6BFF" stop-opacity=".35"/><stop offset="1" stop-color="#9B6BFF" stop-opacity="0"/></radialGradient>
+      </defs>
+      <g id="base"></g>
+      <g id="uvLayer" clip-path="url(#uvClip)" style="display:none"></g>
+      <rect width="1600" height="900" fill="#03050C" opacity=".96" mask="url(#dark)"/>
+      <circle id="tintC" cx="800" cy="450" r="170" fill="url(#tint)" pointer-events="none"/>
+      <g id="rings"></g>
+      <circle id="dwell" cx="0" cy="0" r="46" fill="none" stroke="#FFE7A3" stroke-width="7" stroke-dasharray="289" stroke-dashoffset="289" transform="rotate(-90)" opacity="0"/>
+    </svg>
+    <button id="uvBtn" aria-pressed="false">🔦 UV-licht</button>
+    <div id="card" hidden></div>
+  </div>
+  <aside><h2>Dossier</h2><div id="dossier"><div class="empty">Houd de lichtbundel stil op iets wat opvalt. Na een seconde weet je wat het is.</div></div><button id="recon" disabled>Reconstrueer de oorzaak</button></aside>
+</main>
+<div class="overlay" id="intro"><div class="box">
+  <h2>Het licht is uit. Het project loopt vast.</h2>
+  <p>Zoek met je zaklamp naar knelpunten. Sommige sporen zie je alleen met UV-licht. Pas op: de batterij raakt leeg, en UV kost dubbel.</p>
+  <button class="go" id="startBtn">Zaklamp aan</button>
+  <p class="phys">In de installatie volg je met een rode cirkel (LED of sticker) de zaklamp op het scherm — zoals een Wii-remote. Muis werkt als fallback.</p></div></div>
+<div class="overlay" id="reconOv" hidden><div class="box"><h2>Wat is de echte oorzaak?</h2><p>De meeste knelpunten zijn symptomen. Eén ervan verklaart de rest.</p><div class="opts" id="opts"></div></div></div>
+<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+<script>// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const TITLE = document.title.split(' — ')[0];
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db'), userP = use('user'), dlP = use('downloads');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = {
+    get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+    put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
+  };
+  const refs = {};   // runId -> {ref|localId}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+
+  const css = document.createElement('style');
+  css.textContent = `
+  .rs{margin-top:18px;padding-top:16px;border-top:2px solid rgba(127,127,127,.25);text-align:left}
+  .rs h3{margin:0 0 8px;font-size:20px}
+  .rs .rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rs input[type=text],.rs input[type=email]{font:inherit;font-size:16px;padding:10px 12px;border-radius:8px;border:2px solid rgba(127,127,127,.4);background:rgba(255,255,255,.92);color:#1b1b2b;width:100%}
+  .rs label.rs-ok{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;line-height:1.35;opacity:.9}
+  .rs .rs-send{display:inline-block;font:inherit;font-weight:800;font-size:17px;text-decoration:none;padding:11px 18px;border-radius:10px;background:var(--rs-acc,#2F5BEA);color:var(--rs-on,#fff);border:0;cursor:pointer}
+  .rs .rs-send[aria-disabled=true]{opacity:.45;pointer-events:none}
+  .rs .rs-status{font-size:14px;margin:8px 0 0;min-height:18px;opacity:.85}
+  .rs ol{padding-left:22px;margin:6px 0;font-size:16px}
+  .rs ol li.me{font-weight:800}
+  .rs .rs-admin{font:inherit;font-size:13px;background:none;border:1px solid rgba(127,127,127,.5);border-radius:6px;padding:5px 10px;margin-top:10px;cursor:pointer;color:inherit}
+  .rs-simple .rs-row{display:flex;gap:10px;flex-wrap:wrap}
+  .rs-simple .rs-row input{flex:1;min-width:220px;font-size:20px;padding:14px 16px}
+  .rs-simple .rs-send{font-size:20px;padding:14px 22px}
+  .rs-rank{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}.rs-rank b{font-size:34px}.rs-rank span{opacity:.8}
+  .rs-top{display:flex;gap:14px;list-style:decimal inside;padding:0;margin:0 0 14px;font-size:15px;opacity:.8;flex-wrap:wrap}
+  .rs-outro{margin:18px 0 0;font-size:15px;line-height:1.45;opacity:.75;max-width:60ch}
+  @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
+  document.head.appendChild(css);
+
+  async function saveScore(runId, r) {
+    const doc = { game: GAME, naam: r.naam || 'Anoniem', score: r.score, samenvatting: r.lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) {
+      try {
+        if (refs[runId]?.ref) { await refs[runId].ref.set(doc); }
+        else { refs[runId] = { ref: await db.collection('scores').add(doc) }; }
+        return 'db';
+      } catch (e) { console.warn('db opslaan mislukt', e); }
+    }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function saveContact(r, naam, email) {
+    const doc = { game: GAME, naam: naam || '', email, score: r.score, samenvatting: r.lines.join(' | '), toestemming: true, at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { await db.doc('data/contacts').collection('entries').add(doc); return true; } catch (e) { console.warn('contact niet opgeslagen', e); } }
+    try { const k = LKEY + '-contacts'; const a = JSON.parse(localStorage.getItem(k) || '[]'); a.push(doc); localStorage.setItem(k, JSON.stringify(a.slice(-300))); return true; } catch (e) { return false; }
+  }
+  async function all() {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(1000).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).map(x => ({ ...x, _id: x.id }));
+  }
+  async function top(n = 5) {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(n).get(); return s.docs.map(d => ({ ...d.data(), _id: d.id })); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score).slice(0, n).map(x => ({ ...x, _id: x.id }));
+  }
+  function mailHref(email, r, naam) {
+    const subject = `Jouw resultaat: ${TITLE}`;
+    const body = [`Hoi${naam ? ' ' + naam : ''},`, '', `Bedankt voor het spelen van ${TITLE}. Dit is jouw resultaat:`, '', `Score: ${r.score}`, ...r.lines.map(l => '- ' + l), '', ...(r.tip ? [r.tip, ''] : []), 'Groet,', 'Enversed Studios'].join('\n');
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function renderRank(el, runId, score) {
+    const rows = await all(); if (!rows.length) { el.innerHTML = ''; return; }
+    const place = rows.filter(x => x.score > score).length + 1;
+    el.innerHTML = `<div class="rs-rank"><b>#${place}</b><span>van ${rows.length} ${rows.length === 1 ? 'speler' : 'spelers'}</span></div><ol class="rs-top">${rows.slice(0, 5).map(x => `<li>${x.score}</li>`).join('')}</ol>`;
+  }
+  async function renderBoard(el, runId) {
+    const rows = await top(5);
+    const mine = refs[runId]?.ref?.id || refs[runId]?.localId;
+    el.innerHTML = rows.length ? `<h3>Ranglijst</h3><ol>${rows.map(x => `<li class="${x._id === mine ? 'me' : ''}">${esc(x.naam || 'Anoniem')}: ${x.score}${x._id === mine ? ' (jij)' : ''}</li>`).join('')}</ol>` : '';
+  }
+
+  async function exportCsv(btn) {
+    const db = await dbP, dl = await dlP;
+    let rows = [];
+    if (db) { try { rows = (await db.doc('data/contacts').collection('entries').orderBy('at', 'desc').get()).docs.map(d => d.data()); } catch (e) {} }
+    else { try { rows = JSON.parse(localStorage.getItem(LKEY + '-contacts') || '[]'); } catch (e) {} }
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = ['datum;naam;email;score;samenvatting', ...rows.map(r => [r.at, r.naam, r.email, r.score, r.samenvatting].map(q).join(';'))].join('\n');
+    if (dl) { try { await dl.save({ filename: `${GAME}-resultaten.csv`, data: csv }); return; } catch (e) { btn.textContent = 'Download geannuleerd'; return; } }
+    btn.textContent = rows.length ? `${rows.length} inzendingen (download alleen in de gepubliceerde versie)` : 'Nog geen inzendingen';
+  }
+
+  // Mount the results block into `container`. result = {score, lines:[...], tip?}; runId groups saves of one play session.
+  async function mount(container, result, runId = 'run-' + Date.now(), opts = {}) {
+    if (opts.simple !== false) return mountSimple(container, result, runId);
+    const box = document.createElement('div'); box.className = 'rs';
+    box.innerHTML = `
+      <h3>Resultaat ontvangen per e-mail</h3>
+      <div class="rs-grid">
+        <input type="text" class="rs-name" placeholder="Je naam (voor de ranglijst)" maxlength="40" aria-label="Naam">
+        <input type="email" class="rs-mail" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres">
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Ik ga akkoord dat mijn e-mailadres met mijn resultaat wordt opgeslagen door Enversed Studios.</label>
+      <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Resultaat mailen</a>
+      <button type="button" class="rs-send rs-save" style="margin-left:6px;background:transparent;color:inherit;border:2px solid rgba(127,127,127,.5)">Alleen naam opslaan</button>
+      <div class="rs-status" role="status"></div>
+      <div class="rs-board"></div>`;
+    container.appendChild(box);
+    const $n = box.querySelector('.rs-name'), $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'),
+          $send = box.querySelector('a.rs-send'), $save = box.querySelector('.rs-save'), $st = box.querySelector('.rs-status'), $b = box.querySelector('.rs-board');
+    const refresh = () => {
+      const ok = validEmail($m.value.trim()) && $c.checked;
+      $send.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      $send.href = ok ? mailHref($m.value.trim(), result, $n.value.trim()) : '#';
+    };
+    [$n, $m, $c].forEach(el => el.addEventListener('input', refresh)); $c.addEventListener('change', refresh);
+    const where = w => w === 'db' ? 'Opgeslagen in de gedeelde resultaten.' : 'Opgeslagen op dit apparaat.';
+    // Save the score straight away (anonymous until a name is given)
+    $st.textContent = 'Resultaat opslaan…';
+    const w = await saveScore(runId, { ...result, naam: '' });
+    $st.textContent = where(w); renderBoard($b, runId);
+    $save.onclick = async () => { const w = await saveScore(runId, { ...result, naam: $n.value.trim() }); $st.textContent = where(w); renderBoard($b, runId); };
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim(), naam = $n.value.trim();
+      // navigation to the mail app proceeds; saving runs alongside it
+      saveScore(runId, { ...result, naam }).then(() => renderBoard($b, runId));
+      const ok = await saveContact(result, naam, email);
+      $st.textContent = ok ? `Je mailprogramma opent met je resultaat voor ${email}. Klik daar op verzenden.` : 'Je mailprogramma opent met je resultaat. Je e-mailadres kon niet worden opgeslagen.';
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) {
+      const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)';
+      b.onclick = () => exportCsv(b); box.appendChild(b);
+    }
+  }
+  async function mountSimple(container, result, runId) {
+    const box = document.createElement('div'); box.className = 'rs rs-simple';
+    box.innerHTML = `
+      <div class="rs-rankwrap"></div>
+      <div class="rs-row">
+        <input type="email" class="rs-mail" placeholder="jouw@email.nl" aria-label="E-mailadres" autocomplete="email" inputmode="email">
+        <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Stuur mijn resultaat</a>
+      </div>
+      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Enversed Studios mag mijn e-mailadres bewaren (optioneel)</label>
+      <div class="rs-status" role="status"></div>
+      ${result.outro ? `<p class="rs-outro">${esc(result.outro)}</p>` : ''}`;
+    container.appendChild(box);
+    const $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'), $send = box.querySelector('.rs-send'), $st = box.querySelector('.rs-status');
+    const refresh = () => { const ok = validEmail($m.value.trim()); $send.setAttribute('aria-disabled', ok ? 'false' : 'true'); $send.href = ok ? mailHref($m.value.trim(), result, '') : '#'; };
+    $m.addEventListener('input', refresh);
+    $m.addEventListener('keydown', e => { if (e.key === 'Enter' && $send.getAttribute('aria-disabled') === 'false') $send.click(); });
+    await saveScore(runId, { ...result, naam: '' });
+    renderRank(box.querySelector('.rs-rankwrap'), runId, result.score);
+    $send.addEventListener('click', async e => {
+      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+      const email = $m.value.trim();
+      let kept = false; if ($c.checked) kept = await saveContact(result, '', email);
+      $st.textContent = `Je mailprogramma opent met je resultaat. Klik daar op verzenden.${kept ? ' Je e-mailadres is bewaard.' : ''}`;
+    });
+    const user = await userP;
+    if (user && user.canEdit && await user.canEdit()) { const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)'; b.onclick = () => exportCsv(b); box.appendChild(b); }
+  }
+  return { mount };
+})();
+</script>
+<script>
+const ITEMS=[
+ {id:'inbox',x:250,y:330,r:70,n:'Mailbox van de planner',d:'312 ongelezen berichten. Een paar zijn al weken oud.',k:1},
+ {id:'bord',x:470,y:205,r:90,n:'Planningsbord',d:'Er staan twee verschillende einddatums op hetzelfde bord.',k:1},
+ {id:'bordUV',x:560,y:250,r:60,uv:1,n:'Onder de nieuwe datum',d:'In onzichtbare inkt: "eigenaar planning?? → niemand".',k:1,root:1},
+ {id:'akkoord',x:660,y:455,r:60,n:'Bakje "Wacht op akkoord"',d:'14 aanvragen wachten op één handtekening.',k:1},
+ {id:'prullenbak',x:770,y:690,r:55,n:'Prullenbak',d:'Een geprinte mail van de leverancier: onderdeel komt 4 weken later.',k:1},
+ {id:'testbank',x:1190,y:500,r:95,n:'Testbank',d:'Negen producten staan in de rij voor één testopstelling.',k:1},
+ {id:'postitUV',x:1430,y:300,r:55,uv:1,n:'Achter de koffieautomaat',d:'UV-notitie: "overleg geschrapt — wie belt de klant?"',k:1},
+ {id:'plant',x:95,y:640,r:60,n:'Plant',d:'Gewoon een plant. Heeft wel water nodig.'},
+ {id:'taart',x:360,y:580,r:55,n:'Verjaardagstaart',d:'Iemand is jarig. Gezellig, niet het probleem.'},
+ {id:'kalender',x:110,y:215,r:60,n:'Vakantierooster',d:'Iedereen is deze weken gewoon aanwezig.'},
+ {id:'lamp',x:1080,y:110,r:55,n:'Knipperende lamp',d:'De lamp knippert. Vervelend, maar niet de oorzaak.'},
+ {id:'koffie',x:1420,y:470,r:65,n:'Koffieautomaat',d:'Werkt prima. Volle bonenbak.'},
+ {id:'fiets',x:980,y:740,r:70,n:'Fiets',d:'De fiets van een stagiair. Niks mis mee.'}
+];
+const OPTS=[{t:'Te weinig testcapaciteit'},{t:'De leverancier is te laat'},{t:'Niemand is eigenaar van de planning',ok:1},{t:'De manager tekent te traag'}];
+const WHY='Mails blijven liggen, deadlines spreken elkaar tegen, de leverancier wordt niet opgevolgd en het overleg is geschrapt. Ze hebben één ding gemeen: niemand voelt zich eigenaar van de planning. De testbank en de handtekening zijn knelpunten, maar geen oorzaak.';
+const BAT=120;
+let S, raf, last, L={x:800,y:450};
+const $=id=>document.getElementById(id);
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.1,t='sine',v=.06){const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+
+/* ===== Camera bridge: rode cirkel = zaklamp (Wii-remote-stijl) ===== */
+const CAM = {
+  url: (location.search.match(/[?&]ws=([^&]+)/)||[])[1]
+    ? decodeURIComponent(location.search.match(/[?&]ws=([^&]+)/)[1])
+    : 'ws://127.0.0.1:8765',
+  ws: null,
+  connected: false,
+  fromCam: false,   // true zolang de camera de pointer stuurt
+  lastTs: 0,
+  reconnectT: null,
+};
+function camStatus(txt, ok){
+  let el = $('camStatus');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'camStatus';
+    el.style.cssText = 'position:absolute;top:12px;right:12px;z-index:5;font:600 13px Manrope,sans-serif;padding:6px 12px;border-radius:10px;background:rgba(11,16,32,.85);border:2px solid #2A3358;color:#8D96B8';
+    $('stageWrap').appendChild(el);
+  }
+  el.textContent = txt;
+  el.style.borderColor = ok ? '#3DDC97' : (ok===false ? '#FF5C6C' : '#2A3358');
+  el.style.color = ok ? '#3DDC97' : (ok===false ? '#FF5C6C' : '#8D96B8');
+}
+function connectCamera(){
+  if(CAM.ws && (CAM.ws.readyState===WebSocket.OPEN || CAM.ws.readyState===WebSocket.CONNECTING)) return;
+  try{
+    CAM.ws = new WebSocket(CAM.url);
+  }catch(e){
+    camStatus('Camera: geen verbinding', false);
+    scheduleReconnect();
+    return;
+  }
+  camStatus('Camera: verbinden…', null);
+  CAM.ws.onopen = ()=>{ CAM.connected=true; camStatus('Camera: verbonden — rode cirkel = zaklamp', true); };
+  CAM.ws.onclose = ()=>{ CAM.connected=false; CAM.fromCam=false; camStatus('Camera: offline (muis/toetsen werken)', false); scheduleReconnect(); };
+  CAM.ws.onerror = ()=>{ /* onclose volgt */ };
+  CAM.ws.onmessage = (ev)=>{
+    let msg;
+    try{ msg = JSON.parse(ev.data); }catch(e){ return; }
+    if(!msg || msg.type!=='camera') return;
+    // Prefer flashlight object; fallback to primary nx/ny
+    let nx = msg.nx, ny = msg.ny;
+    if(Array.isArray(msg.objects)){
+      const fl = msg.objects.find(o=>o.kind==='flashlight');
+      if(fl){ nx=fl.nx; ny=fl.ny; }
+    }
+    if(nx==null || ny==null || !msg.detected){
+      // pointer even kwijt: laat muis weer toe na korte timeout
+      if(performance.now()-CAM.lastTs > 400) CAM.fromCam = false;
+      return;
+    }
+    CAM.fromCam = true;
+    CAM.lastTs = performance.now();
+    // genormaliseerd 0..1 → SVG viewBox 1600×900
+    L.x = Math.max(0, Math.min(1600, nx * 1600));
+    L.y = Math.max(0, Math.min(900, ny * 900));
+  };
+}
+function scheduleReconnect(){
+  if(CAM.reconnectT) return;
+  CAM.reconnectT = setTimeout(()=>{ CAM.reconnectT=null; connectCamera(); }, 2000);
+}
+connectCamera();
+
+function drawBase(){
+  const desk=(x,y)=>`<rect x="${x}" y="${y}" width="230" height="20" fill="#8B6B4A"/><rect x="${x+10}" y="${y+20}" width="14" height="110" fill="#6E5338"/><rect x="${x+206}" y="${y+20}" width="14" height="110" fill="#6E5338"/>`;
+  return `<rect width="1600" height="900" fill="#3D4A6B"/><rect y="560" width="800" height="340" fill="#5A6380"/><rect x="800" width="800" height="900" fill="#4B5A54"/><rect x="800" y="600" width="800" height="300" fill="#646E66"/>
+   <rect x="796" width="8" height="900" fill="#2A334D"/>
+   <!-- kalender --><rect x="60" y="160" width="100" height="110" fill="#F2F2F2"/><rect x="60" y="160" width="100" height="24" fill="#E25C5C"/>${[0,1,2,3].map(r=>[0,1,2,3].map(c=>`<rect x="${68+c*23}" y="${192+r*18}" width="16" height="12" fill="${(r*4+c)%5===0?'#7DC4A4':'#CFCFCF'}"/>`).join('')).join('')}
+   <!-- bord --><rect x="330" y="120" width="300" height="180" fill="#F4F6F8" stroke="#9AA3B5" stroke-width="8"/><text x="350" y="170" font-family="Manrope,sans-serif" font-size="24" font-weight="800" fill="#2D6CDF">ATLAS · klaar: 12 mei</text><text x="350" y="210" font-family="Manrope,sans-serif" font-size="24" font-weight="800" fill="#E25C5C">klaar: 23 juni?</text><path d="M350 240 h220 M350 262 h160" stroke="#B9C0CC" stroke-width="5"/>
+   ${desk(130,420)}<rect x="185" y="300" width="130" height="90" rx="6" fill="#1C2233"/><rect x="195" y="310" width="110" height="64" fill="#3A6FD8"/><rect x="235" y="390" width="30" height="30" fill="#1C2233"/><text x="250" y="350" text-anchor="middle" font-family="Manrope" font-weight="800" font-size="26" fill="#fff">312</text>
+   ${desk(520,500)}<rect x="620" y="440" width="90" height="60" fill="#C9B48A"/><rect x="630" y="430" width="70" height="14" fill="#F2F2F2"/><rect x="633" y="420" width="64" height="12" fill="#F2F2F2"/><text x="665" y="482" text-anchor="middle" font-family="Manrope" font-weight="800" font-size="12" fill="#5A4A2A">WACHT OP AKKOORD</text>
+   <rect x="330" y="560" width="70" height="30" rx="6" fill="#F5D7A1"/><rect x="330" y="548" width="70" height="14" rx="4" fill="#F28CB1"/><rect x="362" y="532" width="4" height="16" fill="#FFF"/>
+   <path d="M740 660 h60 l-8 70 h-44z" fill="#7C8598"/><rect x="752" y="650" width="34" height="16" fill="#F2F2F2" transform="rotate(-10 769 658)"/>
+   <rect x="70" y="640" width="50" height="50" fill="#9C6A43"/><path d="M95 640 q-30 -50 -12 -80 M95 640 q14 -60 34 -70 M95 640 q-4 -40 4 -90" stroke="#5E8C4E" stroke-width="9" fill="none"/>
+   <!-- werkplaats --><rect x="900" y="300" width="160" height="260" fill="#6B7F93"/><rect x="920" y="330" width="120" height="70" fill="#2A3442"/><circle cx="980" cy="470" r="34" fill="#8EA2B6"/>
+   <rect x="1060" y="530" width="380" height="26" fill="#2E3A44"/>${[0,1,2,3,4,5,6,7,8].map(i=>`<rect x="${1075+i*24}" y="${505-(i%2)*4}" width="20" height="24" fill="#C49A5E"/>`).join('')}
+   <rect x="1250" y="400" width="140" height="130" fill="#7D8C9B"/><rect x="1270" y="420" width="100" height="50" fill="#1E2833"/><circle cx="1350" cy="500" r="10" fill="#FF5C6C"/>
+   <rect x="1360" y="340" width="120" height="200" rx="10" fill="#A8B2BC"/><rect x="1380" y="370" width="80" height="60" fill="#2A3442"/><rect x="1405" y="470" width="30" height="40" fill="#3B2A1E"/>
+   <path d="M1060 60 v30" stroke="#333" stroke-width="4"/><path d="M1040 90 h80 l-14 30 h-52z" fill="#C9CFD6"/>
+   <g transform="translate(980 740)"><circle cx="-50" cy="20" r="34" fill="none" stroke="#2A2A2A" stroke-width="7"/><circle cx="50" cy="20" r="34" fill="none" stroke="#2A2A2A" stroke-width="7"/><path d="M-50 20 L-10 -20 L40 -20 L50 20 M-10 -20 L0 20" stroke="#E25C5C" stroke-width="7" fill="none"/></g>`;
+}
+const uvArt=`<g font-family="Manrope,sans-serif" font-weight="800" fill="#C9A8FF" style="filter:drop-shadow(0 0 6px #9B6BFF)"><text x="470" y="245" font-size="20">eigenaar planning??</text><text x="500" y="272" font-size="20">→ niemand</text>
+  <rect x="1400" y="270" width="80" height="62" fill="none" stroke="#C9A8FF" stroke-width="3"/><text x="1408" y="296" font-size="13">overleg</text><text x="1408" y="312" font-size="13">geschrapt</text><text x="1408" y="327" font-size="11">wie belt klant?</text>
+  <text x="120" y="520" font-size="16" opacity=".7">✗</text><text x="1100" y="640" font-size="16" opacity=".7">vingerafdruk</text></g>`;
+
+function start(){
+  S={bat:BAT,uv:false,marks:{},scanned:new Set(),dwellOn:null,dwell:0,score:0,card:null,over:false};
+  $('base').innerHTML=drawBase(); $('uvLayer').innerHTML=uvArt; $('intro').hidden=true; $('end').hidden=true; $('card').hidden=true;
+  setUV(false); renderDossier(); ac(); last=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
+}
+function svgPt(e){ const r=$('scene').getBoundingClientRect(); const vb=1600/900, rb=r.width/r.height; let w,h,ox=0,oy=0; if(rb>vb){ h=r.height; w=h*vb; ox=(r.width-w)/2; } else { w=r.width; h=w/vb; oy=(r.height-h)/2; } return {x:(e.clientX-r.left-ox)/w*1600, y:(e.clientY-r.top-oy)/h*900}; }
+// Muis/toetsen alleen als de camera geen rode cirkel ziet (fallback)
+$('scene').addEventListener('pointermove',e=>{ if(!CAM.fromCam) L=svgPt(e); });
+$('scene').addEventListener('pointerdown',e=>{ if(!CAM.fromCam) L=svgPt(e); });
+addEventListener('keydown',e=>{
+  if(e.key.toLowerCase()==='u'&&S&&!S.over) setUV(!S.uv);
+  if(CAM.fromCam) return; // pijltjes niet over camera heen
+  const s=40;
+  if(e.key==='ArrowLeft') L.x-=s; if(e.key==='ArrowRight') L.x+=s;
+  if(e.key==='ArrowUp') L.y-=s; if(e.key==='ArrowDown') L.y+=s;
+  L.x=Math.max(0,Math.min(1600,L.x)); L.y=Math.max(0,Math.min(900,L.y));
+});
+function setUV(on){ S.uv=on; $('uvBtn').classList.toggle('on',on); $('uvBtn').setAttribute('aria-pressed',on); $('uvLayer').style.display=on?'':'none'; $('tintC').setAttribute('fill',on?'url(#tintUV)':'url(#tint)'); tone(on?300:500,.06); }
+$('uvBtn').onclick=()=>{ if(S&&!S.over) setUV(!S.uv); };
+
+function openCard(it){
+  S.card=it; tone(it.uv?520:660,.12,'triangle');
+  const c=$('card'); c.className=it.uv?'uv':''; c.hidden=false;
+  c.innerHTML=`<h3>${it.uv?'🟣 ':''}${it.n}</h3><p>${it.d}</p><div class="acts"><button class="btn k" data-v="1">Knelpunt</button><button class="btn n" data-v="0">Niets aan de hand</button></div>`;
+}
+$('card').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||!S.card) return; const it=S.card, v=+b.dataset.v;
+  const ok = v===(it.k?1:0); S.marks[it.id]={v,ok};
+  if(v&&ok) S.score+=100; else if(!v&&ok) S.score+=30; else S.score=Math.max(0,S.score-50);
+  ok ? tone(v?880:600,.12,'triangle') : tone(170,.25,'sawtooth',.05);
+  ring(it, ok ? (v?'#FF5C6C':'#3DDC97') : '#8D96B8');
+  S.card=null; $('card').hidden=true; renderDossier(); });
+function ring(it,col){ $('rings').insertAdjacentHTML('beforeend',`<circle cx="${it.x}" cy="${it.y}" r="${it.r}" fill="none" stroke="${col}" stroke-width="6" stroke-dasharray="14 10" opacity=".9"/>`); }
+function renderDossier(){
+  const ks=ITEMS.filter(i=>S.marks[i.id]?.v===1);
+  $('dossier').innerHTML = ks.length ? ks.map(i=>`<div class="dz ${i.uv?'uv':''}">${i.n}<small>${i.d}</small></div>`).join('') : '<div class="empty">Houd de lichtbundel stil op iets wat opvalt. Na een seconde weet je wat het is.</div>';
+  $('found').textContent=ks.length; $('score').textContent=S.score; $('recon').disabled=ks.length<2;
+}
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  $('hole').setAttribute('cx',L.x); $('hole').setAttribute('cy',L.y); $('uvHole').setAttribute('cx',L.x); $('uvHole').setAttribute('cy',L.y); $('tintC').setAttribute('cx',L.x); $('tintC').setAttribute('cy',L.y);
+  if(!S.card){
+    S.bat-=dt*(S.uv?2:1);
+    const it=ITEMS.find(i=>!S.scanned.has(i.id) && Math.hypot(i.x-L.x,i.y-L.y)<i.r && (!i.uv||S.uv));
+    if(it){ if(S.dwellOn!==it){ S.dwellOn=it; S.dwell=0; } S.dwell+=dt; const d=$('dwell'); d.setAttribute('opacity',1); d.setAttribute('transform',`translate(${L.x} ${L.y}) rotate(-90)`); d.setAttribute('stroke-dashoffset',289*(1-Math.min(1,S.dwell/1))); d.setAttribute('stroke',it.uv?'#9B6BFF':'#FFE7A3');
+      if(S.dwell>=1){ S.scanned.add(it.id); S.dwellOn=null; d.setAttribute('opacity',0); openCard(it); } }
+    else { S.dwellOn=null; $('dwell').setAttribute('opacity',0); }
+  }
+  const p=Math.max(0,S.bat/BAT); $('batF').style.width=(p*100)+'%'; $('batF').style.background=p<.2?'#FF5C6C':S.uv?'#9B6BFF':'#FFE7A3';
+  if(p<.2 && Math.random()<.04) $('hole').setAttribute('r',120+Math.random()*50); else $('hole').setAttribute('r',170);
+  if(S.bat<=0 && !S.card){ $('hole').setAttribute('r',0); return openRecon(true); }
+  raf=requestAnimationFrame(loop);
+}
+$('recon').onclick=()=>openRecon(false);
+function openRecon(){ cancelAnimationFrame(raf); S.card=null; $('card').hidden=true; $('opts').innerHTML=OPTS.map((o,i)=>`<button data-i="${i}">${o.t}</button>`).join(''); $('reconOv').hidden=false; }
+$('opts').onclick=e=>{ const b=e.target.closest('button'); if(b) finish(OPTS[+b.dataset.i]); };
+function finish(choice){
+  S.over=true; $('reconOv').hidden=true;
+  const knel=ITEMS.filter(i=>i.k), found=knel.filter(i=>S.marks[i.id]?.v===1), wrong=ITEMS.filter(i=>S.marks[i.id]&&!S.marks[i.id].ok).length;
+  const uvFound=found.filter(i=>i.uv).length, batLeft=Math.max(0,Math.round(S.bat));
+  if(choice.ok) S.score+=400+batLeft*4;
+  const verdict = choice.ok && found.length>=6 ? 'Zaak opgelost. Je zag door de symptomen heen.' : choice.ok ? 'Juiste oorzaak, maar een paar sporen bleven in het donker.' : `Dat is een knelpunt, maar niet de oorzaak. ${uvFound?'':'Het UV-licht had je verder geholpen.'}`;
+  $('endBox').innerHTML=`<h2>${choice.ok?'Oorzaak gevonden.':'Bijna.'}</h2><div class="big">${S.score}</div>
+   <div class="fin"><div><b>${found.length}/${knel.length}</b>knelpunten gevonden</div><div><b>${uvFound}/2</b>UV-sporen</div><div><b>${wrong}</b>verkeerd ingeschat</div><div><b>${batLeft}s</b>batterij over</div></div>
+   <p>${verdict}</p><div class="chain">${knel.filter(i=>!i.root).map(i=>`<span>${S.marks[i.id]?.v===1?'✓':'·'} ${i.n}</span>`).join('')}<span>→</span><span class="root">Niemand is eigenaar van de planning</span></div>
+   <p style="font-size:17px">${WHY}</p><div id="rsSlot"></div><button class="go" id="again">Nieuw onderzoek</button>`;
+  $('end').hidden=false; $('again').onclick=start;
+  RESULTS.mount($('rsSlot'), {score:S.score, lines:[`Gekozen oorzaak: ${choice.t} (${choice.ok?'juist':'onjuist'})`, `${found.length} van ${knel.length} knelpunten gevonden, waarvan ${uvFound} met UV-licht`, `${wrong} keer verkeerd ingeschat`, `Batterij over: ${batLeft} seconden`, ...found.map(i=>`Knelpunt: ${i.n} — ${i.d}`), WHY],
+    outro:'Zoeken, ontdekken en zelf de puzzel leggen: zo combineert Enversed Studios storytelling, fysieke interactie en technologie in onderzoeksgames zoals AI Murder Mystery.'});
+}
+$('startBtn').onclick=start;
+$('base').innerHTML=drawBase();
+</script>
+</body>
+</html>
