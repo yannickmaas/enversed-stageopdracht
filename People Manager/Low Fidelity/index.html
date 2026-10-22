@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="nl" data-game="people-manager">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>People Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#3A2A1A;--rs-acc:#FF6B5B;--rs-on:#fff;
+  font-family:"Baloo 2","Trebuchet MS",sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:#2A3447;background-image:radial-gradient(rgba(255,255,255,.08) 2px,transparent 2px);background-size:22px 22px;color:var(--ink);display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none}
+header{display:flex;align-items:center;gap:20px;padding:10px 24px;color:#fff}
+h1{margin:0;font-size:38px;font-weight:800;text-shadow:0 3px 0 rgba(0,0,0,.2);line-height:1}
+#zone{font-size:20px;opacity:.9}
+.tag{font-size:17px;font-weight:700;color:#FFC93C;margin-top:4px;line-height:1}
+.hud{margin-left:auto;display:flex;gap:12px}
+.hud div{background:rgba(58,42,26,.55);border-radius:16px;padding:6px 16px;text-align:center;line-height:1.05;min-width:100px}
+.hud b{display:block;font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+.hud span{font-size:13px;opacity:.8}
+main{flex:1;display:grid;grid-template-columns:1fr 230px;gap:16px;padding:0 24px 20px;min-height:0}
+#boardWrap{position:relative;min-height:0;display:grid;place-items:center}
+canvas{max-width:100%;max-height:100%;border-radius:22px;box-shadow:0 14px 0 rgba(10,15,25,.45),0 30px 60px rgba(0,0,0,.25);touch-action:none;cursor:pointer}
+aside{display:flex;flex-direction:column;gap:12px;min-height:0}
+.tray{display:flex;flex-direction:column;gap:12px}
+.tool{font:inherit;border:0;border-radius:20px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px;text-align:left;position:relative;transition:transform .1s;background:#FFF6E6;color:var(--ink);box-shadow:0 7px 0 #C9A878}
+.tool .ic{width:62px;height:54px;display:grid;place-items:center;font-size:32px;flex:none}
+.tool .ic svg{width:100%;height:100%;overflow:visible}
+.tool small{display:block;font-weight:500;font-size:14px;opacity:.7;line-height:1.1}
+.tool .cnt{position:absolute;top:-8px;right:-8px;background:#fff;color:var(--ink);border-radius:50%;width:34px;height:34px;display:grid;place-items:center;font-size:18px;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.tool.sel{transform:translateY(4px);box-shadow:0 3px 0 #C9A878;outline:5px solid #FF6B5B}
+.tool:disabled{opacity:.4;cursor:not-allowed}
+.t-erase,.t-res{background:#6B5A48;color:#fff;box-shadow:0 7px 0 rgba(0,0,0,.25)}
+.t-res{background:#FF6B5B;margin-top:auto}
+#cases{background:rgba(255,255,255,.85);border-radius:20px;padding:12px 14px;flex:1;overflow:auto;min-height:0}
+#cases h2{margin:0 0 6px;font-size:20px}
+.goal{display:flex;gap:10px;align-items:flex-start;padding:8px 0;font-size:16px;line-height:1.2;border-bottom:1px solid rgba(58,42,26,.1)}
+.goal i{font-style:normal;flex:none;width:30px;height:30px;border-radius:50%;background:#FF6B5B;color:#fff;display:grid;place-items:center;font-weight:800;font-size:16px}
+.goal.ok i{background:none;font-size:22px}.goal.ok{opacity:.75}
+.goal>div{flex:1}.goal small{display:block;opacity:.6;font-size:13px}
+.pb{height:8px;border-radius:4px;background:rgba(58,42,26,.12);overflow:hidden;margin-top:5px}.pb em{display:block;height:100%;border-radius:4px;transition:width .3s}
+.found{margin-top:10px;font-size:14px;opacity:.75}
+.cs{display:flex;gap:10px;align-items:center;padding:5px 0;font-size:16px;line-height:1.15;opacity:.45}
+.cs.on{opacity:1}.cs i{font-style:normal;font-size:26px}
+.cs small{display:block;opacity:.75;font-size:13px}
+#toast{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:8;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.t{background:#fff;color:var(--ink);font-weight:800;font-size:22px;border-radius:18px;padding:10px 22px;box-shadow:0 6px 0 rgba(0,0,0,.2);animation:tt 2.6s forwards;display:flex;gap:12px;align-items:center}
+.t i{font-style:normal;font-size:34px}.t small{display:block;font-weight:500;font-size:15px}
+@keyframes tt{0%{opacity:0;transform:translateY(-10px) scale(.9)}10%,82%{opacity:1;transform:none}100%{opacity:0}}
+button:focus-visible,a:focus-visible{outline:5px solid #fff;outline-offset:3px}
+.overlay{position:fixed;inset:0;background:rgba(58,42,26,.9);display:grid;place-items:center;z-index:10;padding:24px;color:#fff}
+.overlay[hidden]{display:none}
+.box{max-width:900px;width:100%;max-height:92vh;overflow:auto}
+.box h2{font-size:clamp(44px,7vw,90px);margin:0;line-height:.95;font-weight:800}
+.box p{font-size:20px;line-height:1.45;max-width:58ch}
+.go{font:inherit;font-weight:800;font-size:26px;background:#FFC93C;color:var(--ink);border:0;border-radius:22px;padding:12px 36px;cursor:pointer;margin-top:10px;box-shadow:0 7px 0 #C99418}
+.big{font-size:90px;font-weight:800;line-height:1}
+.fin{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.fin div{background:rgba(255,255,255,.12);border-radius:18px;padding:12px;font-size:15px}.fin b{display:block;font-size:34px}
+@media (max-width:1000px){main{grid-template-columns:1fr}aside{flex-direction:row;flex-wrap:wrap}.tray{flex-direction:row;flex-wrap:wrap}#cases{display:none}.fin{grid-template-columns:1fr 1fr}body{overflow:auto}}
+/* Dark mode (default; index.html?light for the old look): the white paper blocks need a dark
+   playing field to stand out, and no large white surfaces may be on screen (they would look like paper). */
+body.dark{--ink:#E3E8EF}
+body.dark .tool:not(.t-erase):not(.t-res){background:#2B3445;color:#E3E8EF;box-shadow:0 7px 0 #151B26}
+body.dark .tool .cnt{background:#C9D1DB;color:#1B2230}
+body.dark .tool.sel{box-shadow:0 3px 0 #151B26}
+body.dark #cases{background:rgba(27,34,48,.92);color:#E3E8EF}
+body.dark .goal{border-bottom-color:rgba(227,232,239,.12)}
+body.dark .pb{background:rgba(227,232,239,.15)}
+body.dark .t{background:#2B3445;color:#E3E8EF;box-shadow:0 6px 0 rgba(0,0,0,.35)}
+body.dark .t-res{background:#2B3445;color:#FF8A7D;box-shadow:inset 0 0 0 3px #FF6B5B,0 7px 0 #151B26}
+#camStatus{display:flex;align-items:center;gap:8px;background:rgba(58,42,26,.55);border-radius:16px;padding:6px 14px;font-size:15px;font-weight:700;white-space:nowrap;line-height:1.1}
+#camStatus i{flex:none;width:12px;height:12px;border-radius:50%;background:#9AA3AF;box-shadow:0 0 0 3px rgba(255,255,255,.15)}
+#camStatus[data-s=on] i{background:#23A99A}
+#camStatus[data-s=seen] i{background:#FFC93C;box-shadow:0 0 0 3px rgba(255,201,60,.35)}
+#camStatus[data-s=off]{opacity:.7}
+#camStatus[data-s=cal] i{background:#FF6B5B;box-shadow:0 0 0 3px rgba(255,107,91,.35)}
+#toast.cam-low{top:auto;bottom:32px} /* moved away from the physical object on the screen */
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><div><h1>People Manager</h1><div class="tag">Bouw de route. Begeleid de mensen.</div></div><span id="zone"></span>
+  <div id="camStatus" data-s="off" role="status" title="Koppeling met camera_bridge.py (ws://127.0.0.1:8765)"><i></i><span>Camera niet verbonden</span></div>
+  <div class="hud"><div><b id="inside">0</b><span>onderweg</span></div><div><b id="out">0</b><span>op bestemming</span></div><div><b id="lost">0</b><span>verdwaald</span></div><div><b id="score">0</b><span>score</span></div></div></header>
+<main>
+  <div id="boardWrap"><canvas id="cv" width="792" height="1152" aria-label="Speelveld: leg blokken om de stroom mensen te leiden"></canvas></div>
+  <aside><div class="tray" id="tray" hidden></div><div id="cases"><h2>Doel in dit level</h2><div id="caseList"></div></div><button class="tool t-res" id="resBtn"><span class="ic">🏁</span><span>Mijn resultaat</span></button></aside>
+</main>
+<div id="toast"></div>
+<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+<!-- Phaser 3.90.0 from the CDN; without internet a copy of phaser.min.js next to this file is used -->
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js" onerror="var s=document.createElement('script');s.src='phaser.min.js';document.head.appendChild(s);"></script>
+<script>
+const W=792, H=1152, T=72;
+// Low-fidelity prototype: checkpoints are neutral numbered goals.
+// Open space (portrait): source at the top, checkpoints as circles. People bounce lightly off the edges.
+const ZONES=[
+ {n:'Level 1',inv:{},spawn:[396,-10],
+  water:[],cps:[['1',220,320],['2',580,520]],
+  end:{r:[246,1040,300,90],n:'Finish',ic:'🏁'}},
+ {n:'Level 2',inv:{},spawn:[396,-10],
+  water:[],cps:[['3',220,380],['4',580,380]],
+  end:{r:[246,1040,300,90],n:'Finish',ic:'🏁'}},
+ {n:'Level 3',inv:{},spawn:[200,-10],
+  water:[],cps:[['5',220,280],['6',580,360],['7',400,700]],
+  end:{r:[196,1040,400,90],n:'Finish',ic:'🏁'}},
+ {n:'Level 4',inv:{},spawn:[600,-10],
+  water:[],cps:[['8',580,200],['9',400,480],['a',220,400],['b',220,700]],
+  end:{r:[40,1040,280,90],n:'Finish',ic:'🏁'}}
+];
+const CP_TOTAL=ZONES.reduce((n,z)=>n+z.cps.length,0);
+// A collision triggers one jump in a wide sideways arc (like a fountain) that eases back into the downward stream.
+// hop: start speed upwards (px/s); curveAngle: launch direction (0 = straight sideways, 90 = down);
+// airSpeed: ground speed while in the air (wider arc); curve: seconds to turn back to 90°.
+const BOUNCE={on:true, hop:700, gravity:800, curve:2.6, curveAngle:8, curveSpread:14, airSpeed:240};
+const GOAL=30, NEED=25, R_TRI=34, R_ROL=30, R_CUBE=30, R_CP=42, PLANK_L=160, PLANK_W=48;
+const SHIRTS=['#E8453C','#2F7FD1','#23A99A','#F2A100','#7A5CFA','#E8457A','#3A9D4E'];
+const SKIN=['#F2C9A0','#D9A27A','#A8704A','#7A4E2E','#F5D6B8'];
+let zoneArrived=0, Z, zi, blocks, people, spawnT, tool=null, inv, cps, zoneT=0, totals, celebrate=0, lastTouch=performance.now(), round=1, bid=0, bg=null, drag=null;
+const cv=document.getElementById('cv'), $=id=>document.getElementById(id);
+// Rendering is done by Phaser (scene `Hall` below). The drawing helpers (stand, endpoint, entrance, wood, person, ...)
+// draw into `ctx`, which the scene points at the canvas of a Phaser texture while it builds that texture.
+let ctx=null;
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.08,t='triangle',v=.06){const c=ac(); if(!c||c.state!=='running')return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+// Keep messages out from under the physical object lying on the screen (camera cursor).
+function camAvoid(el){ el.classList.remove('cam-low'); if(window.CAM&&CAM.coversScreen(el.getBoundingClientRect())) el.classList.add('cam-low'); }
+function freeY(w,h){ if(window.CAM) for(const y of [H/2,H*.25,H*.75]) if(!CAM.overlaps(W/2-w/2,y-h/2,w,h)) return y; return H/2; }
+function toast(html){ const t=document.createElement('div'); t.className='t'; t.innerHTML=html; $('toast').appendChild(t); camAvoid($('toast')); setTimeout(()=>t.remove(),2700); while($('toast').children.length>3) $('toast').firstChild.remove(); }
+// ---- Wooden toy blocks ----
+const WOOD={arrow:['#E8453C','#B8322B','#F26B62'],split:['#2F7FD1','#225F9E','#5C9DE0'],cube:['#F2B705','#C08F00','#F8CD45'],bridge:['#D9A86C','#B5874F','#E8C390']};
+function grain(c,x,y,w,h,col){ c.save(); c.beginPath(); c.rect(x,y,w,h); c.clip(); c.strokeStyle=col; c.globalAlpha=.35; c.lineWidth=1.5; for(let i=0;i<5;i++){ c.beginPath(); c.moveTo(x,y+6+i*(h/5)); c.bezierCurveTo(x+w*.3,y+2+i*(h/5),x+w*.6,y+10+i*(h/5),x+w,y+5+i*(h/5)); c.stroke(); } c.restore(); }
+function drawBlock(c,t,px,py,d,lift=0){
+  const [top,side,hi]=WOOD[t], cx=px+T/2, cy=py+T/2, H=12;
+  c.fillStyle=`rgba(58,42,26,${.28-lift/300})`; c.beginPath(); c.ellipse(cx+3,py+T/2+lift+H+4,T*.38+lift/6,T*.2,0,0,7); c.fill();
+  if(t==='bridge'){ // plank over the water
+    c.fillStyle=side; c.fillRect(px-4,py+14+H,T+8,T-28); c.fillStyle=top; c.fillRect(px-4,py+14,T+8,T-28); grain(c,px-4,py+14,T+8,T-28,'#8A6232');
+    c.fillStyle=hi; c.fillRect(px-4,py+14,T+8,4); c.fillStyle='#8A6232'; [px+4,px+T-6].forEach(x=>{ c.beginPath(); c.arc(x,py+T/2,2.5,0,7); c.fill(); }); return; }
+  if(t==='cube'){
+    c.fillStyle=side; c.beginPath(); c.roundRect(px+10,py+12+H,T-20,T-24,6); c.fill();
+    c.fillStyle=top; c.beginPath(); c.roundRect(px+10,py+12,T-20,T-24,6); c.fill(); grain(c,px+10,py+12,T-20,T-24,side); c.fillStyle=hi; c.fillRect(px+14,py+15,T-28,4);
+    c.fillStyle='rgba(255,255,255,.8)'; c.font='800 22px "Baloo 2",sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('■',cx,py+T/2+1); return; }
+  if(t==='split'){ // roller / cylinder
+    c.fillStyle=side; c.beginPath(); c.ellipse(cx,cy+H,22,22,0,0,7); c.fill(); c.fillRect(cx-22,cy,44,H);
+    c.fillStyle=top; c.beginPath(); c.ellipse(cx,cy,22,22,0,0,7); c.fill();
+    c.strokeStyle='rgba(0,0,0,.18)'; c.lineWidth=2; [16,10,4].forEach(r=>{ c.beginPath(); c.arc(cx,cy,r,0,7); c.stroke(); });
+    c.fillStyle=hi; c.beginPath(); c.arc(cx-8,cy-9,5,0,7); c.fill(); return; }
+  // triangle: the tip points in the walking direction
+  c.save(); c.translate(cx,cy); c.rotate(d*Math.PI/2);
+  const tri=(oy)=>{ c.beginPath(); c.moveTo(22,oy); c.lineTo(-18,-22+oy); c.lineTo(-18,22+oy); c.closePath(); };
+  c.restore();
+  c.save(); c.translate(cx,cy+H); c.rotate(d*Math.PI/2); c.fillStyle=side; c.beginPath(); c.moveTo(22,0); c.lineTo(-18,-22); c.lineTo(-18,22); c.closePath(); c.fill(); c.restore();
+  c.save(); c.translate(cx,cy); c.rotate(d*Math.PI/2); c.fillStyle=top; tri(0); c.fill(); c.save(); tri(0); c.clip(); grain(c,-18,-22,40,44,side); c.restore(); c.strokeStyle=hi; c.lineWidth=3; c.beginPath(); c.moveTo(-15,-17); c.lineTo(-15,17); c.stroke(); c.restore();
+}
+function blockSVG(t){
+  const [top,side,hi]=WOOD[t];
+  if(t==='bridge') return `<svg viewBox="0 0 70 60"><rect x="2" y="26" width="66" height="16" rx="3" fill="${side}"/><rect x="2" y="18" width="66" height="16" rx="3" fill="${top}"/><path d="M6 24 q20 -4 40 1 t20 -1 M6 29 q24 3 44 -1" stroke="#8A6232" stroke-width="1.5" fill="none" opacity=".5"/></svg>`;
+  if(t==='cube') return `<svg viewBox="0 0 70 60"><rect x="14" y="20" width="42" height="36" rx="6" fill="${side}"/><rect x="14" y="8" width="42" height="38" rx="6" fill="${top}"/><rect x="19" y="12" width="32" height="4" fill="${hi}"/></svg>`;
+  if(t==='split') return `<svg viewBox="0 0 70 60"><rect x="13" y="26" width="44" height="14" fill="${side}"/><ellipse cx="35" cy="40" rx="22" ry="14" fill="${side}"/><ellipse cx="35" cy="26" rx="22" ry="14" fill="${top}"/><ellipse cx="35" cy="26" rx="13" ry="8" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2"/></svg>`;
+  return `<svg viewBox="0 0 70 60"><path d="M60 40 L12 14 L12 58 Z" fill="${side}"/><path d="M60 30 L12 4 L12 48 Z" fill="${top}"/><path d="M16 10 V42" stroke="${hi}" stroke-width="3"/></svg>`;
+}
+function knock(){ const c=ac(); if(!c) return; [0,.06].forEach((t,i)=>{ const o=c.createOscillator(),g=c.createGain(); o.type='triangle'; o.frequency.value=i?380:520; g.gain.value=.12; g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+t+.09); o.connect(g).connect(c.destination); o.start(c.currentTime+t); o.stop(c.currentTime+t+.1); }); }
+document.querySelectorAll('.how .bi').forEach(el=>el.innerHTML=blockSVG(el.dataset.b));
+
+const rad=a=>a*Math.PI/180;
+function newTotals(){ return {score:0,out:0,lost:0,stray:0,cases:[],arenas:0,start:performance.now()}; }
+
+// Dark mode: dark floor, muted light surfaces (no large white areas: those would look like the white paper blocks).
+const DARK=!/[?&]light\b/.test(location.search);
+document.body.classList.toggle('dark',DARK);
+const PAL=DARK?{floor:'#1B2230',grid:'rgba(227,232,239,.06)',speck:'rgba(227,232,239,.04)',pillar:'#4A5466',pillarTop:'#5A6578',card:'#2B3445',stripe:'#8E99A8',fallInk:'#E3E8EF',zone:'#4E483F',leaf:'#5B7088'}
+              :{floor:'#D6DAE0',grid:'rgba(120,130,145,.18)',speck:'rgba(255,255,255,.18)',pillar:'#B7BDC6',pillarTop:'#CED3DA',card:'#fff',stripe:'#fff',fallInk:'#22252B',zone:'#8E8676',leaf:'#4E9A3A'};
+function makeBg(){ // floor with seams, mats at start and finish
+  const c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d');
+  g.fillStyle=PAL.floor; g.fillRect(0,0,W,H);
+  g.strokeStyle=PAL.grid; g.lineWidth=1.5; for(let x=0;x<W;x+=96){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke(); } for(let y=0;y<H;y+=96){ g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); }
+  for(let i=0;i<900;i++){ g.fillStyle=PAL.speck; g.fillRect(Math.random()*W,Math.random()*H,2,2); }
+  // mats at start and finish
+  const [sx]=Z.spawn, [ex,ey,ew,eh]=Z.end.r;
+  g.fillStyle='#22344F'; g.fillRect(sx-70,0,140,80); g.beginPath(); g.roundRect(ex-26,ey-26,ew+52,eh+52,14); g.fill();
+  g.strokeStyle='rgba(255,255,255,.12)'; g.lineWidth=2; g.strokeRect(sx-62,4,124,72);
+  return c;
+}
+function pillar(x,y){ ctx.fillStyle='rgba(0,0,0,.2)'; ctx.fillRect(x-12,y-8,34,34); ctx.fillStyle=PAL.pillar; ctx.fillRect(x-16,y-16,32,32); ctx.fillStyle=PAL.pillarTop; ctx.fillRect(x-16,y-16,32,8); }
+function plant(x,y){ ctx.fillStyle='#5C6470'; ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.fill(); ctx.fillStyle=PAL.leaf; for(let i=0;i<6;i++){ const a=i/6*7; ctx.beginPath(); ctx.ellipse(x+Math.cos(a)*9,y+Math.sin(a)*9,9,4,a,0,7); ctx.fill(); } }
+function banner(x,y,w,txt,col,t){ const sw=Math.sin(t/1100+x)*1.5; ctx.save(); ctx.translate(x,y); ctx.rotate(sw*.01);
+  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fillRect(-w/2+6,8,w,30); ctx.fillStyle=col; ctx.fillRect(-w/2,0,w,30); ctx.fillStyle='#fff'; ctx.font='800 17px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,0,16); ctx.restore(); }
+function stand(cp,k,t){ // checkpoint
+  const x=cp.x,y=cp.y, col=cp.done?'#FFC93C':'#FF6B5B';
+  ctx.fillStyle=cp.done?'rgba(255,201,60,.28)':'rgba(255,107,91,.16)'; ctx.beginPath(); ctx.roundRect(x-R_CP-10,y-R_CP-10,(R_CP+10)*2,(R_CP+10)*2,12); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fillRect(x-38,y-30,82,64);
+  ctx.fillStyle=PAL.card; ctx.fillRect(x-42,y-34,84,62); ctx.fillStyle=col; ctx.fillRect(x-42,y-34,84,14);
+  ctx.fillStyle='#fff'; ctx.font='800 10px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('CHECKPOINT',x,y-27);
+  if(cp.done){ ctx.font='26px sans-serif'; ctx.fillText('✅',x,y+2); } else { ctx.fillStyle='#FF6B5B'; ctx.beginPath(); ctx.arc(x,y+2,14,0,7); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='800 18px "Baloo 2",sans-serif'; ctx.fillText(Object.keys(cps).indexOf(k)+1,x,y+3); }
+  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fillRect(x-36,y+19,72,6); ctx.fillStyle=cp.done?'#C99418':'#23A99A'; ctx.fillRect(x-36,y+19,72*Math.min(1,cp.n/NEED),6);
+}
+function endpoint(t,noPulse){ const [x,y,w,h]=Z.end.r, n=Math.min(GOAL,zoneArrived), done=n>=GOAL;
+  ctx.fillStyle='rgba(0,0,0,.18)'; ctx.beginPath(); ctx.roundRect(x+5,y+8,w,h,16); ctx.fill();
+  ctx.fillStyle=done?'#FFC93C':'#22344F'; ctx.beginPath(); ctx.roundRect(x,y,w,h,16); ctx.fill();
+  for(let i=0;i<Math.ceil(w/24);i++){ ctx.fillStyle=i%2?PAL.stripe:'#FF6B5B'; ctx.fillRect(x+i*24,y,Math.min(24,w-i*24),12); }
+  ctx.fillStyle=done?'#22344F':'#fff'; ctx.font='800 26px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(`${Z.end.ic} ${Z.end.n}`,x+w/2,y+h/2+2);
+  ctx.font='700 16px "Baloo 2",sans-serif'; ctx.fillText(`${n}/${GOAL} mensen`,x+w/2,y+h-14);
+  if(noPulse) return; const pulse=(Math.sin(t/300)+1)/2; ctx.strokeStyle=`rgba(255,201,60,${.35+pulse*.4})`; ctx.lineWidth=4; ctx.beginPath(); ctx.roundRect(x-8-pulse*4,y-8-pulse*4,w+16+pulse*8,h+16+pulse*8,20); ctx.stroke(); }
+function entrance(t){ const [sx]=Z.spawn;
+  ctx.fillStyle='#22344F'; ctx.fillRect(sx-82,0,14,62); ctx.fillRect(sx+68,0,14,62);
+  ctx.fillStyle='#FF6B5B'; ctx.beginPath(); ctx.roundRect(sx-96,24,192,36,8); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='800 19px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('START',sx,43);
+  ctx.fillStyle='#9AA3AF'; [-40,0,40].forEach(dx=>{ ctx.fillRect(sx+dx-2,64,4,16); }); }
+function loadZone(i){
+  zi=i; Z=ZONES[i]; blocks=[]; people=[]; spawnT=0; inv={...Z.inv}; zoneT=0; cps={}; zoneArrived=0; bg=makeBg();
+  for(const [k,x,y] of Z.cps) cps[k]={x,y,n:0,done:false};
+  $('zone').textContent=Z.n+(round>1?` · ronde ${round}`:''); renderTray(); renderCases();
+  if(VIEW.scene) VIEW.scene.buildZone();
+}
+function inRect(x,y,[rx,ry,rw,rh]){ return x>=rx&&x<=rx+rw&&y>=ry&&y<=ry+rh; }
+function onPlank(x,y){ return blocks.some(b=>{ if(b.t!=='bridge') return false; const a=rad(b.a), dx=x-b.x, dy=y-b.y; const u=dx*Math.cos(a)+dy*Math.sin(a), v=-dx*Math.sin(a)+dy*Math.cos(a); return Math.abs(u)<=PLANK_L/2 && Math.abs(v)<=PLANK_W/2; }); }
+function inWater(x,y){ return Z.water.some(r=>inRect(x,y,r)) && !onPlank(x,y); }
+function blockAt(x,y){ return [...blocks].reverse().find(b=> !b.cam && b.t==='bridge' ? (()=>{ const a=rad(b.a), dx=x-b.x, dy=y-b.y; return Math.abs(dx*Math.cos(a)+dy*Math.sin(a))<=PLANK_L/2 && Math.abs(-dx*Math.sin(a)+dy*Math.cos(a))<=PLANK_W/2+6; })() : !b.cam && Math.hypot(x-b.x,y-b.y)<38); } // camera chips (b.cam) are moved by hand, not by mouse
+
+function renderTray(){ $('tray').innerHTML=''; }
+$('tray').onclick=()=>{};
+function renderCases(){
+  const bar=(p,c)=>`<div class="pb"><em style="width:${Math.min(100,p*100)}%;background:${c}"></em></div>`;
+  const stands=Object.entries(cps).map(([k,cp],i)=>{
+    return `<div class="goal ${cp.done?'ok':''}"><i>${cp.done?'✅':i+1}</i><div>Stuur ${NEED} mensen langs checkpoint ${i+1}${bar(cp.n/NEED,cp.done?'#23A99A':'#FF6B5B')}<small>${Math.min(cp.n,NEED)} / ${NEED}</small></div></div>`; }).join('');
+  const n=Math.min(zoneArrived,GOAL), endOk=n>=GOAL;
+  const end=`<div class="goal ${endOk?'ok':''}"><i>${endOk?'✅':Object.keys(cps).length+1}</i><div>Breng ${GOAL} mensen naar ${Z.end.ic} ${Z.end.n}${bar(n/GOAL,endOk?'#23A99A':'#22344F')}<small>${n} / ${GOAL}</small></div></div>`;
+  $('caseList').innerHTML = stands + end + `<div class="found">Checkpoints gehaald: <b>${totals.cases.length} / ${CP_TOTAL}</b></div>`;
+}
+function hud(){ renderCases(); $('inside').textContent=people.length; $('out').textContent=totals.out; $('lost').textContent=totals.lost; $('score').textContent=totals.score; }
+function touch(){ lastTouch=performance.now(); const c=ac(); if(c&&c.state==='suspended') c.resume(); }
+
+// ---- Free placing, dragging and rotating ----
+function pt(e){ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*W, (e.clientY-r.top)/r.height*H]; }
+cv.addEventListener('pointerdown',e=>{ touch(); }); // geen houten blokken meer plaatsen
+cv.addEventListener('pointermove',e=>{});
+cv.addEventListener('pointerup',()=>{});
+
+// ---- People ----
+function spawn(){
+  if(people.length>=240||celebrate>0) return;
+  const [sx,sy]=Z.spawn;
+  people.push({x:sx+(Math.random()-.5)*26,y:sy,a:90+(Math.random()-.5)*8,v:80+Math.random()*30,lat:(Math.random()-.5)*16,
+    shirt:SHIRTS[Math.floor(Math.random()*SHIRTS.length)],skin:SKIN[Math.floor(Math.random()*SKIN.length)],hair:Math.random()<.5?'#3A2A1A':'#6B4A2A',
+    ph:Math.random()*6,seen:{},hit:{},fall:0,alpha:1});
+}
+function steer(pp,ang,b){ pp.a=ang; const a=rad(ang); // put the person on the line through the block, with their own small offset
+  pp.x=b.x+Math.cos(a)*6-Math.sin(a)*pp.lat; pp.y=b.y+Math.sin(a)*6+Math.cos(a)*pp.lat; }
+function update(dt){
+  zoneT+=dt; spawnT-=dt; while(spawnT<=0){ spawn(); spawnT+=.15; }
+  for(const pp of people){
+    if(pp.fall>0){ pp.fall+=dt; if(pp.fall>.8) pp.gone=true; continue; }
+    if(celebrate>0){ pp.alpha-=dt*1.4; if(pp.alpha<=0){ pp.gone=true; continue; } }
+    if(pp.bounceCurve>0){
+      pp.bounceCurve=Math.max(0,pp.bounceCurve-dt);
+      const t=1-pp.bounceCurve/BOUNCE.curve, progress=t*t; // ease-in: fly sideways first, then bend down
+      pp.a=pp.bounceStartA+(90-pp.bounceStartA)*progress;
+    } else pp.a+= (Math.random()-.5)*dt*6; // slight wandering keeps the stream natural
+    const a=rad(pp.a), sp=pp.z>0?Math.max(pp.v,BOUNCE.airSpeed):pp.v; // faster while airborne
+    pp.x+=Math.cos(a)*sp*dt; pp.y+=Math.sin(a)*sp*dt; pp.ph+=dt*pp.v/9;
+    for(const b of blocks){
+      const d=Math.hypot(pp.x-b.x,pp.y-b.y);
+      // b.R: trigger radius of a physical chip (its size on the screen); b.cam split: configurable branches
+      if(b.t==='arrow' && d<(b.R||R_TRI) && pp.hit[b.id]!==1){ steer(pp,b.a,b); pp.hit={}; pp.hit[b.id]=1; }
+      if(b.t==='split' && d<(b.R||R_ROL) && pp.hit[b.id]!==1){ const turn=b.cam?CAM.splitTurn(b,pp):((b.alt^=1)?-90:90); steer(pp,pp.a+turn,b); pp.hit={}; pp.hit[b.id]=1; }
+      if(b.t==='cube' && d<R_CUBE && pp.hit[b.id]!==1){ pp.a+=180; const n=Math.atan2(pp.y-b.y,pp.x-b.x); pp.x=b.x+Math.cos(n)*(R_CUBE+2); pp.y=b.y+Math.sin(n)*(R_CUBE+2); pp.hit={}; pp.hit[b.id]=1; }
+    }
+    if(window.CAM) CAM.collide(pp); // physical white blocks: people bounce off them (BOUNCE.on) or walk around them
+    if(pp.vz||pp.z>0){ // in the air: gravity; stop at the floor after this single jump
+      pp.vz-=BOUNCE.gravity*dt; pp.z=(pp.z||0)+pp.vz*dt;
+      if(pp.z<=0){ pp.z=0; pp.landAt=performance.now(); pp.vz=0; } }
+    if(pp.squash>0) pp.squash=Math.max(0,pp.squash-dt*4);
+    for(const [k,cp] of Object.entries(cps)) if(!pp.seen[k] && Math.hypot(pp.x-cp.x,pp.y-cp.y)<R_CP){ pp.seen[k]=1; if(!cp.done){ cp.n++; if(cp.n%4===0) renderCases(); if(cp.n>=NEED) caseDone(k); } }
+    if(inRect(pp.x,pp.y,Z.end.r)){ pp.gone=true; totals.out++; zoneArrived++; totals.score+=4; if(zoneArrived%5===0) tone(880+Math.random()*300,.05,'sine',.03); if(zoneArrived===GOAL){ toast(`<i>${Z.end.ic}</i><div>Finish gehaald!<small>${GOAL} mensen aangekomen</small></div>`); tone(988,.2); } checkGoal(); continue; }
+    if(pp.x<-20||pp.x>W+20||pp.y<-40||pp.y>H+20){ pp.gone=true; totals.stray++; continue; }
+  }
+  people=people.filter(p=>!p.gone);
+  if(celebrate>0){ celebrate-=dt; if(celebrate<=0){ celebrate=0; const n=(zi+1)%ZONES.length; if(n===0) round++; loadZone(n); toast(`<i>➡️</i>${ZONES[n].n}`); } }
+  if(performance.now()-lastTouch>90000 && (zi!==0||blocks.length)){ lastTouch=performance.now(); round=1; totals=newTotals(); loadZone(0); }
+}
+function caseDone(k){
+  const cp=cps[k]; cp.done=true; if(!totals.cases.includes(k)) totals.cases.push(k); totals.score+=500;
+  toast(`<i>✅</i><div>Checkpoint ${Object.keys(cps).indexOf(k)+1} gehaald!<small>+500 punten</small></div>`); [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.15),i*80));
+  renderCases(); checkGoal();
+}
+function checkGoal(){ if(celebrate>0) return; if(Object.values(cps).every(c=>c.done) && zoneArrived>=GOAL){ totals.arenas++; totals.score+=Math.max(0,Math.round(180-zoneT))*5; celebrate=3; tone(392,.3); } }
+// ---- Drawing ----
+function wood(t,x,y,ang,lift){
+  const [top,side,hi]=WOOD[t], Hh=12;
+  ctx.fillStyle=`rgba(58,42,26,${.28-lift/300})`; ctx.beginPath();
+  if(t==='bridge'){ ctx.save(); ctx.translate(x+4,y+Hh+lift); ctx.rotate(rad(ang)); ctx.fillRect(-PLANK_L/2,-PLANK_W/2,PLANK_L,PLANK_W); ctx.restore(); }
+  else { ctx.ellipse(x+3,y+lift+Hh+6,30+lift/6,18,0,0,7); ctx.fill(); }
+  ctx.save(); ctx.translate(x,y); ctx.rotate(rad(ang));
+  if(t==='bridge'){ ctx.fillStyle=side; ctx.fillRect(-PLANK_L/2,-PLANK_W/2+Hh,PLANK_L,PLANK_W); ctx.fillStyle=top; ctx.fillRect(-PLANK_L/2,-PLANK_W/2,PLANK_L,PLANK_W); grain(ctx,-PLANK_L/2,-PLANK_W/2,PLANK_L,PLANK_W,'#8A6232'); ctx.fillStyle=hi; ctx.fillRect(-PLANK_L/2,-PLANK_W/2,PLANK_L,4); ctx.fillStyle='#8A6232'; [-PLANK_L/2+10,PLANK_L/2-10].forEach(u=>{ ctx.beginPath(); ctx.arc(u,0,3,0,7); ctx.fill(); }); }
+  else if(t==='cube'){ ctx.rotate(-rad(ang)); ctx.fillStyle=side; ctx.beginPath(); ctx.roundRect(-22,-22+Hh,44,44,6); ctx.fill(); ctx.fillStyle=top; ctx.beginPath(); ctx.roundRect(-22,-22,44,44,6); ctx.fill(); grain(ctx,-22,-22,44,44,side); ctx.fillStyle=hi; ctx.fillRect(-17,-19,34,4); }
+  else if(t==='split'){ ctx.rotate(-rad(ang)); ctx.fillStyle=side; ctx.beginPath(); ctx.ellipse(0,Hh,24,24,0,0,7); ctx.fill(); ctx.fillRect(-24,0,48,Hh); ctx.fillStyle=top; ctx.beginPath(); ctx.arc(0,0,24,0,7); ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.lineWidth=2; [17,10,4].forEach(r=>{ ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.stroke(); }); ctx.fillStyle=hi; ctx.beginPath(); ctx.arc(-8,-9,5,0,7); ctx.fill(); }
+  else { const tri=(oy)=>{ ctx.beginPath(); ctx.moveTo(26,oy); ctx.lineTo(-20,-24+oy); ctx.lineTo(-20,24+oy); ctx.closePath(); };
+    ctx.save(); ctx.rotate(-rad(ang)); ctx.translate(0,Hh); ctx.rotate(rad(ang)); ctx.fillStyle=side; tri(0); ctx.fill(); ctx.restore();
+    ctx.fillStyle=top; tri(0); ctx.fill(); ctx.save(); tri(0); ctx.clip(); grain(ctx,-20,-24,46,48,side); ctx.restore(); ctx.strokeStyle=hi; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-17,-19); ctx.lineTo(-17,19); ctx.stroke(); }
+  ctx.restore();
+}
+function person(pp){ // little person seen from above: shoulders, head, walking feet
+  const a=rad(pp.a), s=Math.sin(pp.ph)*4;
+  ctx.save(); ctx.globalAlpha=Math.max(0,pp.alpha); ctx.translate(pp.x,pp.y); ctx.rotate(a);
+  ctx.fillStyle='rgba(58,42,26,.18)'; ctx.beginPath(); ctx.ellipse(-1,2,9,11,0,0,7); ctx.fill();
+  ctx.fillStyle='#3A2F2A'; ctx.beginPath(); ctx.ellipse(s,-4,3.2,2.2,0,0,7); ctx.ellipse(-s,4,3.2,2.2,0,0,7); ctx.fill();
+  ctx.fillStyle=pp.shirt; ctx.beginPath(); ctx.ellipse(0,0,5,9,0,0,7); ctx.fill();
+  ctx.fillStyle=pp.skin; ctx.beginPath(); ctx.arc(-s*.6+2,-9.5,2.4,0,7); ctx.arc(s*.6+2,9.5,2.4,0,7); ctx.fill();
+  ctx.fillStyle=pp.skin; ctx.beginPath(); ctx.arc(1,0,4.6,0,7); ctx.fill();
+  ctx.fillStyle=pp.hair; ctx.beginPath(); ctx.arc(-.5,0,4.6,Math.PI/2,Math.PI*1.5); ctx.fill();
+  ctx.restore();
+}
+function drawWater(){ // fenced-off construction zone (static: part of the background texture)
+  for(const [x,y,w,h] of Z.water){ // fenced-off construction zone
+    ctx.fillStyle=PAL.zone; ctx.fillRect(x,y,w,h);
+    ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
+    for(let i=0;i<w+h;i+=26){ ctx.fillStyle=(i/26)%2?'rgba(0,0,0,.06)':'rgba(255,255,255,.05)'; ctx.beginPath(); ctx.moveTo(x+i,y); ctx.lineTo(x+i+13,y); ctx.lineTo(x+i+13-h,y+h); ctx.lineTo(x+i-h,y+h); ctx.fill(); }
+    const big=w>h; for(let k=0;k<(big?w:h)/140;k++){ const px=big?x+60+k*140:x+w/2, py=big?y+h/2:y+60+k*140; ctx.fillStyle='#B58A55'; ctx.fillRect(px-16,py-10,32,20); ctx.fillStyle='#FF8A00'; ctx.beginPath(); ctx.moveTo(px+28,py+10); ctx.lineTo(px+36,py-12); ctx.lineTo(px+44,py+10); ctx.fill(); }
+    ctx.restore();
+    ctx.lineWidth=8; ctx.setLineDash([16,16]); ctx.strokeStyle='#FFC800'; ctx.strokeRect(x,y,w,h); ctx.lineDashOffset=16; ctx.strokeStyle='#22252B'; ctx.strokeRect(x,y,w,h); ctx.setLineDash([]); ctx.lineDashOffset=0; }
+}
+$('resBtn').onclick=()=>{ touch();
+  const eff = totals.out+totals.lost ? Math.round(totals.out/(totals.out+totals.lost)*100) : 0;
+  $('endBox').innerHTML=`<h2>Jouw stroom</h2><div class="big">${totals.score}</div>
+   <div class="fin"><div><b>${totals.out}</b>aangekomen</div><div><b>${totals.lost}</b>verdwaald</div><div><b>${eff}%</b>doorstroming</div><div><b>${totals.arenas}</b>levels voltooid</div></div>
+   <p>Checkpoints gehaald: <b>${totals.cases.length} / ${CP_TOTAL}</b></p>
+   <button class="go" id="back">Verder spelen</button>`;
+  $('end').hidden=false; $('back').onclick=()=>{ $('end').hidden=true; touch(); };
+};
+// ===== Phaser view =====
+// The game rules above stay framework-free (model). This scene runs the game loop, renders the hall and feeds
+// pointer input to the model. Textures are generated in code with the existing drawing helpers:
+//   background (floor, carpets, construction zones)  -> image, depth 0
+//   stands (one texture per stand, redrawn when its progress changes) -> images, depth 2
+//   planks (wooden bridges)                          -> sprites, depth 3
+//   destination (texture) + pulsing ring (graphics)  -> depth 4
+//   people (sprite sheet per look, 8 walking frames) -> sprites, depth 5
+//   other wooden blocks                              -> sprites, depth 6
+//   plants + entrance (foreground texture)           -> image, depth 8
+//   "Level voltooid!" banner and idle hint           -> containers, depth 9
+//   camera layer (physical blocks, calibration)      -> canvas texture, depth 10
+const VIEW={scene:null};
+const WALK_FRAMES=8, PERSON_SIZE=32;
+let texSeq=0;
+function canvasTexture(scene,key,w,h,paint){ // a texture drawn with the existing 2D helpers
+  if(scene.textures.exists(key)) scene.textures.remove(key);
+  const t=scene.textures.createCanvas(key,Math.ceil(w),Math.ceil(h)); const prev=ctx; ctx=t.getContext();
+  ctx.clearRect(0,0,t.width,t.height); paint(ctx); ctx=prev; t.refresh(); return t;
+}
+function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Phaser is loaded (CDN or local copy)
+  constructor(){ super('Hall'); this.zoneObjs=[]; this.blockSpr=new Map(); this.active=new Set(); this.pool=[]; this.hudT=0; }
+  create(){
+    VIEW.scene=this;
+    this.game.canvas.style.width=''; this.game.canvas.style.height=''; // keep the page's own CSS sizing of the board
+    this.input.on('pointerdown',()=>touch());
+    // camera layer: physical blocks / chips and the calibration screens are drawn by CAM.draw into this canvas
+    this.camTex=this.textures.createCanvas('camLayer',W,H); this.camCtx=this.camTex.getContext();
+    this.add.image(0,0,'camLayer').setOrigin(0).setDepth(10); this.qs=new Set();
+    // "Level voltooid!" banner
+    const band=this.add.rectangle(W/2,0,W,140,0x3A2A1A,.55);
+    const big=this.add.text(W/2,-6,'Level voltooid!',{fontFamily:'"Baloo 2",sans-serif',fontSize:'72px',fontStyle:'800',color:'#ffffff'}).setOrigin(.5);
+    this.celebSub=this.add.text(W/2,44,'',{fontFamily:'"Baloo 2",sans-serif',fontSize:'26px',fontStyle:'600',color:'#ffffff'}).setOrigin(.5);
+    this.celeb=this.add.container(0,0,[band,big,this.celebSub]).setDepth(9).setVisible(false);
+    // idle hint
+    const hb=this.add.graphics(); hb.fillStyle(0x3A2A1A,.6); hb.fillRoundedRect(W/2-360,-32,720,64,32);
+    this.hintText=this.add.text(W/2,0,'',{fontFamily:'"Baloo 2",sans-serif',fontSize:'26px',fontStyle:'700',color:'#ffffff'}).setOrigin(.5);
+    this.hint=this.add.container(0,0,[hb,this.hintText]).setDepth(9).setVisible(false);
+    this.pulse=this.add.graphics().setDepth(4);
+    // bounce effects: ground shadow under jumping people, dashed jump path, impact ring
+    canvasTexture(this,'hopShadow',30,18,g=>{ g.fillStyle='rgba(0,0,0,.55)'; g.beginPath(); g.ellipse(15,9,13,7,0,0,7); g.fill(); });
+    this.trail=this.add.graphics().setDepth(4.5); this.trailOwners=new Set(); this.lastBoing=0;
+    this.buildZone();
+    new ResizeObserver(()=>this.scale.refresh()).observe(this.game.canvas); // pointer mapping follows the CSS size
+  }
+  // ---- per hall: background, stands, destination, foreground ----
+  buildZone(){
+    for(const o of this.zoneObjs) o.destroy(); this.zoneObjs=[];
+    for(const s of this.blockSpr.values()) s.destroy(); this.blockSpr.clear();
+    const id=++texSeq, keep=o=>(this.zoneObjs.push(o),o);
+    canvasTexture(this,'bg',W,H,g=>{ g.drawImage(bg,0,0); drawWater(); });
+    keep(this.add.image(0,0,'bg').setOrigin(0).setDepth(0));
+    this.stands=Object.entries(cps).map(([k,cp])=>{ const key='stand-'+k+'-'+id;
+      const img=keep(this.add.image(cp.x,cp.y,'__DEFAULT').setDepth(2)); return {k,cp,key,img,sig:null}; });
+    this.updateStands(true);
+    const [x,y,w,h]=Z.end.r; this.endKey='end-'+id; this.endSig=null;
+    this.endImg=keep(this.add.image(x+w/2,y+h/2,'__DEFAULT').setDepth(4)); this.updateEndpoint(true);
+    canvasTexture(this,'fg',W,H,()=>{ plant(24,24); plant(W-24,24); plant(24,H-24); plant(W-24,H-24); entrance(0); });
+    keep(this.add.image(0,0,'fg').setOrigin(0).setDepth(8));
+    this.hintText.setText(`Leid de mensen langs de checkpoints naar de ${Z.end.n}`);
+    this.celebSub.setText('Op naar '+ZONES[(zi+1)%ZONES.length].n.toLowerCase());
+  }
+  updateStands(force){
+    for(const s of this.stands){ const sig=s.cp.n+'|'+s.cp.done; if(!force&&sig===s.sig) continue; s.sig=sig;
+      const R=R_CP+16;
+      canvasTexture(this,s.key,R*2+10,R*2+10,g=>{ g.save(); g.translate(R-s.cp.x,R-s.cp.y); stand(s.cp,s.k,0); g.restore(); });
+      s.img.setTexture(s.key).setOrigin(R/(R*2+10)); }
+  }
+  updateEndpoint(force){ const sig=Math.min(GOAL,zoneArrived); if(!force&&sig===this.endSig) return; this.endSig=sig;
+    const [x,y,w,h]=Z.end.r, m=12;
+    canvasTexture(this,this.endKey,w+2*m,h+2*m,g=>{ g.save(); g.translate(m-x,m-y); endpoint(0,true); g.restore(); });
+    this.endImg.setTexture(this.endKey).setOrigin((m+w/2)/(w+2*m),(m+h/2)/(h+2*m)); }
+  // ---- textures for people (one sprite sheet per look) and wooden blocks ----
+  personKey(pp){ const key=`p${pp.shirt}${pp.skin}${pp.hair}`;
+    if(!this.textures.exists(key)){ const S=PERSON_SIZE, t=this.textures.createCanvas(key,S*WALK_FRAMES,S); const prev=ctx; ctx=t.getContext();
+      for(let f=0;f<WALK_FRAMES;f++){ person({x:f*S+S/2,y:S/2,a:0,ph:f/WALK_FRAMES*Math.PI*2,alpha:1,shirt:pp.shirt,skin:pp.skin,hair:pp.hair}); t.add(f,0,f*S,0,S,S); }
+      ctx=prev; t.refresh(); }
+    return key; }
+  woodKey(t){ const key='wood-'+t; if(!this.textures.exists(key)){ const S=t==='bridge'?200:110;
+      canvasTexture(this,key,S,S,()=>wood(t,S/2,S/2-8,0,0)); } return key; }
+  // ---- every frame ----
+  update(time,delta){
+    update(Math.min(.05,delta/1000)); // the game rules (model)
+    this.syncPeople(); this.syncBlocks(); this.updateStands(false); this.updateEndpoint(false);
+    // destination ring
+    const [x,y,w,h]=Z.end.r, p=(Math.sin(time/300)+1)/2; this.pulse.clear();
+    this.pulse.lineStyle(4,0xFFC93C,.35+p*.4); this.pulse.strokeRoundedRect(x-8-p*4,y-8-p*4,w+16+p*8,h+16+p*8,20);
+    // banner + hint (kept out from under physical objects via freeY)
+    if(celebrate>0){ this.celeb.setVisible(true).setAlpha(Math.min(1,celebrate*.8,(3-celebrate)*3)).setY(freeY(W,140)); } else this.celeb.setVisible(false);
+    const idle=performance.now()-lastTouch>12000&&!(window.CAM&&CAM.physicalCount())&&celebrate<=0&&!(window.CAM&&CAM.state().calibrating);
+    this.hint.setVisible(idle); if(idle) this.hint.setY(freeY(720,64));
+    this.drawCamLayer(time);
+    if((this.hudT+=delta)>=200){ this.hudT=0; hud(); }
+  }
+  syncPeople(){ const seen=new Set();
+    for(const pp of people){ let s=pp.spr; const key=this.personKey(pp);
+      if(!s){ s=this.pool.pop()||this.add.sprite(0,0,key).setDepth(5); s.setTexture(key).setVisible(true); pp.spr=s; this.active.add(s); }
+      const f=Math.floor(((pp.ph%(Math.PI*2))+Math.PI*2)%(Math.PI*2)/(Math.PI*2)*WALK_FRAMES)%WALK_FRAMES;
+      // The person rises without changing size; the shadow stays on the floor.
+      const z=pp.z||0, lift=z*.75, now=performance.now();
+      s.setPosition(pp.x,pp.y-lift).setRotation(rad(pp.a)).setFrame(f).setAlpha(Math.max(0,pp.fall>0?1-pp.fall:pp.alpha))
+       .setDepth(z>0?5.5:5);
+      if(!s.sh) s.sh=this.add.image(0,0,'hopShadow').setDepth(4.6);
+      if(z>.5){ s.sh.setVisible(true).setPosition(pp.x+2,pp.y+4).setScale(1-Math.min(.5,z/160)).setAlpha(.5*(1-Math.min(.7,z/140))); } else s.sh.setVisible(false);
+      if(z>.5||(pp.landAt&&now-pp.landAt<600)){ (pp.trail||(pp.trail=[])).push([pp.x,pp.y-lift,now]); this.trailOwners.add(pp); }
+      if(pp.bounceAt&&s.lastB!==pp.bounceAt){ s.lastB=pp.bounceAt; this.impact(pp.bx,pp.by); }
+      if(pp.fall>0){ if(!pp.q){ this.qs.add(pp.q=this.add.text(0,0,'?',{fontFamily:'"Baloo 2",sans-serif',fontSize:'20px',fontStyle:'800',color:PAL.fallInk}).setOrigin(.5).setDepth(5)); }
+        pp.q.setPosition(pp.x,pp.y-10-pp.fall*20).setAlpha(Math.max(0,1-pp.fall*1.2)); }
+      seen.add(s); }
+    for(const s of this.active) if(!seen.has(s)){ s.setVisible(false); if(s.sh) s.sh.setVisible(false); s.lastB=null; this.active.delete(s); this.pool.push(s); }
+    this.drawTrails();
+    // question marks of people that are gone
+    if(this.qs.size){ const live=new Set(people.map(pp=>pp.q)); for(const q of this.qs) if(!live.has(q)){ q.destroy(); this.qs.delete(q); } }
+  }
+  drawTrails(){ // wider, warm-colored dashed jump path, fading out
+    const g=this.trail, now=performance.now(), LIFE=1400, DASH=7, GAP=6; g.clear();
+    for(const pp of this.trailOwners){
+      if(!people.includes(pp)){ this.trailOwners.delete(pp); continue; }
+      const t=pp.trail; while(t.length&&now-t[0][2]>LIFE) t.shift();
+      if(t.length<2){ if(!t.length) this.trailOwners.delete(pp); continue; }
+      let on=true, left=DASH;
+      for(let i=1;i<t.length;i++){ let [x0,y0]=t[i-1]; const [x1,y1,tt]=t[i]; let seg=Math.hypot(x1-x0,y1-y0); if(!seg) continue;
+        const ux=(x1-x0)/seg, uy=(y1-y0)/seg, alpha=.85*(1-(now-tt)/LIFE);
+        while(seg>0){ const step=Math.min(seg,left);
+          if(on){ g.lineStyle(4,0xF2A100,alpha); g.lineBetween(x0,y0,x0+ux*step,y0+uy*step); }
+          x0+=ux*step; y0+=uy*step; seg-=step; left-=step; if(left<=0){ on=!on; left=on?DASH:GAP; } } }
+    }
+  }
+  impact(x,y){ // ring where the person hits the block + a short 'boing'
+    const ring=this.add.circle(x,y,8).setStrokeStyle(4,0xF2A100,.9).setDepth(4.7);
+    this.tweens.add({targets:ring,scale:3.2,alpha:0,duration:380,ease:'Cubic.easeOut',onComplete:()=>ring.destroy()});
+    const now=performance.now(); if(now-this.lastBoing>120){ this.lastBoing=now; tone(330,.07,'sine',.05); setTimeout(()=>tone(520,.09,'sine',.04),60); }
+  }
+  syncBlocks(){ const seen=new Set();
+    for(const b of blocks){ if(b.cam) continue; // physical chips: the paper/chip itself lies on the screen
+      let s=this.blockSpr.get(b); if(!s){ s=this.add.image(0,0,this.woodKey(b.t)).setDepth(b.t==='bridge'?3:6); this.blockSpr.set(b,s); }
+      let l=0; if(b.drop>0){ b.drop=Math.max(0,b.drop-.08); l=b.drop*b.drop*40; } if(drag&&drag.b===b&&drag.moved) l=14;
+      s.setPosition(b.x,b.y-l+8).setRotation(b.t==='arrow'||b.t==='bridge'?rad(b.a):0); seen.add(b); }
+    for(const [b,s] of this.blockSpr) if(!seen.has(b)){ s.destroy(); this.blockSpr.delete(b); }
+  }
+  drawCamLayer(time){ if(!window.CAM) return;
+    // every frame: besides drawing, CAM.draw also keeps the camera state up to date (chips, walls, calibration, status)
+    const g=this.camCtx; g.clearRect(0,0,W,H); CAM.draw(g,time); this.camTex.refresh();
+  }
+}};
+function startPhaser(){
+  const go=()=>new Phaser.Game({type:Phaser.CANVAS, canvas:cv, width:W, height:H, backgroundColor:PAL.floor, banner:false,
+    scale:{mode:Phaser.Scale.NONE}, audio:{noAudio:true}, render:{antialias:true}, scene:[makeHall()]});
+  // textures contain text: wait (briefly) for the font, then start
+  const fonts=document.fonts?Promise.race([Promise.all(['800 20px "Baloo 2"','700 20px "Baloo 2"','600 20px "Baloo 2"'].map(f=>document.fonts.load(f))),new Promise(r=>setTimeout(r,1500))]):Promise.resolve();
+  const ready=()=>new Promise((res,rej)=>{ const t0=performance.now(); (function wait(){ if(window.Phaser) res(); else if(performance.now()-t0>8000) rej(); else setTimeout(wait,50); })(); });
+  Promise.all([fonts.catch(()=>{}),ready()]).then(go,()=>{ document.getElementById('boardWrap').insertAdjacentHTML('beforeend',
+    '<p style="position:absolute;inset:auto 0 45%;text-align:center;font-weight:800">Phaser kon niet laden: zet phaser.min.js naast index.html.</p>'); });
+}
+
+totals=newTotals(); loadZone(0); startPhaser();
+window.__pm={place:(x,y,t,a=90)=>{ blocks.push({id:++bid,t,x,y,a,alt:0}); }, state:()=>({cps,zi,totals,people:people.length,celebrate}), load:loadZone, update};
+</script>
+<script>
+// ===== Camera link: Python/OpenCV (camera_bridge.py) -> WebSocket -> canvas =====
+// Optional: if the bridge is not running, the game plays normally and reconnects in the background.
+// The white test object drives a cursor; the red and green chips act as blocks in the simulation.
+//
+// Coordinates: the bridge sends nx/ny as a fraction of the *camera frame*, not of the canvas. The canvas
+// is only part of the monitor and the monitor only part of the camera frame, so nx*W squeezes the cursor
+// into a small region. A 4-point calibration (press K, place the object on the four targets) yields a
+// perspective transform camera (nx,ny) -> canvas (x,y) that also covers mirroring and rotation.
+window.CAM=(()=>{
+  const URL_='ws://127.0.0.1:8765', RETRY_MIN=1000, RETRY_MAX=8000, STALE=1500, LOST_GRACE=250, FADE_MS=1200;
+  // Calibration targets are inset so the whole object fits on the canvas; the transform extrapolates to the edges.
+  const CAL_KEY='pm-camera-calibration-v1', CAL_INSET=.15, CAL_HOLD=900, CAL_STILL=.012, CAL_MOVE=.05, OFF_CANVAS=60;
+  // Cursor ring radius in screen pixels. It must lie just outside the physical object, otherwise the object
+  // hides it. The default fits an AirPods case on a ~24" monitor; override with index.html?camring=180.
+  const RING_PX=Math.min(400,Math.max(30,+(location.search.match(/[?&]camring=(\d+)/)||[])[1]||150));
+  let ws=null, retryT=null, retryMs=RETRY_MIN, connected=false, lastMsg=0, lastSeen=0, objs=[], cur=null, lastDraw=0, failed=false, warned=false, raw=null;
+  let cal=null, calib=null, ringR=100;
+
+  // ---- Physical chips (fiches) ----
+  // The bridge reports each chip with kind, position, rim point (size) and, for the red chip, the yellow
+  // segment as heading point. Each chip becomes a real block in the existing simulation:
+  //   redirect (red)  -> 'arrow' block: people walk on in the direction of the yellow segment
+  //   split    (green)-> 'split' block: people turn into one of two branches, relative to their own walking
+  //                       direction (same rule as the wooden roll). Edit turns/ratio below to change it.
+  // Colors of the camera visuals: saturated blue (never white/red/yellow/green: those are detection colors).
+  const VIS=DARK?{line:'#3D8BFF',shade:'rgba(5,10,20,.6)',held:'#6B7686'}:{line:'#2F7FD1',shade:'rgba(34,52,79,.45)',held:'#9AA3AF'};
+  const CHIPS={}; // fiches uitgeschakeld
+  const CHIP_GRACE=2000, CHIP_PAD=6, CHIP_POS_DB=4, CHIP_ANG_DB=4; // ms kept after loss; trigger margin; dead bands (canvas px / degrees)
+  const chips=new Map(); // bridge id -> {kind, b (block in the simulation), seen, held, wet}
+  // ---- White blocks: walls ----
+  // A wall does not choose a direction. A person who walks into it is stopped and walks along its edge;
+  // past the corner the person continues in the direction they had before (from the entrance: downwards).
+  const WALL={pad:6, name:'wit blok'}; // pad: half the width of a person (canvas units)
+  const walls=new Map(); // bridge id -> {x, y, hw, hh, ar (radians), cs, sn, seen, held}
+  const angDiff=(a,b)=>Math.abs(((a-b)%360+540)%360-180);
+  // [ ] exposure, , . fine brightness, A auto exposure, B reference image: also usable from the game window
+  const BRIDGE_KEYS=['[',']','-','=','+',',','.','a','A','b','B'];
+  let expoAsked=0, expoShown='';
+  let debug=/[?&]camdebug\b/.test(location.search); // open index.html?camdebug to show raw coordinates on the canvas
+  const listeners=new Set(), el=$('camStatus');
+  const LABEL={off:'Camera niet verbonden',on:'Camera verbonden',seen:'Camera verbonden · object in beeld',cal:'Camera kalibreren…'};
+  const LABEL_UNCAL={on:'Camera verbonden · niet gekalibreerd (K)',seen:'Object in beeld · niet gekalibreerd (K)'};
+  function status(s){ let txt=(!cal&&LABEL_UNCAL[s])||LABEL[s];
+    if(s==='cal'&&calib&&calib.auto) txt=`Camera kalibreren ${Math.min(calib.i+1,ACAL_GRID.length)}/${ACAL_GRID.length} · Esc = stoppen`;
+    if(s==='seen'&&(chips.size||walls.size)) txt=[...new Set([...chips.values()].map(c=>CHIPS[c.kind].name).concat(walls.size?[WALL.name+(walls.size>1?'en':'')]:[]))].join(' + ')+' in beeld'+(cal?'':' · niet gekalibreerd (K)'); if(el&&(el.dataset.s!==s||el.lastChild.textContent!==txt)){ el.dataset.s=s; el.lastChild.textContent=txt; } }
+  const num=v=>typeof v==='number'&&Number.isFinite(v), c01=v=>Math.min(1,Math.max(0,v));
+  // Only accept normalized values (0..1). Do not silently clamp values outside that range (e.g. pixels):
+  // that would leave the cursor stuck in a corner and hide the real error.
+  const inRange=(nx,ny)=>{ const ok=num(nx)&&num(ny)&&nx>=-.02&&nx<=1.02&&ny>=-.02&&ny<=1.02;
+    if(!ok&&num(nx)&&num(ny)&&!warned){ warned=true; console.warn('[camera] coördinaten buiten 0..1 genegeerd (pixels in plaats van genormaliseerd?):',nx,ny); } return ok; };
+
+  // ---- Perspective transform (4 point pairs, h33 = 1) ----
+  function solveH(src,dst){
+    const A=[], b=[];
+    for(let i=0;i<4;i++){ const [x,y]=src[i], [u,v]=dst[i];
+      A.push([x,y,1,0,0,0,-u*x,-u*y]); b.push(u); A.push([0,0,0,x,y,1,-v*x,-v*y]); b.push(v); }
+    for(let c=0;c<8;c++){ // Gauss-Jordan with partial pivoting
+      let p=c; for(let r=c+1;r<8;r++) if(Math.abs(A[r][c])>Math.abs(A[p][c])) p=r;
+      if(Math.abs(A[p][c])<1e-12) return null;
+      [A[c],A[p]]=[A[p],A[c]]; [b[c],b[p]]=[b[p],b[c]];
+      for(let r=0;r<8;r++) if(r!==c&&A[r][c]){ const f=A[r][c]/A[c][c]; for(let k=c;k<8;k++) A[r][k]-=f*A[c][k]; b[r]-=f*b[c]; }
+    }
+    return [...b.map((v,i)=>v/A[i][i]),1];
+  }
+  const hw=(h,x,y)=>h[6]*x+h[7]*y+h[8];
+  function applyH(c,x,y){ const w=hw(c.h,x,y); if(!(w*c.sign>1e-9)) return null; // behind the transform's horizon
+    return [(c.h[0]*x+c.h[1]*y+c.h[2])/w,(c.h[3]*x+c.h[4]*y+c.h[5])/w]; }
+  const targets=()=>[[CAL_INSET*W,CAL_INSET*H],[(1-CAL_INSET)*W,CAL_INSET*H],[(1-CAL_INSET)*W,(1-CAL_INSET)*H],[CAL_INSET*W,(1-CAL_INSET)*H]];
+  function makeCal(pts){ // null if the four camera points do not form a usable (convex, large enough) quad
+    const cross=[0,1,2,3].map(i=>{ const [a,b,c]=[pts[i],pts[(i+1)%4],pts[(i+2)%4]]; return (b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]); });
+    if(!(cross.every(v=>v>0)||cross.every(v=>v<0))) return null;
+    const area=Math.abs(pts.reduce((s,p,i)=>{ const q=pts[(i+1)%4]; return s+p[0]*q[1]-q[0]*p[1]; },0))/2;
+    if(area<.002) return null;
+    const h=solveH(pts,targets()); if(!h||!h.every(Number.isFinite)) return null;
+    const sign=Math.sign(hw(h,pts[0][0],pts[0][1]));
+    if(!sign||!pts.every(([x,y])=>hw(h,x,y)*sign>0)) return null;
+    return {h,sign,pts};
+  }
+  // ---- Multi-point calibration (automatic, K): least-squares perspective + correction for lens curvature ----
+  function solveLin(A,b){ const n=b.length, M=A.map((r,i)=>[...r,b[i]]);
+    for(let c=0;c<n;c++){ let p=c; for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[p][c])) p=r;
+      if(Math.abs(M[p][c])<1e-12) return null; [M[c],M[p]]=[M[p],M[c]];
+      for(let r=0;r<n;r++) if(r!==c){ const f=M[r][c]/M[c][c]; for(let k=c;k<=n;k++) M[r][k]-=f*M[c][k]; } }
+    return M.map((r,i)=>r[n]/r[i]); }
+  function lsq(rows,rhs,ridge=0){ const n=rows[0].length, A=Array.from({length:n},()=>Array(n).fill(0)), b=Array(n).fill(0);
+    rows.forEach((r,k)=>{ for(let i=0;i<n;i++){ b[i]+=r[i]*rhs[k]; for(let j=0;j<n;j++) A[i][j]+=r[i]*r[j]; } });
+    for(let i=0;i<n;i++) A[i][i]+=ridge; return solveLin(A,b); }
+  // Lens curvature (barrel distortion of a wide-angle webcam): camera points are first "straightened" around
+  // the image center (radial model, k1/k2), then the perspective transform is applied. k1/k2 are found from the
+  // calibration points themselves.
+  function undist(c,x,y){ if(!c.k) return [x,y]; const A=c.aspect||16/9, u=(x-.5)*A, v=y-.5, r2=u*u+v*v, f=1+c.k[0]*r2+c.k[1]*r2*r2; return [.5+u*f/A,.5+v*f]; }
+  function applyCal(c,x,y){ const p=undist(c,x,y); return applyH(c,p[0],p[1]); }
+  function fitH(cam,canv){ // least-squares perspective transform (more than 4 points)
+    const rows=[], rhs=[];
+    cam.forEach(([x,y],k)=>{ const X=canv[k][0]/W, Y=canv[k][1]/H;
+      rows.push([x,y,1,0,0,0,-X*x,-X*y]); rhs.push(X); rows.push([0,0,0,x,y,1,-Y*x,-Y*y]); rhs.push(Y); });
+    const g=lsq(rows,rhs); if(!g||!g.every(Number.isFinite)) return null;
+    const h=[g[0]*W,g[1]*W,g[2]*W,g[3]*H,g[4]*H,g[5]*H,g[6],g[7],1];
+    const sign=Math.sign(hw(h,cam[0][0],cam[0][1])); if(!sign||!cam.every(([x,y])=>hw(h,x,y)*sign>0)) return null;
+    return {h,sign};
+  }
+  function fitCal(cam,canv,aspect){
+    if(!cam||cam.length<4) return null;
+    const A=aspect||16/9;
+    const tryK=k=>{ const c0={k,aspect:A}, pts=cam.map(p=>undist(c0,p[0],p[1])), f=fitH(pts,canv); if(!f) return null;
+      const c={...f,k,aspect:A}, e=Math.sqrt(cam.reduce((s,p,i)=>{ const q=applyCal(c,p[0],p[1]); return s+(q?(q[0]-canv[i][0])**2+(q[1]-canv[i][1])**2:1e6); },0)/cam.length);
+      c.rms=e; return c; };
+    let best=tryK([0,0]); if(!best) return null; const noLens=best.rms;
+    if(cam.length>=8){ // search the lens curvature (golden-section search on k1 for a few k2 values)
+      const g=(1+Math.sqrt(5))/2;
+      const search=k2=>{ let a=-1, b=1, c=b-(b-a)/g, d=a+(b-a)/g; const f=k1=>{ const r=tryK([k1,k2]); return r?r.rms:1e9; };
+        let fc=f(c), fd=f(d); for(let i=0;i<40;i++){ if(fc<fd){ b=d; d=c; fd=fc; c=b-(b-a)/g; fc=f(c); } else { a=c; c=d; fc=fd; d=a+(b-a)/g; fd=f(d); } }
+        return tryK([(a+b)/2,k2]); };
+      for(let k2=-.4;k2<=.401;k2+=.1){ const r=search(+k2.toFixed(2)); if(r&&r.rms<best.rms) best=r; }
+      for(let k2=best.k[1]-.08;k2<=best.k[1]+.081;k2+=.02){ const r=search(+k2.toFixed(3)); if(r&&r.rms<best.rms) best=r; }
+      if(!(best.rms<noLens*.9)) best=tryK([0,0]); // only use the lens model when it clearly helps
+    }
+    best.rmsNoLens=noLens; best.auto={cam,canv,aspect:A}; best.lens=!!(best.k[0]||best.k[1]);
+    return best;
+  }
+  function loadCal(){ try{ const c=JSON.parse(localStorage.getItem(CAL_KEY)||'null');
+    if(c&&c.auto&&Array.isArray(c.auto.cam)&&Array.isArray(c.auto.canv)) return fitCal(c.auto.cam,c.auto.canv,c.auto.aspect);
+    return c&&Array.isArray(c.pts)&&c.pts.length===4&&c.pts.every(p=>Array.isArray(p)&&p.length===2&&p.every(num))?makeCal(c.pts):null; }catch(e){ return null; } }
+  function saveCal(){ try{ if(!cal) localStorage.removeItem(CAL_KEY);
+    else localStorage.setItem(CAL_KEY,JSON.stringify(cal.auto?{auto:cal.auto,rms:cal.rms,at:new Date().toISOString()}:{pts:cal.pts,at:new Date().toISOString()})); }catch(e){} }
+
+  function toCanvas(nx,ny){
+    if(!cal) return [c01(nx)*W, c01(ny)*H]; // uncalibrated: whole camera frame = canvas
+    const p=applyCal(cal,nx,ny);
+    if(!p||p[0]<-OFF_CANVAS||p[0]>W+OFF_CANVAS||p[1]<-OFF_CANVAS||p[1]>H+OFF_CANVAS) return null; // object lies next to the playfield
+    return [Math.min(W,Math.max(0,p[0])), Math.min(H,Math.max(0,p[1]))];
+  }
+
+  function mapRaw(nx,ny){ return cal?applyCal(cal,nx,ny):[nx*W,ny*H]; } // helper points (rim, heading): no clamping
+
+  // ---- Calibration: hold the object still on each target; the averaged raw position is recorded ----
+  function startCal(){ calib={pts:[],buf:[],seen:false,near:false}; cur=null; console.info('[camera] kalibratie gestart'); }
+  function stopCal(){ if(calib&&calib.auto) sendCal({cmd:'cancel'}); calib=null; }
+  // Automatic: the field turns black, one bright square at a time is shown at a known spot, the bridge
+  // reports where the camera sees it. 12 points over the whole field; no object has to be placed.
+  const ACAL_GRID=[[.06,.08],[.36,.08],[.64,.08],[.94,.08],[.06,.5],[.36,.5],[.64,.5],[.94,.5],[.06,.92],[.36,.92],[.64,.92],[.94,.92]];
+  const ACAL_SIZE=44, ACAL_SHOW=150, ACAL_TIMEOUT=7000;
+  const acalTarget=i=>[ACAL_GRID[i][0]*W, ACAL_GRID[i][1]*H];
+  function sendCal(o){ if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'cal',...o})); }
+  function startAutoCal(){
+    if(!ws||ws.readyState!==1){ if(typeof toast==='function') toast('<i>📷</i>Camera niet verbonden: handmatige kalibratie'); startCal(); return; }
+    calib={auto:true,phase:'black',t:performance.now(),sent:false,i:0,tries:0,cam:[],canv:[],missed:[]}; cur=null;
+    console.info('[camera] automatische kalibratie gestart');
+  }
+  function acalNext(now){ const s=calib; s.i++; s.tries=0; s.t=now; s.sent=false; if(s.i>=ACAL_GRID.length) acalFinish(); }
+  function acalFinish(){ const s=calib; calib=null; sendCal({cmd:'cancel'});
+    console.info('[camera] kalibratiepunten (camera -> scherm)',JSON.stringify(s.cam.map((p,k)=>[p.map(v=>+v.toFixed(3)),s.canv[k].map(Math.round)])));
+    const c=s.cam.length>=6?fitCal(s.cam,s.canv,s.aspect):null;
+    if(c){ cal=c; saveCal(); setObjs(objs);
+      console.info('[camera] automatische kalibratie',s.cam.length,'punten, gemiddelde afwijking',c.rms.toFixed(1),'px',c.lens?`(lenscorrectie k1=${c.k[0].toFixed(3)} k2=${c.k[1].toFixed(3)}; zonder: ${c.rmsNoLens.toFixed(1)} px)`:'',s.missed);
+      if(typeof toast==='function') toast(`<i>🎯</i><div>Camera gekalibreerd<small>${s.cam.length} punten · gemiddelde afwijking ${c.rms.toFixed(1).replace('.',',')} px${c.lens?' · met lenscorrectie':''}</small></div>`); }
+    else if(typeof toast==='function') toast(`<i>⚠️</i><div>Kalibratie mislukt<small>${s.cam.length} van ${ACAL_GRID.length} punten gezien${s.missed[0]?': '+s.missed[0]:''}. Staat de game op het volle scherm en ziet de camera het hele speelveld?</small></div>`);
+  }
+  function acalTick(now){ const s=calib; if(!s||!s.auto) return;
+    if(!connected){ calib=null; if(typeof toast==='function') toast('<i>⚠️</i>Kalibratie gestopt: camera niet verbonden'); return; }
+    if(!s.sent&&now-s.t>(s.phase==='black'?700:ACAL_SHOW)){ s.sent=true; s.sentT=now; sendCal(s.phase==='black'?{cmd:'ref'}:{cmd:'point',i:s.i}); }
+    if(s.sent&&now-s.sentT>ACAL_TIMEOUT){ // no answer
+      if(s.phase==='black'){ calib=null; if(typeof toast==='function') toast('<i>⚠️</i>Kalibratie: geen antwoord van camera_bridge.py (nieuwe versie nodig?)'); }
+      else { s.missed.push('geen antwoord'); acalNext(now); } }
+  }
+  function onCalMsg(m){ const s=calib, now=performance.now(); if(!s||!s.auto) return;
+    if(m.ref&&s.phase==='black'){ s.phase='point'; s.i=0; s.t=now; s.sent=false; return; }
+    if(s.phase!=='point'||m.i!==s.i) return;
+    if(m.ok&&num(m.nx)&&num(m.ny)){ s.cam.push([m.nx,m.ny]); s.canv.push(acalTarget(s.i)); if(num(m.fw)&&num(m.fh)&&m.fh>0) s.aspect=m.fw/m.fh; acalNext(now); }
+    else if(++s.tries<2){ s.t=now; s.sent=false; } // try this point once more
+    else { s.missed.push(String(m.reason||'niet gezien')); acalNext(now); }
+  }
+  function drawAutoCal(c){ const s=calib;
+    c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H); // nothing else may change on the field while measuring
+    if(s.phase==='point'){ const [x,y]=acalTarget(s.i); c.fillStyle='#fff'; c.fillRect(x-ACAL_SIZE/2,y-ACAL_SIZE/2,ACAL_SIZE,ACAL_SIZE); }
+    c.restore(); }
+  function calSample(o){
+    const s=calib, now=performance.now();
+    if(!o){ s.buf=[]; s.seen=false; return; }
+    s.seen=true;
+    s.near=s.pts.some(([x,y])=>Math.hypot(o.nx-x,o.ny-y)<CAL_MOVE); // still on the previous target
+    if(s.near){ s.buf=[]; return; }
+    s.buf.push([o.nx,o.ny,now]);
+    let i=s.buf.length-1; while(i>0&&Math.hypot(s.buf[i-1][0]-o.nx,s.buf[i-1][1]-o.ny)<=CAL_STILL) i--; // moving restarts the countdown
+    s.buf=s.buf.slice(i);
+    if(now-s.buf[0][2]<CAL_HOLD) return;
+    const n=s.buf.length; s.pts.push([s.buf.reduce((a,p)=>a+p[0],0)/n, s.buf.reduce((a,p)=>a+p[1],0)/n]); s.buf=[];
+    if(typeof tone==='function') tone(660+s.pts.length*90,.1);
+    if(s.pts.length<4) return;
+    const c=makeCal(s.pts); calib=null;
+    if(c){ cal=c; saveCal(); setObjs(objs); console.info('[camera] kalibratie opgeslagen',c.pts); if(typeof toast==='function') toast('<i>🎯</i>Camera gekalibreerd'); }
+    else if(typeof toast==='function') toast('<i>⚠️</i><div>Kalibratie mislukt<small>De vier punten waren niet goed te onderscheiden. Druk K om opnieuw te beginnen.</small></div>');
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.ctrlKey||e.metaKey||e.altKey||(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]'))) return;
+    if(e.key==='k'||e.key==='K'){ e.preventDefault(); if(e.shiftKey) startCal(); else startAutoCal(); } // Shift+K: manual (object on 4 targets)
+    else if(e.key==='Escape'&&calib){ e.preventDefault(); stopCal(); }
+    else if(BRIDGE_KEYS.includes(e.key)){ // camera settings from the game window: forwarded to camera_bridge.py
+      e.preventDefault();
+      if(!ws||ws.readyState!==1){ if(typeof toast==='function') toast('<i>📷</i>Camera niet verbonden'); return; }
+      ws.send(JSON.stringify({type:'key',key:e.key}));
+      if(e.key==='b'||e.key==='B'){ if(typeof toast==='function') toast('<i>📷</i><div>Referentie vastgelegd<small>Wat nu in beeld is, telt niet als blok.</small></div>'); }
+      else expoAsked=performance.now(); // the next message shows the new exposure
+    }
+  });
+
+  function connect(){
+    if(ws||retryT) return; // never two connections or retry attempts at the same time
+    let s; try{ s=new WebSocket(URL_); }catch(e){ schedule(); return; }
+    ws=s;
+    s.onopen=()=>{ if(ws!==s) return; connected=true; retryMs=RETRY_MIN; lastMsg=performance.now(); status('on'); console.info('[camera] verbonden met',URL_); };
+    s.onmessage=e=>{ if(ws===s) receive(e.data); };
+    s.onerror=()=>{}; // 'close' always follows; reconnecting happens there
+    s.onclose=()=>{ if(ws!==s) return; if(connected) console.info('[camera] verbinding verbroken'); ws=null; connected=false; setObjs([]); status('off'); schedule(); };
+  }
+  function schedule(){ if(retryT) return; retryT=setTimeout(()=>{ retryT=null; connect(); },retryMs); retryMs=Math.min(RETRY_MAX,retryMs*2); }
+
+  function receive(data){
+    let m; try{ m=JSON.parse(data); }catch(e){ return; }
+    if(m&&typeof m==='object'&&m.type==='cal'){ lastMsg=performance.now(); onCalMsg(m); return; } // calibration reply
+    if(!m||typeof m!=='object'||typeof m.detected!=='boolean') return;
+    lastMsg=performance.now(); raw=m;
+    if(typeof m.exposure==='string'&&expoAsked&&m.exposure!==expoShown&&performance.now()-expoAsked<3000){
+      expoShown=m.exposure; expoAsked=0; if(typeof toast==='function') toast(`<i>📷</i>${m.exposure.replace(/[<>&]/g,'')}`); }
+    else if(typeof m.exposure==='string'&&!expoShown) expoShown=m.exposure;
+    let list=[];
+    if(m.detected){
+      const pt=v=>Array.isArray(v)&&v.length===2&&num(v[0])&&num(v[1])&&Math.abs(v[0]-.5)<1&&Math.abs(v[1]-.5)<1?[v[0],v[1]]:null;
+      if(Array.isArray(m.objects)) list=m.objects.filter(o=>o&&inRange(o.nx,o.ny)).map((o,i)=>({id:String(o.id??i),color:String(o.color??''),nx:c01(o.nx),ny:c01(o.ny),angle:num(o.angle)?o.angle:null,area:num(o.area)?o.area:0,
+        kind:CHIPS[o.kind]||o.kind==='block'?o.kind:'probe', rim:pt(o.rim), head:pt(o.head), held:o.held===true,
+        corners:Array.isArray(o.corners)&&o.corners.length===4&&o.corners.every(c=>pt(c))?o.corners.map(pt):null}));
+      else if(inRange(m.nx,m.ny)) list=[{id:'0',color:'',nx:c01(m.nx),ny:c01(m.ny),angle:null,area:0}];
+    }
+    if(calib&&!calib.auto) calSample(list.find(o=>o.kind==='block'||o.kind==='probe')||list[0]||null); // manual calibration with the white block
+    setObjs(list);
+  }
+  function setObjs(list){
+    objs=list.map(o=>{ const p=toCanvas(o.nx,o.ny); if(!p) return null; const q={...o,x:p[0],y:p[1]};
+      if(CHIPS[o.kind]){ // size and heading via the same calibration as the position (covers perspective and mirroring)
+        const c=mapRaw(o.nx,o.ny), rim=o.rim&&mapRaw(o.rim[0],o.rim[1]), hd=o.head&&mapRaw(o.head[0],o.head[1]);
+        q.r=c&&rim?Math.min(160,Math.max(12,Math.hypot(rim[0]-c[0],rim[1]-c[1]))):34;
+        q.a=c&&hd&&Math.hypot(hd[0]-c[0],hd[1]-c[1])>1?(Math.atan2(hd[1]-c[1],hd[0]-c[0])*180/Math.PI+360)%360:null; }
+      if(o.kind==='block'){
+        const cs=o.corners&&o.corners.map(c=>mapRaw(c[0],c[1]));
+        if(!cs||cs.some(c=>!c)) return null;
+        // rectangle from the (perspective) quadrilateral: average opposite edges
+        const ux=(cs[1][0]-cs[0][0]+cs[2][0]-cs[3][0])/2, uy=(cs[1][1]-cs[0][1]+cs[2][1]-cs[3][1])/2;
+        const vx=(cs[3][0]-cs[0][0]+cs[2][0]-cs[1][0])/2, vy=(cs[3][1]-cs[0][1]+cs[2][1]-cs[1][1])/2;
+        const L=Math.hypot(ux,uy)||1, ar=Math.atan2(uy,ux);
+        q.x=cs.reduce((a,c)=>a+c[0],0)/4; q.y=cs.reduce((a,c)=>a+c[1],0)/4;
+        q.hw=L/2; q.hh=Math.abs(-vx*Math.sin(ar)+vy*Math.cos(ar))/2; q.ar=ar; }
+      return q; }).filter(Boolean);
+    if(objs.some(o=>o.kind==='probe')) lastSeen=performance.now();
+    syncChips(performance.now());
+    syncWalls(performance.now());
+    // The bridge already holds objects through short detection gaps and sends them in every message,
+    // so an object that is missing from a message is really gone (no timeout needed; a stalled bridge is
+    // handled by STALE). Timeouts would make walls flicker when messages arrive slowly.
+    const present=new Set(objs.map(o=>o.id));
+    if(!calib){ for(const [id,c] of chips) if(!present.has(id)) c.seen=-Infinity;
+                for(const [id,w] of walls) if(!present.has(id)) w.seen=-Infinity; }
+    listeners.forEach(f=>{ try{ f(objs); }catch(e){ console.error(e); } });
+  }
+
+  // ---- Chips -> blocks in the simulation ----
+  function syncChips(now){
+    if(calib) return; // positions are not reliable during calibration
+    for(const o of objs){ if(!CHIPS[o.kind]) continue;
+      let c=chips.get(o.id);
+      if(!c){ c={kind:o.kind,b:{id:++bid,t:CHIPS[o.kind].t,x:o.x,y:o.y,a:o.a??90,alt:0,cam:o.kind,R:o.r+CHIP_PAD,inA:90,acc:0}}; chips.set(o.id,c); touch(); }
+      const b=c.b; let moved=false;
+      if(Math.hypot(o.x-b.x,o.y-b.y)>CHIP_POS_DB){ b.x=o.x; b.y=o.y; moved=true; }
+      if(o.a!=null&&angDiff(o.a,b.a)>CHIP_ANG_DB){ b.a=o.a; moved=true; }
+      b.R=o.r+CHIP_PAD; c.r=o.r; c.seen=now; c.held=o.held;
+      if(moved) touch(); // physical play counts as activity (no idle reset)
+    }
+  }
+  function updateChips(now){
+    for(const [id,c] of chips){
+      const b=c.b, gone=now-c.seen>CHIP_GRACE;
+      c.wet=Z.water.some(r=>inRect(b.x,b.y,r)); // the existing rule: in the construction zone only a plank works
+      const on=!gone&&!c.wet&&!calib, i=blocks.indexOf(b);
+      if(on&&i<0) blocks.push(b); else if(!on&&i>=0) blocks.splice(i,1); // blocks is replaced on a new zone: re-added here
+      if(gone) chips.delete(id);
+    }
+  }
+  function syncWalls(now){
+    if(calib) return;
+    for(const o of objs){ if(o.kind!=='block') continue;
+      let w=walls.get(o.id); const fresh=!w;
+      if(!w){ w={}; walls.set(o.id,w); }
+      // dead bands: small detection noise must not shake the wall
+      if(fresh||Math.hypot(o.x-w.x,o.y-w.y)>CHIP_POS_DB||Math.abs(o.hw-w.hw)>CHIP_POS_DB||Math.abs(o.hh-w.hh)>CHIP_POS_DB||angDiff(o.ar*180/Math.PI*2,w.ar*180/Math.PI*2)/2>CHIP_ANG_DB){
+        Object.assign(w,{x:o.x,y:o.y,hw:o.hw,hh:o.hh,ar:o.ar,cs:Math.cos(o.ar),sn:Math.sin(o.ar)}); touch(); }
+      w.seen=now; w.held=o.held;
+    }
+  }
+  function updateWalls(now){ for(const [id,w] of walls) if(now-w.seen>CHIP_GRACE||calib) walls.delete(id); }
+  // Called by the simulation for every person, every frame (after moving).
+  // A white-block bounce triggers one jump and a short curve back into the downward stream.
+  // BOUNCE.on=false gives the old behaviour: walk along the edge.
+  function bounceOff(pp){
+    for(const w of walls.values()){
+      const dx=pp.x-w.x, dy=pp.y-w.y;
+      let lx=dx*w.cs+dy*w.sn, ly=-dx*w.sn+dy*w.cs;
+      const ex=w.hw+WALL.pad, ey=w.hh+WALL.pad;
+      if(!(Math.abs(lx)<ex&&Math.abs(ly)<ey)) continue;
+      let nlx=0, nly=0; // outward normal of the side that was hit (wall axes)
+      if(ex-Math.abs(lx)<ey-Math.abs(ly)){ nlx=Math.sign(lx||1); lx=nlx*(ex+1); } else { nly=Math.sign(ly||1); ly=nly*(ey+1); }
+      pp.x=w.x+lx*w.cs-ly*w.sn; pp.y=w.y+lx*w.sn+ly*w.cs;           // back out of the block
+      const nx=nlx*w.cs-nly*w.sn, ny=nlx*w.sn+nly*w.cs;              // the same normal in screen axes
+      const a=rad(pp.a), dxh=Math.cos(a), dyh=Math.sin(a), dot=dxh*nx+dyh*ny;
+      if(dot<0){ // curve around the collision, then resume the natural downward stream
+        const side=Math.abs(nx)>.2?Math.sign(nx):(pp.x>=w.x?1:-1); // fly off on the side that was hit
+        const sa=BOUNCE.curveAngle+(Math.random()-.5)*BOUNCE.curveSpread;
+        pp.bounceStartA=side>0?sa:180-sa;
+        pp.a=pp.bounceStartA; pp.bounceCurve=BOUNCE.curve;
+        if(!(pp.z>2)) pp.vz=BOUNCE.hop; // jump (squash & stretch follows vz/z)
+        pp.v=Math.min((pp.v||100)*1.08,160); // stream gets a bit of weight/energy from the hit
+        pp.bounceAt=performance.now(); pp.bx=pp.x; pp.by=pp.y;
+        pp.squash=1; // peak squash on impact frame
+      }
+    }
+  }
+  function collide(pp){
+    if(BOUNCE.on) return bounceOff(pp);
+    if(pp.wall&&(!walls.has(pp.wall)||angDiff(pp.a,pp.slideA)>30)){ // wall removed, or a chip gave a new direction meanwhile
+      if(walls.has(pp.wall)) pp.wantA=null; else pp.a=pp.wantA;
+      pp.wall=null; pp.wantA=null; }
+    for(const [id,w] of walls){
+      const dx=pp.x-w.x, dy=pp.y-w.y;
+      let lx=dx*w.cs+dy*w.sn, ly=-dx*w.sn+dy*w.cs;           // person in the wall's own axes
+      const ex=w.hw+WALL.pad, ey=w.hh+WALL.pad;
+      const inside=Math.abs(lx)<ex&&Math.abs(ly)<ey;
+      if(!inside){
+        if(pp.wall===id){ // walking along this wall: past the end of the edge -> continue in the old direction
+          const along=pp.wallAxis==='x'?Math.abs(ly)>=ey:Math.abs(lx)>=ex;
+          const want=rad(pp.wantA), wx=Math.cos(want)*w.cs+Math.sin(want)*w.sn, wy=-Math.cos(want)*w.sn+Math.sin(want)*w.cs;
+          const away=pp.wallAxis==='x'?wx*Math.sign(lx)>.2:wy*Math.sign(ly)>.2; // the old direction no longer points into the wall
+          const off=pp.wallAxis==='x'?Math.abs(lx)-ex:Math.abs(ly)-ey; // drifted away from the edge
+          if(along||away||off>10){ pp.a=pp.wantA; pp.wall=null; pp.wantA=null; }
+        }
+        continue; // not touching
+      }
+      // inside (also when the wall itself just moved over the person): push out to the nearest edge
+      if(pp.wall!==id){ pp.wantA=pp.wall?pp.wantA:pp.a; pp.wall=id; pp.slide=0; }
+      const want=rad(pp.wantA), wx=Math.cos(want)*w.cs+Math.sin(want)*w.sn, wy=-Math.cos(want)*w.sn+Math.sin(want)*w.cs;
+      let tx=0, ty=0;
+      if(ex-Math.abs(lx)<ey-Math.abs(ly)){ // closest to a short/long side along x: push out in x, walk along y
+        lx=Math.sign(lx||1)*ex; pp.wallAxis='x';
+        ty=Math.abs(wy)>.25?Math.sign(wy):(pp.slide||(pp.slide=ly>=0?1:-1)); }
+      else { ly=Math.sign(ly||1)*ey; pp.wallAxis='y';
+        tx=Math.abs(wx)>.25?Math.sign(wx):(pp.slide||(pp.slide=lx>=0?1:-1)); }  // head-on: go around the nearest end
+      pp.x=w.x+lx*w.cs-ly*w.sn; pp.y=w.y+lx*w.sn+ly*w.cs;
+      pp.a=pp.slideA=Math.atan2(tx*w.sn+ty*w.cs,tx*w.cs-ty*w.sn)*180/Math.PI;  // walk along the edge
+    }
+  }
+  function drawWalls(c){ /* geen borders: witte blokken zijn onzichtbaar, alleen bounce */ }
+  // Split branch for a chip, called by the simulation when a person reaches it.
+  function splitTurn(b,pp){
+    const cfg=CHIPS.split, d=((pp.a-b.inA)%360+540)%360-180; b.inA+=d*.2; // smoothed incoming direction, for the visual
+    b.acc+=cfg.ratio; if(b.acc>=1){ b.acc-=1; return cfg.turns[0]; } return cfg.turns[1];
+  }
+  // Visuals: blue/navy only. Red, yellow, green and white are detection colors and could be seen as a chip.
+  function chevrons(c,x,y,ang,from,len,t,alpha){
+    const a=ang*Math.PI/180, ca=Math.cos(a), sa=Math.sin(a), gap=26, off=(t/22)%gap;
+    for(let s=from+off; s<from+len; s+=gap){ const px=x+ca*s, py=y+sa*s, f=Math.min(1,(s-from)/18,(from+len-s)/30);
+      c.save(); c.globalAlpha=alpha*f; c.translate(px,py); c.rotate(a); c.lineCap='round'; c.lineJoin='round';
+      c.beginPath(); c.moveTo(-6,-8); c.lineTo(3,0); c.lineTo(-6,8);
+      c.lineWidth=8; c.strokeStyle=VIS.shade; c.stroke(); c.lineWidth=4; c.strokeStyle=VIS.line; c.stroke(); c.restore(); }
+  }
+  function drawChips(c,t){
+    for(const ch of chips.values()){ const b=ch.b, r=ch.r+10, live=!ch.held&&!ch.wet;
+      c.save();
+      c.lineWidth=6; c.strokeStyle=VIS.shade; c.beginPath(); c.arc(b.x,b.y,r,0,7); c.stroke();
+      c.lineWidth=2.5; c.strokeStyle=live?VIS.line:VIS.held; if(!live) c.setLineDash([7,7]); c.beginPath(); c.arc(b.x,b.y,r,0,7); c.stroke(); c.setLineDash([]);
+      if(ch.wet){ const y=b.y+r+34<H?b.y+r+28:b.y-r-28; pill(c,'In de afgezette zone werkt alleen een plank',Math.min(W-220,Math.max(220,b.x)),y); }
+      else if(ch.kind==='redirect') chevrons(c,b.x,b.y,b.a,r+4,120,t,.9);
+      else { const inA=b.inA, cfg=CHIPS.split;
+        { const a=(inA+180)*Math.PI/180; chevrons(c,b.x+Math.cos(a)*(r+70),b.y+Math.sin(a)*(r+70),inA,0,60,t,.3); } // where people come from (fainter, pointing at the chip)
+        cfg.turns.forEach((tr,i)=>{ const share=i?1-cfg.ratio:cfg.ratio; if(share>0) chevrons(c,b.x,b.y,inA+tr,r+4,110,t,.35+.55*Math.min(1,share*2)); }); }
+      c.restore(); }
+  }
+
+  // Thin ring just outside the physical object. No white: the bridge detects white, so a white ring
+  // next to the object would merge with it. Teal = live detection, grey dashed = detection lost (fading out).
+  function cursor(c,x,y,a,live){
+    c.save(); c.globalAlpha=a;
+    c.lineWidth=6; c.strokeStyle='rgba(34,52,79,.45)'; c.beginPath(); c.arc(x,y,ringR,0,7); c.stroke();
+    c.lineWidth=2.5; c.strokeStyle=live?'#23A99A':'#9AA3AF'; if(!live) c.setLineDash([8,8]); c.beginPath(); c.arc(x,y,ringR,0,7); c.stroke();
+    c.restore();
+  }
+  function pill(c,txt,x,y){
+    c.font='700 18px "Baloo 2",sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+    const w=c.measureText(txt).width+32; c.fillStyle='rgba(34,52,79,.88)'; c.beginPath(); c.roundRect(x-w/2,y-20,w,40,20); c.fill(); c.fillStyle='#fff'; c.fillText(txt,x,y+1);
+  }
+  function drawCal(c,now){
+    const tg=targets(), i=calib.pts.length;
+    c.save();
+    tg.forEach(([x,y],k)=>{
+      if(k<i){ c.fillStyle='#23A99A'; c.beginPath(); c.arc(x,y,14,0,7); c.fill(); c.fillStyle='#fff'; c.font='800 16px sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('✓',x,y+1); return; }
+      const on=k===i;
+      c.globalAlpha=on?1:.45; c.lineWidth=on?3:2;
+      c.strokeStyle='rgba(34,52,79,.5)'; c.lineWidth+=3; c.beginPath(); c.arc(x,y,ringR,0,7); c.stroke(); c.lineWidth-=3;
+      c.strokeStyle='#FF6B5B'; c.setLineDash([10,8]); c.beginPath(); c.arc(x,y,ringR,0,7); c.stroke(); c.setLineDash([]);
+      c.beginPath(); c.moveTo(x-18,y); c.lineTo(x+18,y); c.moveTo(x,y-18); c.lineTo(x,y+18); c.stroke();
+      c.fillStyle='#FF6B5B'; c.font='800 22px "Baloo 2",sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(k+1,x+ringR*.72,y-ringR*.72);
+      if(on&&calib.buf.length){ const p=Math.min(1,(now-calib.buf[0][2])/CAL_HOLD); c.strokeStyle='#23A99A'; c.lineWidth=6; c.beginPath(); c.arc(x,y,ringR,-Math.PI/2,-Math.PI/2+p*Math.PI*2); c.stroke(); }
+      c.globalAlpha=1;
+    });
+    const step=`Kalibratie ${i+1}/4: `;
+    pill(c,(!connected?'Kalibratie: wacht op camera_bridge.py…':calib.near?step+'verplaats het doosje naar doel '+(i+1):calib.buf.length?step+'stil houden…':step+'leg het doosje op doel '+(i+1))+'  ·  Esc = stoppen',W/2,H/2);
+    c.restore();
+  }
+  function hover(c,b,a){ // phase 2 preparation: show which game block is under the cursor (visual only)
+    c.save(); c.globalAlpha=a*.9; c.lineWidth=4; c.strokeStyle='#FFC93C'; c.setLineDash([10,8]); c.translate(b.x,b.y);
+    if(b.t==='bridge'){ c.rotate(b.a*Math.PI/180); c.beginPath(); c.roundRect(-PLANK_L/2-8,-PLANK_W/2-8,PLANK_L+16,PLANK_W+16,10); }
+    else { c.beginPath(); c.arc(0,0,40,0,7); }
+    c.stroke(); c.restore();
+  }
+
+  function debugInfo(c){ // raw input: helps verify mirroring/scaling
+    const p=objs[0], txt=!connected?'camdebug: niet verbonden':!raw?'camdebug: nog geen bericht':
+      `camdebug: detected=${raw.detected} nx=${num(raw.nx)?raw.nx.toFixed(3):raw.nx} ny=${num(raw.ny)?raw.ny.toFixed(3):raw.ny}`+(p?` → canvas ${Math.round(p.x)}, ${Math.round(p.y)} van ${W}×${H}`:'')+` · kalibratie ${cal?'aan':'uit'}`+[...chips.values()].map(ch=>` · ${ch.kind==='split'?'splits':'stroom '+Math.round(ch.b.a)+'°'} r=${Math.round(ch.r)}${ch.held?' (vast)':''}`).join('');
+    c.save(); c.font='700 16px "Baloo 2",sans-serif'; c.textAlign='left'; c.textBaseline='middle';
+    const w=c.measureText(txt).width+24; c.fillStyle='rgba(34,52,79,.85)'; c.beginPath(); c.roundRect(52,10,w,34,10); c.fill(); c.fillStyle='#fff'; c.fillText(txt,64,28);
+    if(p){ c.fillStyle='#23A99A'; c.beginPath(); c.arc(p.x,p.y,5,0,7); c.fill(); } // unsmoothed position
+    c.restore();
+  }
+  function draw(c,t){
+    try{
+      const dt=Math.min(.1,Math.max(0,(t-(lastDraw||t))/1000)), now=performance.now(); lastDraw=t;
+      if(now-lastMsg>STALE){ if(connected&&objs.length) setObjs([]); if(calib&&!calib.auto) calSample(null); } // bridge stalled: show nothing
+      updateChips(now); updateWalls(now);
+      status(calib?'cal':!connected?'off':objs.length?'seen':'on');
+      ringR=RING_PX*W/Math.max(1,cv.getBoundingClientRect().width); // screen px -> canvas units (CSS scaling)
+      if(debug) debugInfo(c);
+      if(calib){ if(calib.auto){ acalTick(now); if(calib) drawAutoCal(c); } else drawCal(c,now); return; }
+      drawWalls(c); drawChips(c,t);
+      const p=objs.find(o=>o.kind==='probe'); // the white test object drives the cursor; chips act on the simulation
+      if(p){
+        if(!cur||Math.hypot(p.x-cur.x,p.y-cur.y)>ringR*2) cur={x:p.x,y:p.y,a:cur?cur.a:0}; // big jump: no gliding across the board
+        else { const k=1-Math.exp(-dt*18); cur.x+=(p.x-cur.x)*k; cur.y+=(p.y-cur.y)*k; }
+        cur.a=Math.min(1,cur.a+dt*8); cur.live=true;
+      }
+      else if(cur&&now-lastSeen>LOST_GRACE){ cur.live=false; cur.a-=dt*1000/FADE_MS; if(cur.a<=0) cur=null; }
+      if(!cur) return;
+      const b=blockAt(cur.x,cur.y); if(b) hover(c,b,cur.a);
+      cursor(c,cur.x,cur.y,cur.a,cur.live);
+    }catch(e){ if(!failed){ failed=true; console.error('[camera] overlay-fout, game loopt door:',e); } }
+  }
+  // Does the object (cursor ring) cover this area? Used to keep game texts out from under the object.
+  const hitBox=(cx,cy,rr,x,y,w,h)=>cx+rr>x&&cx-rr<x+w&&cy+rr>y&&cy-rr<y+h;
+  const overlaps=(x,y,w,h)=>(!!cur&&cur.a>.1&&hitBox(cur.x,cur.y,ringR,x,y,w,h))||[...chips.values()].some(ch=>hitBox(ch.b.x,ch.b.y,ch.r+16,x,y,w,h))
+    ||[...walls.values()].some(wl=>hitBox(wl.x,wl.y,Math.hypot(wl.hw,wl.hh)+12,x,y,w,h));
+  function coversScreen(r){ if((!cur||cur.a<=.1)&&!chips.size&&!walls.size) return false; const b=cv.getBoundingClientRect(), sx=b.width/W, sy=b.height/H;
+    return overlaps((r.left-b.left)/sx,(r.top-b.top)/sy,r.width/sx,r.height/sy); }
+
+  cal=loadCal(); // after all helpers above are defined
+  connect();
+  if(/[?&]camcal\b/.test(location.search)) startCal(); // index.html?camcal starts calibration right away
+  return {
+    _calMath:{fitCal,makeCal,applyCal,acalTarget,ACAL_GRID}, // for tests
+    draw, toCanvas, overlaps, coversScreen, splitTurn, collide, physicalCount:()=>chips.size+walls.size, setDebug:v=>{ debug=!!v; },
+    calibrate:startCal, resetCalibration:()=>{ cal=null; saveCal(); },
+    state:()=>({connected, calibrated:!!cal, calibrating:!!calib, objects:objs.map(o=>({...o})), cursor:cur?{x:cur.x,y:cur.y,live:!!cur.live,a:cur.a}:null, ringR,
+      chips:[...chips.entries()].map(([id,ch])=>({id,kind:ch.kind,x:ch.b.x,y:ch.b.y,angle:ch.b.a,r:ch.r,held:!!ch.held,active:blocks.includes(ch.b)})),
+      walls:[...walls.entries()].map(([id,w])=>({id,x:w.x,y:w.y,length:2*w.hw,width:2*w.hh,angle:(w.ar*180/Math.PI+360)%180,held:!!w.held}))}),
+    onUpdate:f=>{ listeners.add(f); return ()=>listeners.delete(f); }
+  };
+})();
+// Hooks for phase 2 (read-only; existing __pm functions remain unchanged).
+Object.assign(window.__pm,{cam:CAM, blockAt:(x,y)=>blockAt(x,y), blocks:()=>blocks});
+</script>
+</body>
+</html>
