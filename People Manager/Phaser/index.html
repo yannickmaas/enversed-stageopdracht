@@ -303,8 +303,10 @@ const ZONES=[
   water:[],cps:[['8',580,200],['9',400,480],['a',220,400],['b',220,700]],
   end:{r:[40,1040,280,90],n:'Afsluitborrel',ic:'🥂'}}
 ];
-// Bounce on white blocks: jump height with gravity, each landing loses energy (like a bouncing ball).
-const BOUNCE={on:true, hop:380, gravity:1100, restitution:.5, minV:70, spread:14}; // hop: start speed upwards (px/s); spread: degrees of random variation
+// A collision triggers one jump in a wide sideways arc (like a fountain) that eases back into the downward stream.
+// hop: start speed upwards (px/s); curveAngle: launch direction (0 = straight sideways, 90 = down);
+// airSpeed: ground speed while in the air (wider arc); curve: seconds to turn back to 90°.
+const BOUNCE={on:true, hop:700, gravity:800, curve:2.6, curveAngle:8, curveSpread:14, airSpeed:240};
 const GOAL=30, NEED=25, R_TRI=34, R_ROL=30, R_CUBE=30, R_CP=42, PLANK_L=160, PLANK_W=48;
 const SHIRTS=['#E8453C','#2F7FD1','#23A99A','#F2A100','#7A5CFA','#E8457A','#3A9D4E'];
 const SKIN=['#F2C9A0','#D9A27A','#A8704A','#7A4E2E','#F5D6B8'];
@@ -448,8 +450,13 @@ function update(dt){
   for(const pp of people){
     if(pp.fall>0){ pp.fall+=dt; if(pp.fall>.8) pp.gone=true; continue; }
     if(celebrate>0){ pp.alpha-=dt*1.4; if(pp.alpha<=0){ pp.gone=true; continue; } }
-    pp.a+= (Math.random()-.5)*dt*6; // slight wandering
-    const a=rad(pp.a); pp.x+=Math.cos(a)*pp.v*dt; pp.y+=Math.sin(a)*pp.v*dt; pp.ph+=dt*pp.v/9;
+    if(pp.bounceCurve>0){
+      pp.bounceCurve=Math.max(0,pp.bounceCurve-dt);
+      const t=1-pp.bounceCurve/BOUNCE.curve, progress=t*t; // ease-in: fly sideways first, then bend down
+      pp.a=pp.bounceStartA+(90-pp.bounceStartA)*progress;
+    } else pp.a+= (Math.random()-.5)*dt*6; // slight wandering keeps the stream natural
+    const a=rad(pp.a), sp=pp.z>0?Math.max(pp.v,BOUNCE.airSpeed):pp.v; // faster while airborne
+    pp.x+=Math.cos(a)*sp*dt; pp.y+=Math.sin(a)*sp*dt; pp.ph+=dt*pp.v/9;
     for(const b of blocks){
       const d=Math.hypot(pp.x-b.x,pp.y-b.y);
       // b.R: trigger radius of a physical chip (its size on the screen); b.cam split: configurable branches
@@ -458,9 +465,9 @@ function update(dt){
       if(b.t==='cube' && d<R_CUBE && pp.hit[b.id]!==1){ pp.a+=180; const n=Math.atan2(pp.y-b.y,pp.x-b.x); pp.x=b.x+Math.cos(n)*(R_CUBE+2); pp.y=b.y+Math.sin(n)*(R_CUBE+2); pp.hit={}; pp.hit[b.id]=1; }
     }
     if(window.CAM) CAM.collide(pp); // physical white blocks: people bounce off them (BOUNCE.on) or walk around them
-    if(pp.vz||pp.z>0){ // in the air: gravity; on landing bounce up again with less energy, until it is too little
+    if(pp.vz||pp.z>0){ // in the air: gravity; stop at the floor after this single jump
       pp.vz-=BOUNCE.gravity*dt; pp.z=(pp.z||0)+pp.vz*dt;
-      if(pp.z<=0){ pp.z=0; pp.landAt=performance.now(); pp.vz=-pp.vz>BOUNCE.minV?-pp.vz*BOUNCE.restitution:0; } }
+      if(pp.z<=0){ pp.z=0; pp.landAt=performance.now(); pp.vz=0; } }
     if(pp.squash>0) pp.squash=Math.max(0,pp.squash-dt*4);
     for(const [k,cp] of Object.entries(cps)) if(!pp.seen[k] && Math.hypot(pp.x-cp.x,pp.y-cp.y)<R_CP){ pp.seen[k]=1; if(!cp.done){ cp.n++; if(cp.n%4===0) renderCases(); if(cp.n>=NEED) caseDone(k); } }
     if(inRect(pp.x,pp.y,Z.end.r)){ pp.gone=true; totals.out++; zoneArrived++; totals.score+=4; if(zoneArrived%5===0) tone(880+Math.random()*300,.05,'sine',.03); if(zoneArrived===GOAL){ toast(`<i>${Z.end.ic}</i><div>${Z.end.n} loopt vol!<small>${GOAL} bezoekers aangekomen</small></div>`); tone(988,.2); } checkGoal(); continue; }
@@ -620,13 +627,10 @@ function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Pha
     for(const pp of people){ let s=pp.spr; const key=this.personKey(pp);
       if(!s){ s=this.pool.pop()||this.add.sprite(0,0,key).setDepth(5); s.setTexture(key).setVisible(true); pp.spr=s; this.active.add(s); }
       const f=Math.floor(((pp.ph%(Math.PI*2))+Math.PI*2)%(Math.PI*2)/(Math.PI*2)*WALK_FRAMES)%WALK_FRAMES;
-      // jump seen from above: the person rises (moves up a little and grows), the shadow stays on the floor
-      const z=pp.z||0, lift=z*.75, now=performance.now(), land=pp.landAt?Math.max(0,1-(now-pp.landAt)/140):0;
+      // The person rises without changing size; the shadow stays on the floor.
+      const z=pp.z||0, lift=z*.75, now=performance.now();
       s.setPosition(pp.x,pp.y-lift).setRotation(rad(pp.a)).setFrame(f).setAlpha(Math.max(0,pp.fall>0?1-pp.fall:pp.alpha))
-       .setScale(
-         (1+z/200)*(1+.35*land)*(1-(pp.vz>0?0.12:0)+(pp.vz<0?0.08:0))*(1+.4*(pp.squash||0)),
-         (1+z/200)*(1-.28*land)*(1+(pp.vz>0?0.18:0)-(pp.vz<0?0.06:0))*(1-.35*(pp.squash||0))
-       ).setDepth(z>0?5.5:5); // squash & stretch: weight on bounce/land
+       .setDepth(z>0?5.5:5);
       if(!s.sh) s.sh=this.add.image(0,0,'hopShadow').setDepth(4.6);
       if(z>.5){ s.sh.setVisible(true).setPosition(pp.x+2,pp.y+4).setScale(1-Math.min(.5,z/160)).setAlpha(.5*(1-Math.min(.7,z/140))); } else s.sh.setVisible(false);
       if(z>.5||(pp.landAt&&now-pp.landAt<600)){ (pp.trail||(pp.trail=[])).push([pp.x,pp.y-lift,now]); this.trailOwners.add(pp); }
@@ -639,8 +643,8 @@ function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Pha
     // question marks of people that are gone
     if(this.qs.size){ const live=new Set(people.map(pp=>pp.q)); for(const q of this.qs) if(!live.has(q)){ q.destroy(); this.qs.delete(q); } }
   }
-  drawTrails(){ // dashed jump path, fading out (like the bouncing ball)
-    const g=this.trail, now=performance.now(), LIFE=900, DASH=7, GAP=6; g.clear();
+  drawTrails(){ // wider, warm-colored dashed jump path, fading out
+    const g=this.trail, now=performance.now(), LIFE=1400, DASH=7, GAP=6; g.clear();
     for(const pp of this.trailOwners){
       if(!people.includes(pp)){ this.trailOwners.delete(pp); continue; }
       const t=pp.trail; while(t.length&&now-t[0][2]>LIFE) t.shift();
@@ -649,12 +653,12 @@ function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Pha
       for(let i=1;i<t.length;i++){ let [x0,y0]=t[i-1]; const [x1,y1,tt]=t[i]; let seg=Math.hypot(x1-x0,y1-y0); if(!seg) continue;
         const ux=(x1-x0)/seg, uy=(y1-y0)/seg, alpha=.85*(1-(now-tt)/LIFE);
         while(seg>0){ const step=Math.min(seg,left);
-          if(on){ g.lineStyle(3,0x3FB6E8,alpha); g.lineBetween(x0,y0,x0+ux*step,y0+uy*step); }
+          if(on){ g.lineStyle(4,0xF2A100,alpha); g.lineBetween(x0,y0,x0+ux*step,y0+uy*step); }
           x0+=ux*step; y0+=uy*step; seg-=step; left-=step; if(left<=0){ on=!on; left=on?DASH:GAP; } } }
     }
   }
   impact(x,y){ // ring where the person hits the block + a short 'boing'
-    const ring=this.add.circle(x,y,7).setStrokeStyle(3,0x2AA8D8,.9).setDepth(4.7);
+    const ring=this.add.circle(x,y,8).setStrokeStyle(4,0xF2A100,.9).setDepth(4.7);
     this.tweens.add({targets:ring,scale:3.2,alpha:0,duration:380,ease:'Cubic.easeOut',onComplete:()=>ring.destroy()});
     const now=performance.now(); if(now-this.lastBoing>120){ this.lastBoing=now; tone(330,.07,'sine',.05); setTimeout(()=>tone(520,.09,'sine',.04),60); }
   }
@@ -983,8 +987,8 @@ window.CAM=(()=>{
   }
   function updateWalls(now){ for(const [id,w] of walls) if(now-w.seen>CHIP_GRACE||calib) walls.delete(id); }
   // Called by the simulation for every person, every frame (after moving).
-  // Bounce: a person who walks into a white block bounces off it (angle in = angle out) and makes a little
-  // jump with gravity (see BOUNCE in the game rules). BOUNCE.on=false gives the old behaviour: walk along the edge.
+  // A white-block bounce triggers one jump and a short curve back into the downward stream.
+  // BOUNCE.on=false gives the old behaviour: walk along the edge.
   function bounceOff(pp){
     for(const w of walls.values()){
       const dx=pp.x-w.x, dy=pp.y-w.y;
@@ -996,9 +1000,11 @@ window.CAM=(()=>{
       pp.x=w.x+lx*w.cs-ly*w.sn; pp.y=w.y+lx*w.sn+ly*w.cs;           // back out of the block
       const nx=nlx*w.cs-nly*w.sn, ny=nlx*w.sn+nly*w.cs;              // the same normal in screen axes
       const a=rad(pp.a), dxh=Math.cos(a), dyh=Math.sin(a), dot=dxh*nx+dyh*ny;
-      if(dot<0){ // moving into the block: mirror the direction in the side that was hit
-        const rx=dxh-2*dot*nx, ry=dyh-2*dot*ny;
-        pp.a=Math.atan2(ry,rx)*180/Math.PI+(Math.random()-.5)*BOUNCE.spread;
+      if(dot<0){ // curve around the collision, then resume the natural downward stream
+        const side=Math.abs(nx)>.2?Math.sign(nx):(pp.x>=w.x?1:-1); // fly off on the side that was hit
+        const sa=BOUNCE.curveAngle+(Math.random()-.5)*BOUNCE.curveSpread;
+        pp.bounceStartA=side>0?sa:180-sa;
+        pp.a=pp.bounceStartA; pp.bounceCurve=BOUNCE.curve;
         if(!(pp.z>2)) pp.vz=BOUNCE.hop; // jump (squash & stretch follows vz/z)
         pp.v=Math.min((pp.v||100)*1.08,160); // stream gets a bit of weight/energy from the hit
         pp.bounceAt=performance.now(); pp.bx=pp.x; pp.by=pp.y;
