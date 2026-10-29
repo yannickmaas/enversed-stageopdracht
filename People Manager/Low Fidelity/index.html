@@ -20,10 +20,10 @@ h1{margin:0;font-size:38px;font-weight:800;text-shadow:0 3px 0 rgba(0,0,0,.2);li
 .hud div{background:rgba(58,42,26,.55);border-radius:16px;padding:6px 16px;text-align:center;line-height:1.05;min-width:100px}
 .hud b{display:block;font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
 .hud span{font-size:13px;opacity:.8}
-main{flex:1;display:grid;grid-template-columns:1fr 230px;gap:16px;padding:0 24px 20px;min-height:0}
-#boardWrap{position:relative;min-height:0;display:grid;place-items:center}
+main{flex:1;display:grid;grid-template-columns:1fr 170px;gap:10px;padding:0 12px 12px;min-height:0}
+#boardWrap{position:relative;min-height:0;display:flex;align-items:center;justify-content:center} /* flex (not grid): lets the canvas' max-height:100% apply, so the whole board fits */
 canvas{max-width:100%;max-height:100%;border-radius:22px;box-shadow:0 14px 0 rgba(10,15,25,.45),0 30px 60px rgba(0,0,0,.25);touch-action:none;cursor:pointer}
-aside{display:flex;flex-direction:column;gap:12px;min-height:0}
+aside{display:flex;flex-direction:column;gap:8px;min-height:0}
 .tray{display:flex;flex-direction:column;gap:12px}
 .tool{font:inherit;border:0;border-radius:20px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px;text-align:left;position:relative;transition:transform .1s;background:#FFF6E6;color:var(--ink);box-shadow:0 7px 0 #C9A878}
 .tool .ic{width:62px;height:54px;display:grid;place-items:center;font-size:32px;flex:none}
@@ -33,15 +33,15 @@ aside{display:flex;flex-direction:column;gap:12px;min-height:0}
 .tool.sel{transform:translateY(4px);box-shadow:0 3px 0 #C9A878;outline:5px solid #FF6B5B}
 .tool:disabled{opacity:.4;cursor:not-allowed}
 .t-erase,.t-res{background:#6B5A48;color:#fff;box-shadow:0 7px 0 rgba(0,0,0,.25)}
-.t-res{background:#FF6B5B;margin-top:auto}
-#cases{background:rgba(255,255,255,.85);border-radius:20px;padding:12px 14px;flex:1;overflow:auto;min-height:0}
-#cases h2{margin:0 0 6px;font-size:20px}
-.goal{display:flex;gap:10px;align-items:flex-start;padding:8px 0;font-size:16px;line-height:1.2;border-bottom:1px solid rgba(58,42,26,.1)}
-.goal i{font-style:normal;flex:none;width:30px;height:30px;border-radius:50%;background:#FF6B5B;color:#fff;display:grid;place-items:center;font-weight:800;font-size:16px}
-.goal.ok i{background:none;font-size:22px}.goal.ok{opacity:.75}
-.goal>div{flex:1}.goal small{display:block;opacity:.6;font-size:13px}
-.pb{height:8px;border-radius:4px;background:rgba(58,42,26,.12);overflow:hidden;margin-top:5px}.pb em{display:block;height:100%;border-radius:4px;transition:width .3s}
-.found{margin-top:10px;font-size:14px;opacity:.75}
+.t-res{background:#FF6B5B;margin-top:auto;font-size:15px;padding:6px 10px;gap:6px;border-radius:14px}.t-res .ic{width:28px;height:28px;font-size:20px}
+#cases{background:rgba(255,255,255,.85);border-radius:14px;padding:6px 10px;flex:1;overflow:auto;min-height:0}
+#cases h2{margin:0 0 2px;font-size:14px}
+.goal{display:flex;gap:6px;align-items:flex-start;padding:4px 0;font-size:12px;line-height:1.15;border-bottom:1px solid rgba(58,42,26,.1)}
+.goal i{font-style:normal;flex:none;width:20px;height:20px;border-radius:50%;background:#FF6B5B;color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px}
+.goal.ok i{background:none;font-size:15px}.goal.ok{opacity:.75}
+.goal>div{flex:1}.goal small{display:block;opacity:.6;font-size:11px}
+.pb{height:5px;border-radius:3px;background:rgba(58,42,26,.12);overflow:hidden;margin-top:3px}.pb em{display:block;height:100%;border-radius:4px;transition:width .3s}
+.found{margin-top:4px;font-size:11px;opacity:.75}
 .cs{display:flex;gap:10px;align-items:center;padding:5px 0;font-size:16px;line-height:1.15;opacity:.45}
 .cs.on{opacity:1}.cs i{font-style:normal;font-size:26px}
 .cs small{display:block;opacity:.75;font-size:13px}
@@ -55,11 +55,11 @@ button:focus-visible,a:focus-visible{outline:5px solid #fff;outline-offset:3px}
 .box{max-width:900px;width:100%;max-height:92vh;overflow:auto}
 .box h2{font-size:clamp(44px,7vw,90px);margin:0;line-height:.95;font-weight:800}
 .box p{font-size:20px;line-height:1.45;max-width:58ch}
-.go{font:inherit;font-weight:800;font-size:26px;background:#FFC93C;color:var(--ink);border:0;border-radius:22px;padding:12px 36px;cursor:pointer;margin-top:10px;box-shadow:0 7px 0 #C99418}
+.go{font:inherit;font-weight:800;font-size:26px;background:#FFC93C;color:#3A2A1A;border:0;border-radius:22px;padding:12px 36px;cursor:pointer;margin-top:10px;box-shadow:0 7px 0 #C99418}
 .big{font-size:90px;font-weight:800;line-height:1}
-.fin{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.fin{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}
 .fin div{background:rgba(255,255,255,.12);border-radius:18px;padding:12px;font-size:15px}.fin b{display:block;font-size:34px}
-@media (max-width:1000px){main{grid-template-columns:1fr}aside{flex-direction:row;flex-wrap:wrap}.tray{flex-direction:row;flex-wrap:wrap}#cases{display:none}.fin{grid-template-columns:1fr 1fr}body{overflow:auto}}
+@media (max-width:1000px){header{flex-wrap:wrap}main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}aside{flex-direction:row;flex-wrap:wrap;align-items:flex-start}.tray{flex-direction:row;flex-wrap:wrap}#cases{flex:1 1 260px;max-height:16vh}.t-res{margin-top:0}.fin{grid-template-columns:1fr 1fr}body{overflow:auto}}
 /* Dark mode (default; index.html?light for the old look): the white paper blocks need a dark
    playing field to stand out, and no large white surfaces may be on screen (they would look like paper). */
 body.dark{--ink:#E3E8EF}
@@ -77,6 +77,10 @@ body.dark .t-res{background:#2B3445;color:#FF8A7D;box-shadow:inset 0 0 0 3px #FF
 #camStatus[data-s=seen] i{background:#FFC93C;box-shadow:0 0 0 3px rgba(255,201,60,.35)}
 #camStatus[data-s=off]{opacity:.7}
 #camStatus[data-s=cal] i{background:#FF6B5B;box-shadow:0 0 0 3px rgba(255,107,91,.35)}
+body.dark .t-help{background:#2B3445;color:#E3E8EF;box-shadow:0 7px 0 #151B26}
+.t-help{font-size:15px;padding:6px 10px;gap:6px;border-radius:14px;margin-top:auto}.t-help .ic{width:28px;height:28px;font-size:20px}
+.t-help+.t-res{margin-top:0}
+.steps{display:grid;gap:12px;margin:18px 0;padding:0;list-style:none;max-width:60ch}.steps li{display:flex;gap:14px;align-items:flex-start;font-size:19px;line-height:1.35}.steps li b{flex:none;width:36px;height:36px;border-radius:50%;background:#FFC93C;color:#3A2A1A;display:grid;place-items:center;font-size:18px}
 #toast.cam-low{top:auto;bottom:32px} /* moved away from the physical object on the screen */
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -84,10 +88,10 @@ body.dark .t-res{background:#2B3445;color:#FF8A7D;box-shadow:inset 0 0 0 3px #FF
 <body>
 <header><div><h1>People Manager</h1><div class="tag">Bouw de route. Begeleid de mensen.</div></div><span id="zone"></span>
   <div id="camStatus" data-s="off" role="status" title="Koppeling met camera_bridge.py (ws://127.0.0.1:8765)"><i></i><span>Camera niet verbonden</span></div>
-  <div class="hud"><div><b id="inside">0</b><span>onderweg</span></div><div><b id="out">0</b><span>op bestemming</span></div><div><b id="lost">0</b><span>verdwaald</span></div><div><b id="score">0</b><span>score</span></div></div></header>
+  <div class="hud"><div><b id="score">0</b><span>score</span></div></div></header>
 <main>
   <div id="boardWrap"><canvas id="cv" width="792" height="1152" aria-label="Speelveld: leg blokken om de stroom mensen te leiden"></canvas></div>
-  <aside><div class="tray" id="tray" hidden></div><div id="cases"><h2>Doel in dit level</h2><div id="caseList"></div></div><button class="tool t-res" id="resBtn"><span class="ic">🏁</span><span>Mijn resultaat</span></button></aside>
+  <aside><div class="tray" id="tray" hidden></div><div id="cases"><h2>Doel in dit level</h2><div id="caseList"></div></div><button class="tool t-help" id="helpBtn"><span class="ic">❔</span><span>Hoe werkt het?</span></button><button class="tool t-res" id="resBtn"><span class="ic">🏁</span><span>Mijn resultaat</span></button></aside>
 </main>
 <div id="toast"></div>
 <div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
@@ -96,30 +100,58 @@ body.dark .t-res{background:#2B3445;color:#FF8A7D;box-shadow:inset 0 0 0 3px #FF
 <script>
 const W=792, H=1152, T=72;
 // Low-fidelity prototype: checkpoints are neutral numbered goals.
-// Open space (portrait): source at the top, checkpoints as circles. People bounce lightly off the edges.
+// Portrait field: entrance at the top, finish at the bottom. Every level has exactly three checkpoints.
+// People arrive in waves and share the fill state of their wave: leeg (empty) -> halfvol -> vol.
+// A wave takes a checkpoint as soon as CP_NEED of its people have passed it (not everyone has to); every
+// checkpoint taken fills the whole wave up (1-2 checkpoints = halfvol, all 3 = vol).
+// The field has borders (left, right, top: people cannot leave there); the bottom is open: whoever falls past the
+// finish is 'verdwaald'. walls: fixed obstacles of the level, [x, y, width, height, rotation in degrees]
+// (centre and size before rotating; a negative rotation of a wide wall slopes down to the left).
+// hood(x,y,open): walls around a checkpoint so the falling stream cannot reach it by itself: a roof above it and
+// a wall on one side; only the `open` side ('l' or 'r') lets people in, so they have to be steered there with blocks.
+const HOOD=68; // half the width of the hood (the checkpoint tile is R_CP+10 = 52)
+// the side wall only reaches halfway down the checkpoint: below that people can also get in from the closed side
+function hood(x,y,open){ return [[x,y-HOOD,HOOD*2+18,18,0],[open==='l'?x+HOOD:x-HOOD,y-HOOD/2-4,18,HOOD+10,0]]; }
 const ZONES=[
  {n:'Level 1',inv:{},spawn:[396,-10],
-  water:[],cps:[['1',220,320],['2',580,520]],
+  water:[],cps:[['c1',300,380],['c2',620,600],['c3',430,960]],
+  walls:[...hood(300,380,'l'),...hood(620,600,'l'),...hood(430,960,'r')],
+  end:{r:[280,1040,300,90],n:'Finish',ic:'🏁'}},
+ {n:'Level 2',inv:{},spawn:[200,-10],
+  water:[],cps:[['c1',460,200],['c2',110,760],['c3',510,440]],
+  walls:[...hood(460,200,'r'),...hood(110,760,'r'),...hood(510,440,'l')],
+  end:{r:[380,1040,330,90],n:'Finish',ic:'🏁'}},
+ {n:'Level 3',inv:{},spawn:[396,-10],
+  water:[],cps:[['c1',230,520],['c2',570,520],['c3',396,860]],
+  walls:[...hood(230,520,'l'),...hood(570,520,'r'),...hood(396,860,'l')],
   end:{r:[246,1040,300,90],n:'Finish',ic:'🏁'}},
- {n:'Level 2',inv:{},spawn:[396,-10],
-  water:[],cps:[['3',220,380],['4',580,380]],
-  end:{r:[246,1040,300,90],n:'Finish',ic:'🏁'}},
- {n:'Level 3',inv:{},spawn:[200,-10],
-  water:[],cps:[['5',220,280],['6',580,360],['7',400,700]],
-  end:{r:[196,1040,400,90],n:'Finish',ic:'🏁'}},
  {n:'Level 4',inv:{},spawn:[600,-10],
-  water:[],cps:[['8',580,200],['9',400,480],['a',220,400],['b',220,700]],
-  end:{r:[40,1040,280,90],n:'Finish',ic:'🏁'}}
+  water:[],cps:[['c1',600,290],['c2',240,640],['c3',540,900]],
+  walls:[...hood(600,290,'r'),...hood(240,640,'l'),...hood(540,900,'r')],
+  end:{r:[300,1040,320,90],n:'Finish',ic:'🏁'}}
 ];
-const CP_TOTAL=ZONES.reduce((n,z)=>n+z.cps.length,0);
-// A collision triggers one jump in a wide sideways arc (like a fountain) that eases back into the downward stream.
-// hop: start speed upwards (px/s); curveAngle: launch direction (0 = straight sideways, 90 = down);
+// Waves: size people per wave, one every `every` s. The next wave follows `pause` s after the last person of the
+// wave has left the field (finish or verdwaald), or at the latest maxWait s after the last one entered.
+const WAVE={size:1, every:.2, pause:2.5, maxWait:12, idleAfter:15}; // a wave is now a single person
+// idleAfter: niet meer gebruikt; actief/inactief wordt bepaald door isActive() (ACTIVE_FOR seconden na de laatste blokactie)
+const SPEED=2; // walking speed factor (2 = twice as fast as the original stream)
+const CP_NEED=Math.min(3,WAVE.size); // people of one wave that must pass a checkpoint before the wave has taken it (1 with single-person waves)
+// Fill states: 0 checkpoints taken = leeg, 1-2 = halfvol, all 3 = vol. Points per person at the finish, by state.
+const FILL_NAMES=['leeg','halfvol','vol'], FILL_PTS=[1,5,20];
+const fillState=n=>n>=3?2:n>=1?1:0;
+const SOLID_PAD=6, BORDER=16; // SOLID_PAD: half the width of a person; BORDER: thickness of the field border
+// A collision triggers one small hop in a wide sideways arc (like a fountain) that eases back into the downward stream.
+// Applies to the white blocks, the level walls and the field border (border: bounce power there, a light bounce). hop: start speed upwards (px/s, 260 = small hop); curveAngle: launch direction (0 = straight sideways, 90 = down);
 // airSpeed: ground speed while in the air (wider arc); curve: seconds to turn back to 90°.
-const BOUNCE={on:true, hop:700, gravity:800, curve:2.6, curveAngle:8, curveSpread:14, airSpeed:240};
-const GOAL=30, NEED=25, R_TRI=34, R_ROL=30, R_CUBE=30, R_CP=42, PLANK_L=160, PLANK_W=48;
+// Water feel: a hit near the middle of a block sprays high and wide, a hit near its edge only bends around it
+// (glance: extra launch angle towards 90° for edge hits); every person gets its own height/speed/curve (vary).
+const BOUNCE={on:true, hop:260, gravity:800, curve:2.6, curveAngle:8, curveSpread:30, airSpeed:240, glance:55, vary:.35, border:.2};
+const HOP_LIFT=.75; // how far a jumping person is drawn above their floor position (z * HOP_LIFT); used by drawing and checkpoints
+const GOAL=10, R_TRI=34, R_ROL=30, R_CUBE=30, R_CP=42, PLANK_L=160, PLANK_W=48;
 const SHIRTS=['#E8453C','#2F7FD1','#23A99A','#F2A100','#7A5CFA','#E8457A','#3A9D4E'];
 const SKIN=['#F2C9A0','#D9A27A','#A8704A','#7A4E2E','#F5D6B8'];
-let zoneArrived=0, Z, zi, blocks, people, spawnT, tool=null, inv, cps, zoneT=0, totals, celebrate=0, lastTouch=performance.now(), round=1, bid=0, bg=null, drag=null;
+// lastTouch=-1e9: de game start als inactief (wave blijft 1, geen meldingen) tot iemand iets doet
+let zoneArrived=0, zoneFull=0, zoneFill=[0,0,0], wave=null, solids=[], solidsVer=0, Z, zi, blocks, people, spawnT, tool=null, inv, cps, zoneT=0, totals, celebrate=0, lastTouch=-1e9, round=1, bid=0, bg=null, drag=null;
 const cv=document.getElementById('cv'), $=id=>document.getElementById(id);
 // Rendering is done by Phaser (scene `Hall` below). The drawing helpers (stand, endpoint, entrance, wood, person, ...)
 // draw into `ctx`, which the scene points at the canvas of a Phaser texture while it builds that texture.
@@ -129,7 +161,11 @@ function tone(f,d=.08,t='triangle',v=.06){const c=ac(); if(!c||c.state!=='runnin
 // Keep messages out from under the physical object lying on the screen (camera cursor).
 function camAvoid(el){ el.classList.remove('cam-low'); if(window.CAM&&CAM.coversScreen(el.getBoundingClientRect())) el.classList.add('cam-low'); }
 function freeY(w,h){ if(window.CAM) for(const y of [H/2,H*.25,H*.75]) if(!CAM.overlaps(W/2-w/2,y-h/2,w,h)) return y; return H/2; }
-function toast(html){ const t=document.createElement('div'); t.className='t'; t.innerHTML=html; $('toast').appendChild(t); camAvoid($('toast')); setTimeout(()=>t.remove(),2700); while($('toast').children.length>3) $('toast').firstChild.remove(); }
+const ACTIVE_FOR=20; // actief = binnen zoveel seconden na de laatste aanraking/sleepactie; alleen dan meldingen en scoretelling
+const isActive=()=>performance.now()-lastTouch<=ACTIVE_FOR*1000;
+// force=true: system messages (camera, calibration) always show, also when nobody is playing
+function sysToast(html){ toast(html,true); }
+function toast(html,force){ if(!force&&!isActive()) return; /* niemand aan het spelen: geen meldingen voor voorbijgangers */ const t=document.createElement('div'); t.className='t'; t.innerHTML=html; $('toast').appendChild(t); camAvoid($('toast')); setTimeout(()=>t.remove(),2700); while($('toast').children.length>3) $('toast').firstChild.remove(); }
 // ---- Wooden toy blocks ----
 const WOOD={arrow:['#E8453C','#B8322B','#F26B62'],split:['#2F7FD1','#225F9E','#5C9DE0'],cube:['#F2B705','#C08F00','#F8CD45'],bridge:['#D9A86C','#B5874F','#E8C390']};
 function grain(c,x,y,w,h,col){ c.save(); c.beginPath(); c.rect(x,y,w,h); c.clip(); c.strokeStyle=col; c.globalAlpha=.35; c.lineWidth=1.5; for(let i=0;i<5;i++){ c.beginPath(); c.moveTo(x,y+6+i*(h/5)); c.bezierCurveTo(x+w*.3,y+2+i*(h/5),x+w*.6,y+10+i*(h/5),x+w,y+5+i*(h/5)); c.stroke(); } c.restore(); }
@@ -166,7 +202,7 @@ function knock(){ const c=ac(); if(!c) return; [0,.06].forEach((t,i)=>{ const o=
 document.querySelectorAll('.how .bi').forEach(el=>el.innerHTML=blockSVG(el.dataset.b));
 
 const rad=a=>a*Math.PI/180;
-function newTotals(){ return {score:0,out:0,lost:0,stray:0,cases:[],arenas:0,start:performance.now()}; }
+function newTotals(){ return {score:0,out:0,lost:0,stray:0,cases:[],fill:[0,0,0],arenas:0,start:performance.now()}; }
 
 // Dark mode: dark floor, muted light surfaces (no large white areas: those would look like the white paper blocks).
 const DARK=!/[?&]light\b/.test(location.search);
@@ -182,8 +218,23 @@ function makeBg(){ // floor with seams, mats at start and finish
   const [sx]=Z.spawn, [ex,ey,ew,eh]=Z.end.r;
   g.fillStyle='#22344F'; g.fillRect(sx-70,0,140,80); g.beginPath(); g.roundRect(ex-26,ey-26,ew+52,eh+52,14); g.fill();
   g.strokeStyle='rgba(255,255,255,.12)'; g.lineWidth=2; g.strokeRect(sx-62,4,124,72);
+  for(const w of solids) drawSolid(g,w); // field border and the level's walls (not white: the camera must not see them as blocks)
   return c;
 }
+function drawSolid(g,w){ // a wall: concrete-like strip with a lighter top edge and a small shadow
+  g.save(); g.translate(w.x,w.y); g.rotate(w.ar);
+  g.fillStyle='rgba(0,0,0,.25)'; g.fillRect(-w.hw+3,-w.hh+4,w.hw*2,w.hh*2);
+  g.fillStyle=PAL.pillar; g.fillRect(-w.hw,-w.hh,w.hw*2,w.hh*2);
+  g.fillStyle=PAL.pillarTop; if(w.hw>=w.hh) g.fillRect(-w.hw,-w.hh,w.hw*2,Math.min(5,w.hh)); else g.fillRect(-w.hw,-w.hh,Math.min(5,w.hw),w.hh*2);
+  g.restore(); }
+function solid(x,y,w,h,deg,id){ const ar=rad(deg); return {id,x,y,hw:w/2,hh:h/2,ar,cs:Math.cos(ar),sn:Math.sin(ar)}; }
+function buildSolids(){ // borders left/right/top (with an opening at the entrance) + the walls of this level
+  const [sx]=Z.spawn, b=BORDER, gap=90, out=[
+    solid(b/2,H/2,b,H+80,0,'bL'), solid(W-b/2,H/2,b,H+80,0,'bR'),
+    solid((sx-gap)/2,b/2,sx-gap,b,0,'bT1'), solid((sx+gap+W)/2,b/2,W-sx-gap,b,0,'bT2')];
+  for(const o of out) o.soft=true; // the border bounces lightly
+  (Z.walls||[]).forEach(([x,y,l,t,a],i)=>out.push(solid(x,y,l,t,a,'w'+i)));
+  return out; }
 function pillar(x,y){ ctx.fillStyle='rgba(0,0,0,.2)'; ctx.fillRect(x-12,y-8,34,34); ctx.fillStyle=PAL.pillar; ctx.fillRect(x-16,y-16,32,32); ctx.fillStyle=PAL.pillarTop; ctx.fillRect(x-16,y-16,32,8); }
 function plant(x,y){ ctx.fillStyle='#5C6470'; ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.fill(); ctx.fillStyle=PAL.leaf; for(let i=0;i<6;i++){ const a=i/6*7; ctx.beginPath(); ctx.ellipse(x+Math.cos(a)*9,y+Math.sin(a)*9,9,4,a,0,7); ctx.fill(); } }
 function banner(x,y,w,txt,col,t){ const sw=Math.sin(t/1100+x)*1.5; ctx.save(); ctx.translate(x,y); ctx.rotate(sw*.01);
@@ -195,24 +246,40 @@ function stand(cp,k,t){ // checkpoint
   ctx.fillStyle=PAL.card; ctx.fillRect(x-42,y-34,84,62); ctx.fillStyle=col; ctx.fillRect(x-42,y-34,84,14);
   ctx.fillStyle='#fff'; ctx.font='800 10px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('CHECKPOINT',x,y-27);
   if(cp.done){ ctx.font='26px sans-serif'; ctx.fillText('✅',x,y+2); } else { ctx.fillStyle='#FF6B5B'; ctx.beginPath(); ctx.arc(x,y+2,14,0,7); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='800 18px "Baloo 2",sans-serif'; ctx.fillText(Object.keys(cps).indexOf(k)+1,x,y+3); }
-  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fillRect(x-36,y+19,72,6); ctx.fillStyle=cp.done?'#C99418':'#23A99A'; ctx.fillRect(x-36,y+19,72*Math.min(1,cp.n/NEED),6);
+  // progress: count on the card + a ring around the checkpoint that fills up (clearly visible on the dark floor)
+  const p=Math.min(1,cp.n/CP_NEED), rr=R_CP+12; // people of the current wave that passed, towards CP_NEED (done = taken)
+  ctx.fillStyle=cp.done?'#C99418':PAL.fallInk; ctx.font='800 13px "Baloo 2",sans-serif'; ctx.fillText(`${Math.min(cp.n,CP_NEED)}/${CP_NEED}`,x,y+21);
+  ctx.lineCap='round'; ctx.lineWidth=7; ctx.strokeStyle=DARK?'rgba(227,232,239,.18)':'rgba(0,0,0,.15)'; ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.stroke();
+  if(p>0){ ctx.strokeStyle=cp.done?'#FFC93C':'#23A99A'; ctx.beginPath(); ctx.arc(x,y,rr,-Math.PI/2,-Math.PI/2+p*Math.PI*2); ctx.stroke(); }
+  ctx.lineCap='butt';
 }
-function endpoint(t,noPulse){ const [x,y,w,h]=Z.end.r, n=Math.min(GOAL,zoneArrived), done=n>=GOAL;
+function endpoint(t,noPulse){ const [x,y,w,h]=Z.end.r, n=Math.min(GOAL,zoneFull), done=n>=GOAL;
   ctx.fillStyle='rgba(0,0,0,.18)'; ctx.beginPath(); ctx.roundRect(x+5,y+8,w,h,16); ctx.fill();
   ctx.fillStyle=done?'#FFC93C':'#22344F'; ctx.beginPath(); ctx.roundRect(x,y,w,h,16); ctx.fill();
   for(let i=0;i<Math.ceil(w/24);i++){ ctx.fillStyle=i%2?PAL.stripe:'#FF6B5B'; ctx.fillRect(x+i*24,y,Math.min(24,w-i*24),12); }
   ctx.fillStyle=done?'#22344F':'#fff'; ctx.font='800 26px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(`${Z.end.ic} ${Z.end.n}`,x+w/2,y+h/2+2);
-  ctx.font='700 16px "Baloo 2",sans-serif'; ctx.fillText(`${n}/${GOAL} mensen`,x+w/2,y+h-14);
+  ctx.font='700 16px "Baloo 2",sans-serif'; ctx.fillText(`${n}/${GOAL} vol`,x+w/2,y+h-14);
   if(noPulse) return; const pulse=(Math.sin(t/300)+1)/2; ctx.strokeStyle=`rgba(255,201,60,${.35+pulse*.4})`; ctx.lineWidth=4; ctx.beginPath(); ctx.roundRect(x-8-pulse*4,y-8-pulse*4,w+16+pulse*8,h+16+pulse*8,20); ctx.stroke(); }
 function entrance(t){ const [sx]=Z.spawn;
   ctx.fillStyle='#22344F'; ctx.fillRect(sx-82,0,14,62); ctx.fillRect(sx+68,0,14,62);
   ctx.fillStyle='#FF6B5B'; ctx.beginPath(); ctx.roundRect(sx-96,24,192,36,8); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='800 19px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('START',sx,43);
   ctx.fillStyle='#9AA3AF'; [-40,0,40].forEach(dx=>{ ctx.fillRect(sx+dx-2,64,4,16); }); }
 function loadZone(i){
-  zi=i; Z=ZONES[i]; blocks=[]; people=[]; spawnT=0; inv={...Z.inv}; zoneT=0; cps={}; zoneArrived=0; bg=makeBg();
+  zi=i; Z=ZONES[i]; blocks=[]; people=[]; spawnT=0; inv={...Z.inv}; zoneT=0; cps={}; zoneArrived=0; zoneFull=0; zoneFill=[0,0,0];
+  solids=buildSolids(); solidsVer++; bg=makeBg(); wave=newWave(1);
   for(const [k,x,y] of Z.cps) cps[k]={x,y,n:0,done:false};
   $('zone').textContent=Z.n+(round>1?` · ronde ${round}`:''); renderTray(); renderCases();
   if(VIEW.scene) VIEW.scene.buildZone();
+}
+function newWave(no){ return {no, spawned:0, t:0, lastSpawn:0, pause:0, hits:{}, taken:{}, st:0, stats:{fill:[0,0,0],lost:0}}; }
+function waveTick(dt){ // spawns the people of the current wave, then waits for them before the next wave
+  if(wave.pause>0){ wave.pause-=dt; if(wave.pause<=0){ const idle=!isActive(); wave=newWave(idle?1:wave.no+1); for(const cp of Object.values(cps)){ cp.n=0; cp.done=false; } spawnT=0; toast(`<i>🚶</i><div>Er komt iemand aan<small>Stuur de persoon langs de checkpoints</small></div>`); } return; }
+  wave.t+=dt;
+  if(wave.spawned<WAVE.size){ spawnT-=dt; while(spawnT<=0&&wave.spawned<WAVE.size){ if(!spawn()) { spawnT=.1; break; } wave.spawned++; wave.lastSpawn=wave.t; spawnT+=WAVE.every; } return; }
+  if(!people.some(p=>p.W===wave)||wave.t-wave.lastSpawn>WAVE.maxWait){ const f=wave.stats.fill;
+    const res=wave.stats.lost?'is verdwaald':f[2]?'is vol aangekomen':f[1]?'is halfvol aangekomen':f[0]?'is leeg aangekomen':'is weg';
+    toast(`<i>🚶</i><div>Persoon ${res}<small>${f[2]?'Goed gedaan!':'Probeer alle 3 de checkpoints te halen'}</small></div>`);
+    wave.pause=WAVE.pause; }
 }
 function inRect(x,y,[rx,ry,rw,rh]){ return x>=rx&&x<=rx+rw&&y>=ry&&y<=ry+rh; }
 function onPlank(x,y){ return blocks.some(b=>{ if(b.t!=='bridge') return false; const a=rad(b.a), dx=x-b.x, dy=y-b.y; const u=dx*Math.cos(a)+dy*Math.sin(a), v=-dx*Math.sin(a)+dy*Math.cos(a); return Math.abs(u)<=PLANK_L/2 && Math.abs(v)<=PLANK_W/2; }); }
@@ -223,14 +290,21 @@ function renderTray(){ $('tray').innerHTML=''; }
 $('tray').onclick=()=>{};
 function renderCases(){
   const bar=(p,c)=>`<div class="pb"><em style="width:${Math.min(100,p*100)}%;background:${c}"></em></div>`;
-  const stands=Object.entries(cps).map(([k,cp],i)=>{
-    return `<div class="goal ${cp.done?'ok':''}"><i>${cp.done?'✅':i+1}</i><div>Stuur ${NEED} mensen langs checkpoint ${i+1}${bar(cp.n/NEED,cp.done?'#23A99A':'#FF6B5B')}<small>${Math.min(cp.n,NEED)} / ${NEED}</small></div></div>`; }).join('');
-  const n=Math.min(zoneArrived,GOAL), endOk=n>=GOAL;
-  const end=`<div class="goal ${endOk?'ok':''}"><i>${endOk?'✅':Object.keys(cps).length+1}</i><div>Breng ${GOAL} mensen naar ${Z.end.ic} ${Z.end.n}${bar(n/GOAL,endOk?'#23A99A':'#22344F')}<small>${n} / ${GOAL}</small></div></div>`;
-  $('caseList').innerHTML = stands + end + `<div class="found">Checkpoints gehaald: <b>${totals.cases.length} / ${CP_TOTAL}</b></div>`;
+  const wv=wave.pause>0?`Volgende persoon over ${Math.ceil(wave.pause)} s`:WAVE.size===1?(wave.spawned?'Persoon onderweg':'Persoon komt eraan'):`${wave.spawned} / ${WAVE.size} mensen binnen`;
+  const waveRow=`<div class="goal"><i>🚶</i><div>Persoon: ${gaugeSVG(wave.st)} ${FILL_NAMES[wave.st]}<small>${wv}</small></div></div>`;
+  const stands=Object.entries(cps).map(([k,cp],i)=>
+    `<div class="goal ${cp.done?'ok':''}"><i>${cp.done?'✅':i+1}</i><div>Checkpoint ${i+1}${bar(cp.n/CP_NEED,cp.done?'#23A99A':'#FF6B5B')}<small>${Math.min(cp.n,CP_NEED)} / ${CP_NEED}</small></div></div>`).join('');
+  const n=Math.min(zoneFull,GOAL), endOk=n>=GOAL;
+  const end=`<div class="goal ${endOk?'ok':''}"><i>${endOk?'✅':Z.end.ic}</i><div>${Z.end.n}${bar(n/GOAL,endOk?'#23A99A':'#22344F')}<small>${n} / ${GOAL} vol</small></div></div>`;
+  const states=`<div class="found">Aangekomen: ${[2,1,0].map(st=>`<span class="fs">${gaugeSVG(st)} <b>${zoneFill[st]}</b> ${FILL_NAMES[st]}</span>`).join(' ')}</div>`;
+  $('caseList').innerHTML = waveRow + stands + end + states;
 }
-function hud(){ renderCases(); $('inside').textContent=people.length; $('out').textContent=totals.out; $('lost').textContent=totals.lost; $('score').textContent=totals.score; }
-function touch(){ lastTouch=performance.now(); const c=ac(); if(c&&c.state==='suspended') c.resume(); }
+function gaugeSVG(st){ // fill gauge for the goals panel: empty, half or full
+  return `<svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:-3px"><clipPath id="gc${st}"><circle cx="8" cy="8" r="6"/></clipPath><circle cx="8" cy="8" r="6" fill="rgba(127,127,127,.2)"/>${st?`<rect x="0" y="${st===2?0:8}" width="16" height="16" fill="#3FA9F5" clip-path="url(#gc${st})"/>`:''}<circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`; }
+function hud(){ renderCases(); $('score').textContent=totals.score; }
+// Alleen echt spelen (een wit blok neerleggen, verplaatsen, draaien of weghalen) telt als activiteit: touch(true).
+// Andere klikken (knoppen, leeg veld) zetten alleen het geluid aan en maken de game niet actief.
+function touch(play){ if(play===true) lastTouch=performance.now(); const c=ac(); if(c&&c.state==='suspended') c.resume(); }
 
 // ---- Free placing, dragging and rotating ----
 function pt(e){ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*W, (e.clientY-r.top)/r.height*H]; }
@@ -240,25 +314,191 @@ cv.addEventListener('pointerup',()=>{});
 
 // ---- People ----
 function spawn(){
-  if(people.length>=240||celebrate>0) return;
+  if(people.length>=240||celebrate>0) return false;
   const [sx,sy]=Z.spawn;
-  people.push({x:sx+(Math.random()-.5)*26,y:sy,a:90+(Math.random()-.5)*8,v:80+Math.random()*30,lat:(Math.random()-.5)*16,
+  people.push({wave:wave.no,W:wave,st:wave.st,x:sx+(Math.random()-.5)*26,y:sy,a:90+(Math.random()-.5)*8,v:(130+Math.random()*40)*SPEED,lat:(Math.random()-.5)*16,
     shirt:SHIRTS[Math.floor(Math.random()*SHIRTS.length)],skin:SKIN[Math.floor(Math.random()*SKIN.length)],hair:Math.random()<.5?'#3A2A1A':'#6B4A2A',
     ph:Math.random()*6,seen:{},hit:{},fall:0,alpha:1});
+  return true;
 }
+// A checkpoint counts a person as soon as they touch what is drawn: the square tile (R_CP+10) or the progress ring
+// (radius R_CP+12, 7 px wide). Checked for the feet (floor position) and for the visible figure, which is drawn
+// higher during a jump, so someone who visibly flies through a checkpoint also counts.
+function atCheckpoint(pp,cp){ const sq=R_CP+10, ring=R_CP+16, dx=pp.x-cp.x, lift=(pp.z||0)*HOP_LIFT;
+  const on=dy=>(Math.abs(dx)<=sq&&Math.abs(dy)<=sq)||Math.hypot(dx,dy)<=ring;
+  return on(pp.y-cp.y)||(lift>0&&on(pp.y-lift-cp.y)); }
 function steer(pp,ang,b){ pp.a=ang; const a=rad(ang); // put the person on the line through the block, with their own small offset
   pp.x=b.x+Math.cos(a)*6-Math.sin(a)*pp.lat; pp.y=b.y+Math.sin(a)*6+Math.cos(a)*pp.lat; }
+// ===== Flow movement, inspired by the water in "Where's My Water?" =====
+// Every person is simulated on its own as a fluid particle; together they behave like one flowing mass.
+//  - Gravity pulls people towards the bottom of the board. In free fall the sideways speed fades out, so someone
+//    who drops off an edge curves smoothly down and joins the stream again.
+//  - The white blocks are solid surfaces: people never pass through them. On a slope gravity makes them slide;
+//    on a flat top they spread sideways towards the nearest way down (path navigation via a flow field over the
+//    board, rebuilt in real time whenever a block is placed, moved or removed).
+//  - Split: the stream divides over both edges of a block depending on where each person lands.
+//  - Pooling: people keep personal space (separation = pressure) and match their neighbours' speed (viscosity).
+//    Behind obstacles they pile up; with no way down they climb slowly along the flow field to a passage.
+//  - Narrow gap: the walls squeeze the group into a compact stream; in open space it spreads out again.
+//  - Heading turns gradually (max FLOW.turn deg/s): no sudden direction changes.
+// Off by default: the bounce movement (BOUNCE) is used. index.html?flow switches this water flow on.
+// g: gravity (px/s2); fall/spread/climb: speed factors on each person's own speed pp.v; air: sideways damping in
+// free fall (/s); grip: how fast someone on a surface reaches the spreading speed (/s); r: personal space (px);
+// push: separation strength; visc: speed matching with neighbours (/s); cell: flow-field cell (px); tie: field
+// difference below which both ways count as equally good.
+const FLOW={on:/[?&]flow\b/.test(location.search), g:520, fall:1.15, spread:1, air:1.8, grip:6, climb:.45,
+  r:12, push:.5, visc:2.5, turn:300, cell:16, tie:6};
+const FIELD={cols:Math.ceil(W/FLOW.cell), rows:Math.ceil(H/FLOW.cell), d:null, ver:'', at:0};
+// Flow field: cost to reach the bottom of the board from every cell, around the blocks. Going down is cheap,
+// sideways a bit more, upwards expensive, so the field points at the nearest way *down*, like water would go.
+function buildField(walls){
+  const C=FIELD.cols, R=FIELD.rows, S=FLOW.cell, n=C*R, blocked=new Uint8Array(n), d=new Float32Array(n).fill(Infinity);
+  for(const w of walls){ const e=Math.hypot(w.hw,w.hh)+S;
+    const c0=Math.max(0,Math.floor((w.x-e)/S)), c1=Math.min(C-1,Math.floor((w.x+e)/S)), r0=Math.max(0,Math.floor((w.y-e)/S)), r1=Math.min(R-1,Math.floor((w.y+e)/S));
+    for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){ const dx=(c+.5)*S-w.x, dy=(r+.5)*S-w.y;
+      if(Math.abs(dx*w.cs+dy*w.sn)<=w.hw+4&&Math.abs(-dx*w.sn+dy*w.cs)<=w.hh+4) blocked[r*C+c]=1; } }
+  // moves from a cell to its neighbour: [dc, dr, cost]
+  const MOV=[[0,1,1],[1,1,1.3],[-1,1,1.3],[1,0,1.15],[-1,0,1.15],[1,-1,3.2],[-1,-1,3.2],[0,-1,3]];
+  const heap=[]; const pushH=(v,i)=>{ heap.push([v,i]); let k=heap.length-1; while(k){ const p=(k-1)>>1; if(heap[p][0]<=heap[k][0]) break; [heap[p],heap[k]]=[heap[k],heap[p]]; k=p; } };
+  const popH=()=>{ const top=heap[0], last=heap.pop(); if(heap.length){ heap[0]=last; let k=0; for(;;){ const l=2*k+1, r=l+1; let m=k;
+      if(l<heap.length&&heap[l][0]<heap[m][0]) m=l; if(r<heap.length&&heap[r][0]<heap[m][0]) m=r; if(m===k) break; [heap[m],heap[k]]=[heap[k],heap[m]]; k=m; } } return top; };
+  for(let c=0;c<C;c++){ const i=(R-1)*C+c; if(!blocked[i]){ d[i]=0; pushH(0,i); } } // the bottom edge is where the stream drains
+  while(heap.length){ const [v,u]=popH(); if(v>d[u]) continue; const uc=u%C, ur=(u/C)|0;
+    for(const [dc,dr,cost] of MOV){ const pc=uc-dc, pr=ur-dr; if(pc<0||pc>=C||pr<0||pr>=R) continue; const p=pr*C+pc; if(blocked[p]) continue;
+      if(dc&&dr&&(blocked[pr*C+uc]||blocked[ur*C+pc])) continue; // no cutting corners of a block
+      const nv=v+cost; if(nv<d[p]){ d[p]=nv; pushH(nv,p); } } }
+  FIELD.d=d;
+}
+function fieldAt(x,y){ if(y>=H) return 0; if(!FIELD.d||x<0||x>=W) return Infinity;
+  const c=Math.floor(x/FLOW.cell), r=Math.max(0,Math.floor(y/FLOW.cell)); return FIELD.d[r*FIELD.cols+c]; }
+const FDIRS=[[0,1],[.7071,.7071],[-.7071,.7071],[1,0],[-1,0],[.7071,-.7071],[-.7071,-.7071],[0,-1]];
+function fieldDir(x,y,side){ let best=null, bd=Infinity; // direction to the lowest neighbouring field value; own side wins near-ties
+  for(const [dx,dy] of FDIRS){ const v=fieldAt(x+dx*FLOW.cell,y+dy*FLOW.cell)-(dx*side>0?FLOW.tie*.5:0); if(v<bd){ bd=v; best=[dx,dy]; } }
+  return best; }
+// Neighbours: spatial hash, rebuilt once per frame
+const CROWD=new Map();
+function crowdKey(cx,cy){ return (cx+64)*4096+(cy+64); }
+function flowPrepare(){
+  const v=solidsVer+':'+(window.CAM&&CAM.wallsVer?CAM.wallsVer():0), now=performance.now(); // level walls + white blocks
+  if(v!==FIELD.ver&&(now-FIELD.at>150||!FIELD.d||!FIELD.ver.startsWith(solidsVer+':'))){
+    buildField([...solids,...(window.CAM&&CAM.wallList?CAM.wallList():[])]); FIELD.ver=v; FIELD.at=now; }
+  CROWD.clear(); const s=FLOW.r*2;
+  for(const pp of people){ if(pp.fall>0||pp.gone) continue; const k=crowdKey(Math.floor(pp.x/s),Math.floor(pp.y/s)); let a=CROWD.get(k); if(!a) CROWD.set(k,a=[]); a.push(pp); }
+}
+function woodBlocks(pp){ // the wooden blocks (unchanged rules; only placed via __pm.place now)
+  for(const b of blocks){
+    const d=Math.hypot(pp.x-b.x,pp.y-b.y);
+    if(b.t==='arrow' && d<(b.R||R_TRI) && pp.hit[b.id]!==1){ steer(pp,b.a,b); pp.hit={}; pp.hit[b.id]=1; }
+    if(b.t==='split' && d<(b.R||R_ROL) && pp.hit[b.id]!==1){ const turn=b.cam?CAM.splitTurn(b,pp):((b.alt^=1)?-90:90); steer(pp,pp.a+turn,b); pp.hit={}; pp.hit[b.id]=1; }
+    if(b.t==='cube' && d<R_CUBE && pp.hit[b.id]!==1){ pp.a+=180; const n=Math.atan2(pp.y-b.y,pp.x-b.x); pp.x=b.x+Math.cos(n)*(R_CUBE+2); pp.y=b.y+Math.sin(n)*(R_CUBE+2); pp.hit={}; pp.hit[b.id]=1; }
+  }
+}
+// Solid rectangle with rounded corners (radius SOLID_PAD = half a person). A person is pushed back to the surface
+// and only keeps the speed along it, so on a slope they slide, on a top they rest and spread, and round a corner
+// they flow smoothly over the edge. Tops (normal pointing up) are stored as pp.sup (support) for the next frame.
+function rectCollide(pp,w,id){
+  const dx=pp.x-w.x, dy=pp.y-w.y, lx=dx*w.cs+dy*w.sn, ly=-dx*w.sn+dy*w.cs, pad=SOLID_PAD;
+  if(Math.abs(lx)>w.hw+pad+1||Math.abs(ly)>w.hh+pad+1) return;
+  let qx=Math.max(-w.hw,Math.min(w.hw,lx)), qy=Math.max(-w.hh,Math.min(w.hh,ly)), nlx, nly;
+  const ex=lx-qx, ey=ly-qy, d=Math.hypot(ex,ey);
+  if(d>1e-6){ if(d>=pad+.5) return; nlx=ex/d; nly=ey/d; }
+  else if(w.hw-Math.abs(lx)<w.hh-Math.abs(ly)){ nlx=Math.sign(lx||1); nly=0; qx=nlx*w.hw; } // inside (a block was put on them): out via the nearest side
+  else { nlx=0; nly=Math.sign(ly||1); qy=nly*w.hh; }
+  const px=qx+nlx*pad, py=qy+nly*pad, tx=w.x+px*w.cs-py*w.sn, ty=w.y+px*w.sn+py*w.cs;
+  // a block that is moved onto people pushes them out over a few frames (max 5 px per frame): no teleporting
+  const mx=tx-pp.x, my=ty-pp.y, m=Math.hypot(mx,my), k=m>5?5/m:1; pp.x+=mx*k; pp.y+=my*k;
+  const nx=nlx*w.cs-nly*w.sn, ny=nlx*w.sn+nly*w.cs, vn=pp.vx*nx+pp.vy*ny;
+  if(vn<0){ pp.vx-=vn*nx; pp.vy-=vn*ny; }
+  if(ny<-.3&&(!pp.sup||ny<pp.sup.ny)) pp.sup={nx,ny,w:id,wx:w.x,wy:w.y};
+}
+// Bounce off one solid rectangle (level wall, field border or white block): one small hop and a curve back into
+// the downward stream. Where along the hit side decides the power: the middle splashes, an edge only bends around.
+function bounceRect(pp,w){
+  const dx=pp.x-w.x, dy=pp.y-w.y;
+  let lx=dx*w.cs+dy*w.sn, ly=-dx*w.sn+dy*w.cs;
+  const ex=w.hw+SOLID_PAD, ey=w.hh+SOLID_PAD;
+  if(!(Math.abs(lx)<ex&&Math.abs(ly)<ey)) return;
+  let nlx=0, nly=0; // outward normal of the side that was hit (wall axes)
+  if(ex-Math.abs(lx)<ey-Math.abs(ly)){ nlx=Math.sign(lx||1); lx=nlx*(ex+1); } else { nly=Math.sign(ly||1); ly=nly*(ey+1); }
+  pp.x=w.x+lx*w.cs-ly*w.sn; pp.y=w.y+lx*w.sn+ly*w.cs;           // back out of the block
+  const nx=nlx*w.cs-nly*w.sn, ny=nlx*w.sn+nly*w.cs;              // the same normal in screen axes
+  const a=rad(pp.a), dot=Math.cos(a)*nx+Math.sin(a)*ny;
+  if(dot<0){ // curve around the collision, then resume the natural downward stream
+    const side=Math.abs(nx)>.2?Math.sign(nx):(pp.x>=w.x?1:-1); // fly off on the side that was hit
+    // the field border is soft: people only bounce lightly off the edge of the field
+    const along=nly?Math.abs(lx)/ex:Math.abs(ly)/ey, power=w.soft?BOUNCE.border:.3+.7*(1-Math.min(1,along));
+    const rnd=()=>1+(Math.random()-.5)*2*BOUNCE.vary;
+    const sa=BOUNCE.curveAngle+(1-power)*BOUNCE.glance+(Math.random()-.5)*BOUNCE.curveSpread;
+    pp.bounceStartA=side>0?sa:180-sa;
+    pp.bounceDur=BOUNCE.curve*(.55+.45*power)*rnd();
+    pp.airV=BOUNCE.airSpeed*(.6+.4*power)*rnd();
+    pp.a=pp.bounceStartA; pp.bounceCurve=pp.bounceDur;
+    if(!(pp.z>2)) pp.vz=BOUNCE.hop*power*rnd(); // small hop (squash & stretch follows vz/z)
+    pp.v=Math.min((pp.v||150*SPEED)*1.08,220*SPEED); // stream gets a bit of weight/energy from the hit
+    pp.bounceAt=performance.now(); pp.bx=pp.x; pp.by=pp.y;
+    pp.squash=1; // peak squash on impact frame
+  }
+}
+function flowMove(pp,dt){
+  if(pp.vx==null){ pp.vx=Math.cos(rad(pp.a))*pp.v*.8; pp.vy=Math.sin(rad(pp.a))*pp.v*.8; pp.side=Math.random()<.5?-1:1; }
+  const sup=pp.sup; pp.sup=null; // surface contact found by the collision of the previous frame
+  if(pp.push>0) pp.push-=dt; // a wooden block just steered this person: gravity waits briefly
+  let gk=pp.push>0?.15:1;
+  // ---- neighbours: personal space (pressure), resting on others, speed matching (viscosity) ----
+  const s=FLOW.r*2, cx=Math.floor(pp.x/s), cy=Math.floor(pp.y/s); let mx=0, my=0, nn=0, onCrowd=false;
+  for(let i=-1;i<=1;i++) for(let j=-1;j<=1;j++){ const a=CROWD.get(crowdKey(cx+i,cy+j)); if(!a) continue;
+    for(const q of a){ if(q===pp) continue; let dx=pp.x-q.x, dy=pp.y-q.y, d=Math.hypot(dx,dy);
+      if(d>=FLOW.r*1.8) continue;
+      if(q.vx!=null){ mx+=q.vx; my+=q.vy; nn++; }
+      if(d>=FLOW.r) continue;
+      if(d<.01){ dx=Math.random()-.5; dy=Math.random()-.5; d=Math.hypot(dx,dy); }
+      const k=(FLOW.r-d)/d*FLOW.push*.5; pp.x+=dx*k; pp.y+=dy*k; // each of the pair moves half
+      const ux=-dx/d, uy=-dy/d, vn=pp.vx*ux+pp.vy*uy; if(vn>0){ pp.vx-=ux*vn*.5; pp.vy-=uy*vn*.5; } // do not keep pushing into them
+      if(uy>.5) onCrowd=true; } }
+  if(nn){ const k=Math.min(1,FLOW.visc*dt); pp.vx+=(mx/nn-pp.vx)*k; pp.vy+=(my/nn-pp.vy)*k; }
+  // ---- on a surface (white block, or resting on the pile): spread sideways towards a way down ----
+  const resting=sup||(onCrowd&&pp.vy<pp.v*.35);
+  if(resting){
+    let nx=0, ny=-1; if(sup){ nx=sup.nx; ny=sup.ny;
+      if(sup.w!==pp.supW){ pp.supW=sup.w; const o=(pp.x-sup.wx)*-ny+(pp.y-sup.wy)*nx; pp.side=Math.abs(o)>3?Math.sign(o):pp.side; } } // split: land left of the middle -> go left
+    let tx=-ny, ty=nx; const fd=fieldDir(pp.x,pp.y,pp.side);
+    const along=fd?fd[0]*tx+fd[1]*ty:0;
+    if(sup&&Math.abs(nx)>.14){ if(ty<0){ tx=-tx; ty=-ty; } } // a slope: water only flows downhill, whatever the field says
+    else if(Math.abs(along)>.2){ if(along<0){ tx=-tx; ty=-ty; } } else if(tx*pp.side<0){ tx=-tx; ty=-ty; }
+    if(fd&&fd[1]<-.3&&!(sup&&Math.abs(nx)>.14)){ // in a pocket: the way out goes up, climb slowly along the field
+      const k=Math.min(1,FLOW.grip*dt), c=pp.v*FLOW.climb; pp.vx+=(fd[0]*c-pp.vx)*k; pp.vy+=(fd[1]*c-pp.vy)*k; gk=.25; }
+    else { const cur=pp.vx*tx+pp.vy*ty, want=pp.v*FLOW.spread*(sup?1:.6);
+      if(cur<want){ const dv=(want-cur)*Math.min(1,FLOW.grip*dt); pp.vx+=tx*dv; pp.vy+=ty*dv; } } // a slope may make them faster: no braking
+  } else pp.vx*=Math.exp(-FLOW.air*dt); // free fall: sideways speed fades, the path bends smoothly down
+  // ---- gravity, speed limit, small natural wandering ----
+  pp.vy+=FLOW.g*gk*dt; pp.vx+=(Math.random()-.5)*dt*24;
+  const vmax=pp.v*FLOW.fall, sp0=Math.hypot(pp.vx,pp.vy); if(sp0>vmax){ pp.vx*=vmax/sp0; pp.vy*=vmax/sp0; }
+  pp.x+=pp.vx*dt; pp.y+=pp.vy*dt;
+  const a0=pp.a; woodBlocks(pp);
+  if(pp.a!==a0){ const v=Math.max(pp.v,Math.hypot(pp.vx,pp.vy)); pp.vx=Math.cos(rad(pp.a))*v; pp.vy=Math.sin(rad(pp.a))*v; pp.push=.6; }
+  for(const w of solids) rectCollide(pp,w,w.id); // field border and level walls
+  if(window.CAM&&CAM.flowCollide) CAM.flowCollide(pp); // white blocks are solid: push out, keep only the speed along the surface
+  // ---- heading follows the motion gradually; walking animation follows the real speed ----
+  const sp=Math.hypot(pp.vx,pp.vy);
+  if(sp>12){ const ta=Math.atan2(pp.vy,pp.vx)*180/Math.PI, d=((ta-pp.a)%360+540)%360-180, m=FLOW.turn*dt;
+    pp.a+=Math.max(-m,Math.min(m,d*Math.min(1,8*dt))); }
+  pp.ph+=dt*Math.max(sp,15)/9;
+}
 function update(dt){
-  zoneT+=dt; spawnT-=dt; while(spawnT<=0){ spawn(); spawnT+=.15; }
+  zoneT+=dt; waveTick(dt);
+  if(FLOW.on) flowPrepare();
   for(const pp of people){
     if(pp.fall>0){ pp.fall+=dt; if(pp.fall>.8) pp.gone=true; continue; }
     if(celebrate>0){ pp.alpha-=dt*1.4; if(pp.alpha<=0){ pp.gone=true; continue; } }
+    if(FLOW.on) flowMove(pp,dt); else { // bounce movement (default): walk down, hop and curve off every wall
     if(pp.bounceCurve>0){
       pp.bounceCurve=Math.max(0,pp.bounceCurve-dt);
-      const t=1-pp.bounceCurve/BOUNCE.curve, progress=t*t; // ease-in: fly sideways first, then bend down
+      const t=1-pp.bounceCurve/(pp.bounceDur||BOUNCE.curve), progress=t*t; // ease-in: fly sideways first, then bend down
       pp.a=pp.bounceStartA+(90-pp.bounceStartA)*progress;
     } else pp.a+= (Math.random()-.5)*dt*6; // slight wandering keeps the stream natural
-    const a=rad(pp.a), sp=pp.z>0?Math.max(pp.v,BOUNCE.airSpeed):pp.v; // faster while airborne
+    // like water: the splash speed fades out gradually over the curve instead of stopping at the landing
+    const fade=pp.bounceCurve>0?pp.bounceCurve/(pp.bounceDur||BOUNCE.curve):0;
+    const a=rad(pp.a), sp=pp.v+Math.max(0,(pp.airV||BOUNCE.airSpeed)-pp.v)*fade;
     pp.x+=Math.cos(a)*sp*dt; pp.y+=Math.sin(a)*sp*dt; pp.ph+=dt*pp.v/9;
     for(const b of blocks){
       const d=Math.hypot(pp.x-b.x,pp.y-b.y);
@@ -267,25 +507,36 @@ function update(dt){
       if(b.t==='split' && d<(b.R||R_ROL) && pp.hit[b.id]!==1){ const turn=b.cam?CAM.splitTurn(b,pp):((b.alt^=1)?-90:90); steer(pp,pp.a+turn,b); pp.hit={}; pp.hit[b.id]=1; }
       if(b.t==='cube' && d<R_CUBE && pp.hit[b.id]!==1){ pp.a+=180; const n=Math.atan2(pp.y-b.y,pp.x-b.x); pp.x=b.x+Math.cos(n)*(R_CUBE+2); pp.y=b.y+Math.sin(n)*(R_CUBE+2); pp.hit={}; pp.hit[b.id]=1; }
     }
+    for(const w of solids) bounceRect(pp,w); // field border and level walls
     if(window.CAM) CAM.collide(pp); // physical white blocks: people bounce off them (BOUNCE.on) or walk around them
     if(pp.vz||pp.z>0){ // in the air: gravity; stop at the floor after this single jump
       pp.vz-=BOUNCE.gravity*dt; pp.z=(pp.z||0)+pp.vz*dt;
       if(pp.z<=0){ pp.z=0; pp.landAt=performance.now(); pp.vz=0; } }
     if(pp.squash>0) pp.squash=Math.max(0,pp.squash-dt*4);
-    for(const [k,cp] of Object.entries(cps)) if(!pp.seen[k] && Math.hypot(pp.x-cp.x,pp.y-cp.y)<R_CP){ pp.seen[k]=1; if(!cp.done){ cp.n++; if(cp.n%4===0) renderCases(); if(cp.n>=NEED) caseDone(k); } }
-    if(inRect(pp.x,pp.y,Z.end.r)){ pp.gone=true; totals.out++; zoneArrived++; totals.score+=4; if(zoneArrived%5===0) tone(880+Math.random()*300,.05,'sine',.03); if(zoneArrived===GOAL){ toast(`<i>${Z.end.ic}</i><div>Finish gehaald!<small>${GOAL} mensen aangekomen</small></div>`); tone(988,.2); } checkGoal(); continue; }
-    if(pp.x<-20||pp.x>W+20||pp.y<-40||pp.y>H+20){ pp.gone=true; totals.stray++; continue; }
+    }
+    for(const [k,cp] of Object.entries(cps)) if(!pp.seen[k] && atCheckpoint(pp,cp)){ pp.seen[k]=1; const Wv=pp.W;
+      Wv.hits[k]=(Wv.hits[k]||0)+1; if(Wv===wave) cp.n=Wv.hits[k];
+      if(!Wv.taken[k]&&Wv.hits[k]>=CP_NEED) takeCheckpoint(Wv,k); }
+    if(inRect(pp.x,pp.y,Z.end.r)){ pp.gone=true; if(!isActive()) continue; /* inactief: niets tellen */ const st=pp.st||0; // everyone may finish; the fill state decides the points
+      totals.out++; totals.fill[st]++; zoneArrived++; zoneFill[st]++; pp.W.stats.fill[st]++; totals.score+=FILL_PTS[st];
+      if(st===2){ zoneFull++; tone(880+Math.random()*300,.05,'sine',.03); if(zoneFull===GOAL){ toast(`<i>${Z.end.ic}</i><div>Finish gehaald!<small>${GOAL} volle mensen aangekomen</small></div>`); tone(988,.2); } }
+      checkGoal(); continue; }
+    if(pp.x<-20||pp.x>W+20||pp.y<-40||pp.y>H+20){ pp.gone=true; if(!isActive()) continue; totals.stray++; totals.lost++; pp.W.stats.lost++; continue; } // missed the finish: counts as 'verdwaald'
   }
   people=people.filter(p=>!p.gone);
   if(celebrate>0){ celebrate-=dt; if(celebrate<=0){ celebrate=0; const n=(zi+1)%ZONES.length; if(n===0) round++; loadZone(n); toast(`<i>➡️</i>${ZONES[n].n}`); } }
-  if(performance.now()-lastTouch>90000 && (zi!==0||blocks.length)){ lastTouch=performance.now(); round=1; totals=newTotals(); loadZone(0); }
+  if(performance.now()-lastTouch>90000 && (zi!==0||blocks.length)){ lastTouch=-1e9; round=1; totals=newTotals(); loadZone(0); }
 }
-function caseDone(k){
-  const cp=cps[k]; cp.done=true; if(!totals.cases.includes(k)) totals.cases.push(k); totals.score+=500;
-  toast(`<i>✅</i><div>Checkpoint ${Object.keys(cps).indexOf(k)+1} gehaald!<small>+500 punten</small></div>`); [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.15),i*80));
-  renderCases(); checkGoal();
+function takeCheckpoint(Wv,k){ // CP_NEED people of wave Wv passed checkpoint k: the whole wave fills up
+  Wv.taken[k]=1; if(Wv===wave) cps[k].done=true;
+  const st=fillState(Object.keys(Wv.taken).length), now=performance.now();
+  if(st!==Wv.st){ Wv.st=st; for(const q of people) if(q.W===Wv){ q.st=st; q.popAt=now; } fillSound(st); }
+  toast(`<i>✅</i><div>Checkpoint ${Object.keys(cps).indexOf(k)+1} gepakt<small>De persoon is nu ${FILL_NAMES[Wv.st]}</small></div>`);
+  renderCases();
 }
-function checkGoal(){ if(celebrate>0) return; if(Object.values(cps).every(c=>c.done) && zoneArrived>=GOAL){ totals.arenas++; totals.score+=Math.max(0,Math.round(180-zoneT))*5; celebrate=3; tone(392,.3); } }
+let fillSoundAt=0;
+function fillSound(st){ const now=performance.now(); if(now-fillSoundAt<90) return; fillSoundAt=now; tone(st===2?784:587,.08,'sine',.035); }
+function checkGoal(){ if(celebrate>0) return; if(zoneFull>=GOAL){ totals.arenas++; totals.score+=Math.max(0,Math.round(180-zoneT))*5; celebrate=3; tone(392,.3); } }
 // ---- Drawing ----
 function wood(t,x,y,ang,lift){
   const [top,side,hi]=WOOD[t], Hh=12;
@@ -301,16 +552,33 @@ function wood(t,x,y,ang,lift){
     ctx.fillStyle=top; tri(0); ctx.fill(); ctx.save(); tri(0); ctx.clip(); grain(ctx,-20,-24,46,48,side); ctx.restore(); ctx.strokeStyle=hi; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-17,-19); ctx.lineTo(-17,19); ctx.stroke(); }
   ctx.restore();
 }
-function person(pp){ // little person seen from above: shoulders, head, walking feet
-  const a=rad(pp.a), s=Math.sin(pp.ph)*4;
-  ctx.save(); ctx.globalAlpha=Math.max(0,pp.alpha); ctx.translate(pp.x,pp.y); ctx.rotate(a);
-  ctx.fillStyle='rgba(58,42,26,.18)'; ctx.beginPath(); ctx.ellipse(-1,2,9,11,0,0,7); ctx.fill();
-  ctx.fillStyle='#3A2F2A'; ctx.beginPath(); ctx.ellipse(s,-4,3.2,2.2,0,0,7); ctx.ellipse(-s,4,3.2,2.2,0,0,7); ctx.fill();
-  ctx.fillStyle=pp.shirt; ctx.beginPath(); ctx.ellipse(0,0,5,9,0,0,7); ctx.fill();
-  ctx.fillStyle=pp.skin; ctx.beginPath(); ctx.arc(-s*.6+2,-9.5,2.4,0,7); ctx.arc(s*.6+2,9.5,2.4,0,7); ctx.fill();
-  ctx.fillStyle=pp.skin; ctx.beginPath(); ctx.arc(1,0,4.6,0,7); ctx.fill();
-  ctx.fillStyle=pp.hair; ctx.beginPath(); ctx.arc(-.5,0,4.6,Math.PI/2,Math.PI*1.5); ctx.fill();
+// The fill state is shown in the person itself, like a glass filling up from the feet:
+// leeg = grey figure, halfvol = coloured up to the waist (top still grey), vol = fully coloured with a golden glow.
+const EMPTY_LOOK={shirt:'#9AA3AE', skin:'#C3C9D1', hair:'#7D858F', legB:'#5E656E', legF:'#6B727C'};
+const FILL_CUT=-1; // halfvol: everything below this height (sprite coordinates, 0 = middle of the body) is coloured
+function person(pp){ // walking person seen from the side (faces right; the sprite is mirrored when walking left)
+  const st=pp.st||0, full={shirt:pp.shirt, skin:pp.skin, hair:pp.hair, legB:'#2A2522', legF:'#3A2F2A'};
+  ctx.save(); ctx.globalAlpha=Math.max(0,pp.alpha); ctx.translate(pp.x,pp.y);
+  ctx.fillStyle='rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0,14.5,7,2,0,0,7); ctx.fill(); // floor shadow
+  if(st===2){ const g=ctx.createRadialGradient(0,-2,2,0,-2,14); g.addColorStop(0,'rgba(255,201,60,.55)'); g.addColorStop(1,'rgba(255,201,60,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,-2,14,0,7); ctx.fill(); } // vol: golden glow
+  if(st<2) figure(pp,EMPTY_LOOK);                     // grey base (leeg, and the empty top of halfvol)
+  if(st>0){ ctx.save(); if(st===1){ ctx.beginPath(); ctx.rect(-20,FILL_CUT,40,40); ctx.clip(); } figure(pp,full); ctx.restore(); }
+  if(st===1){ ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(-4,FILL_CUT); ctx.lineTo(4,FILL_CUT); ctx.stroke(); } // fill line
   ctx.restore();
+}
+function figure(pp,c){ // the person itself in the given colours (legs, arms, body, head)
+  const sw=Math.sin(pp.ph)*.6, bob=-Math.abs(Math.cos(pp.ph))*1.2, lim=(x,y,ang,len)=>{ ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+Math.sin(ang)*len,y+Math.cos(ang)*len); ctx.stroke(); };
+  ctx.save(); ctx.translate(0,bob); ctx.lineCap='round';
+  ctx.strokeStyle=c.legB; ctx.lineWidth=3; lim(0,4,-sw,10);    // back leg
+  ctx.strokeStyle=c.skin; ctx.lineWidth=2.4; lim(0,-4,sw,8);   // back arm
+  ctx.strokeStyle=c.legF; ctx.lineWidth=3; lim(0,4,sw,10);     // front leg
+  ctx.fillStyle=c.shirt; ctx.beginPath(); ctx.roundRect(-4,-7,8,12,3); ctx.fill(); // body
+  ctx.strokeStyle=c.skin; ctx.lineWidth=2.4; lim(0,-4,-sw,8);  // front arm
+  ctx.fillStyle=c.skin; ctx.beginPath(); ctx.arc(.5,-11,4.2,0,7); ctx.fill();
+  ctx.fillStyle=c.hair; ctx.beginPath(); ctx.arc(.5,-11.5,4.3,Math.PI*.95,Math.PI*2.05); ctx.fill(); ctx.fillRect(-3.8,-12,2.2,4);
+  ctx.fillStyle='#2A2522'; ctx.fillRect(2.4,-11.5,1.2,1.4); // eye: shows the walking direction
+  ctx.lineCap='butt'; ctx.restore();
 }
 function drawWater(){ // fenced-off construction zone (static: part of the background texture)
   for(const [x,y,w,h] of Z.water){ // fenced-off construction zone
@@ -321,11 +589,23 @@ function drawWater(){ // fenced-off construction zone (static: part of the backg
     ctx.restore();
     ctx.lineWidth=8; ctx.setLineDash([16,16]); ctx.strokeStyle='#FFC800'; ctx.strokeRect(x,y,w,h); ctx.lineDashOffset=16; ctx.strokeStyle='#22252B'; ctx.strokeRect(x,y,w,h); ctx.setLineDash([]); ctx.lineDashOffset=0; }
 }
+$('helpBtn').onclick=()=>{ touch();
+  $('endBox').innerHTML=`<h2>Hoe werkt het?</h2>
+   <p>Mensen komen bij START binnen en lopen vanzelf naar beneden. Jij stuurt de stroom met witte blokken.</p>
+   <ol class="steps">
+    <li><b>1</b><span>Leg een wit blok op het speelveld. Mensen botsen ertegen en buigen af.</span></li>
+    <li><b>2</b><span>Leid ze langs alle drie de checkpoints. Elk checkpoint vult ze verder: leeg, halfvol, vol.</span></li>
+    <li><b>3</b><span>Breng ze vol naar de finish. Bij ${GOAL} volle mensen ga je naar het volgende level.</span></li>
+   </ol>
+   <p>Blok verplaatsen of draaien: schuif het blok met je hand. Weghalen: pak het van het veld.</p>
+   <button class="go" id="back">Spelen</button>`;
+  $('end').hidden=false; $('back').onclick=()=>{ $('end').hidden=true; touch(); };
+};
 $('resBtn').onclick=()=>{ touch();
   const eff = totals.out+totals.lost ? Math.round(totals.out/(totals.out+totals.lost)*100) : 0;
   $('endBox').innerHTML=`<h2>Jouw stroom</h2><div class="big">${totals.score}</div>
-   <div class="fin"><div><b>${totals.out}</b>aangekomen</div><div><b>${totals.lost}</b>verdwaald</div><div><b>${eff}%</b>doorstroming</div><div><b>${totals.arenas}</b>levels voltooid</div></div>
-   <p>Checkpoints gehaald: <b>${totals.cases.length} / ${CP_TOTAL}</b></p>
+   <div class="fin"><div><b>${totals.out}</b>aangekomen</div><div><b>${totals.lost}</b>verdwaald</div><div><b>${eff}%</b>doorstroming</div><div><b>${totals.arenas}</b>levels voltooid</div><div><b>${wave.no}</b>personen op rij</div></div>
+   <p>Aangekomen: <b>${totals.fill[2]}</b> vol · <b>${totals.fill[1]}</b> halfvol · <b>${totals.fill[0]}</b> leeg</p>
    <button class="go" id="back">Verder spelen</button>`;
   $('end').hidden=false; $('back').onclick=()=>{ $('end').hidden=true; touch(); };
 };
@@ -343,6 +623,7 @@ $('resBtn').onclick=()=>{ touch();
 //   camera layer (physical blocks, calibration)      -> canvas texture, depth 10
 const VIEW={scene:null};
 const WALK_FRAMES=8, PERSON_SIZE=32;
+const FILL_GAUGE=false; // true: also show the small fill gauge above every person
 let texSeq=0;
 function canvasTexture(scene,key,w,h,paint){ // a texture drawn with the existing 2D helpers
   if(scene.textures.exists(key)) scene.textures.remove(key);
@@ -369,6 +650,10 @@ function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Pha
     this.hint=this.add.container(0,0,[hb,this.hintText]).setDepth(9).setVisible(false);
     this.pulse=this.add.graphics().setDepth(4);
     // bounce effects: ground shadow under jumping people, dashed jump path, impact ring
+    for(let st=0;st<3;st++) canvasTexture(this,'gauge'+st,18,18,g=>{ // fill gauge above each person: leeg / halfvol / vol
+      g.fillStyle='rgba(20,26,38,.55)'; g.beginPath(); g.arc(9,9,7.5,0,7); g.fill();
+      if(st){ g.save(); g.beginPath(); g.arc(9,9,6,0,7); g.clip(); g.fillStyle='#3FA9F5'; g.fillRect(0,st===2?0:9,18,18); g.restore(); }
+      g.strokeStyle='#E3E8EF'; g.lineWidth=1.6; g.beginPath(); g.arc(9,9,6.2,0,7); g.stroke(); });
     canvasTexture(this,'hopShadow',30,18,g=>{ g.fillStyle='rgba(0,0,0,.55)'; g.beginPath(); g.ellipse(15,9,13,7,0,0,7); g.fill(); });
     this.trail=this.add.graphics().setDepth(4.5); this.trailOwners=new Set(); this.lastBoing=0;
     this.buildZone();
@@ -388,23 +673,23 @@ function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Pha
     this.endImg=keep(this.add.image(x+w/2,y+h/2,'__DEFAULT').setDepth(4)); this.updateEndpoint(true);
     canvasTexture(this,'fg',W,H,()=>{ plant(24,24); plant(W-24,24); plant(24,H-24); plant(W-24,H-24); entrance(0); });
     keep(this.add.image(0,0,'fg').setOrigin(0).setDepth(8));
-    this.hintText.setText(`Leid de mensen langs de checkpoints naar de ${Z.end.n}`);
+    this.hintText.setText('Leg witte blokken op het veld om de stroom te sturen');
     this.celebSub.setText('Op naar '+ZONES[(zi+1)%ZONES.length].n.toLowerCase());
   }
   updateStands(force){
     for(const s of this.stands){ const sig=s.cp.n+'|'+s.cp.done; if(!force&&sig===s.sig) continue; s.sig=sig;
-      const R=R_CP+16;
+      const R=R_CP+20; // room for the progress ring
       canvasTexture(this,s.key,R*2+10,R*2+10,g=>{ g.save(); g.translate(R-s.cp.x,R-s.cp.y); stand(s.cp,s.k,0); g.restore(); });
       s.img.setTexture(s.key).setOrigin(R/(R*2+10)); }
   }
-  updateEndpoint(force){ const sig=Math.min(GOAL,zoneArrived); if(!force&&sig===this.endSig) return; this.endSig=sig;
+  updateEndpoint(force){ const sig=Math.min(GOAL,zoneFull); if(!force&&sig===this.endSig) return; this.endSig=sig;
     const [x,y,w,h]=Z.end.r, m=12;
     canvasTexture(this,this.endKey,w+2*m,h+2*m,g=>{ g.save(); g.translate(m-x,m-y); endpoint(0,true); g.restore(); });
     this.endImg.setTexture(this.endKey).setOrigin((m+w/2)/(w+2*m),(m+h/2)/(h+2*m)); }
   // ---- textures for people (one sprite sheet per look) and wooden blocks ----
-  personKey(pp){ const key=`p${pp.shirt}${pp.skin}${pp.hair}`;
+  personKey(pp){ const key=`p${pp.shirt}${pp.skin}${pp.hair}${pp.st||0}`;
     if(!this.textures.exists(key)){ const S=PERSON_SIZE, t=this.textures.createCanvas(key,S*WALK_FRAMES,S); const prev=ctx; ctx=t.getContext();
-      for(let f=0;f<WALK_FRAMES;f++){ person({x:f*S+S/2,y:S/2,a:0,ph:f/WALK_FRAMES*Math.PI*2,alpha:1,shirt:pp.shirt,skin:pp.skin,hair:pp.hair}); t.add(f,0,f*S,0,S,S); }
+      for(let f=0;f<WALK_FRAMES;f++){ person({x:f*S+S/2,y:S/2,a:0,ph:f/WALK_FRAMES*Math.PI*2,alpha:1,shirt:pp.shirt,skin:pp.skin,hair:pp.hair,st:pp.st}); t.add(f,0,f*S,0,S,S); }
       ctx=prev; t.refresh(); }
     return key; }
   woodKey(t){ const key='wood-'+t; if(!this.textures.exists(key)){ const S=t==='bridge'?200:110;
@@ -428,9 +713,15 @@ function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Pha
       if(!s){ s=this.pool.pop()||this.add.sprite(0,0,key).setDepth(5); s.setTexture(key).setVisible(true); pp.spr=s; this.active.add(s); }
       const f=Math.floor(((pp.ph%(Math.PI*2))+Math.PI*2)%(Math.PI*2)/(Math.PI*2)*WALK_FRAMES)%WALK_FRAMES;
       // The person rises without changing size; the shadow stays on the floor.
-      const z=pp.z||0, lift=z*.75, now=performance.now();
-      s.setPosition(pp.x,pp.y-lift).setRotation(rad(pp.a)).setFrame(f).setAlpha(Math.max(0,pp.fall>0?1-pp.fall:pp.alpha))
+      const z=pp.z||0, lift=z*HOP_LIFT, now=performance.now();
+      if(s.texture.key!==key) s.setTexture(key); // fill state changed
+      const cx=Math.cos(rad(pp.a)); if(cx<-.25) pp.left=true; else if(cx>.25) pp.left=false; // face the walking direction (no flicker when walking straight down)
+      s.setPosition(pp.x,pp.y-lift).setRotation(0).setFlipX(!!pp.left).setFrame(f).setAlpha(Math.max(0,pp.fall>0?1-pp.fall:pp.alpha))
        .setDepth(z>0?5.5:5);
+      if(!s.gg) s.gg=this.add.image(0,0,'gauge0').setDepth(5.2);
+      const pop=pp.popAt?Math.max(0,1-(now-pp.popAt)/300):0; // short pop when the state changes
+      s.gg.setVisible(FILL_GAUGE).setTexture('gauge'+(pp.st||0)).setPosition(pp.x,pp.y-lift-22).setScale(1+pop*.7).setAlpha(s.alpha);
+      s.setScale(1+pop*.35); // short pop of the person when their fill state changes
       if(!s.sh) s.sh=this.add.image(0,0,'hopShadow').setDepth(4.6);
       if(z>.5){ s.sh.setVisible(true).setPosition(pp.x+2,pp.y+4).setScale(1-Math.min(.5,z/160)).setAlpha(.5*(1-Math.min(.7,z/140))); } else s.sh.setVisible(false);
       if(z>.5||(pp.landAt&&now-pp.landAt<600)){ (pp.trail||(pp.trail=[])).push([pp.x,pp.y-lift,now]); this.trailOwners.add(pp); }
@@ -438,7 +729,7 @@ function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Pha
       if(pp.fall>0){ if(!pp.q){ this.qs.add(pp.q=this.add.text(0,0,'?',{fontFamily:'"Baloo 2",sans-serif',fontSize:'20px',fontStyle:'800',color:PAL.fallInk}).setOrigin(.5).setDepth(5)); }
         pp.q.setPosition(pp.x,pp.y-10-pp.fall*20).setAlpha(Math.max(0,1-pp.fall*1.2)); }
       seen.add(s); }
-    for(const s of this.active) if(!seen.has(s)){ s.setVisible(false); if(s.sh) s.sh.setVisible(false); s.lastB=null; this.active.delete(s); this.pool.push(s); }
+    for(const s of this.active) if(!seen.has(s)){ s.setVisible(false); if(s.sh) s.sh.setVisible(false); if(s.gg) s.gg.setVisible(false); s.lastB=null; this.active.delete(s); this.pool.push(s); }
     this.drawTrails();
     // question marks of people that are gone
     if(this.qs.size){ const live=new Set(people.map(pp=>pp.q)); for(const q of this.qs) if(!live.has(q)){ q.destroy(); this.qs.delete(q); } }
@@ -485,7 +776,7 @@ function startPhaser(){
 }
 
 totals=newTotals(); loadZone(0); startPhaser();
-window.__pm={place:(x,y,t,a=90)=>{ blocks.push({id:++bid,t,x,y,a,alt:0}); }, state:()=>({cps,zi,totals,people:people.length,celebrate}), load:loadZone, update};
+window.__pm={place:(x,y,t,a=90)=>{ blocks.push({id:++bid,t,x,y,a,alt:0}); }, state:()=>({cps,zi,totals,people:people.length,celebrate,wave,zoneFull,zoneFill}), load:loadZone, update};
 </script>
 <script>
 // ===== Camera link: Python/OpenCV (camera_bridge.py) -> WebSocket -> canvas =====
@@ -522,6 +813,7 @@ window.CAM=(()=>{
   // past the corner the person continues in the direction they had before (from the entrance: downwards).
   const WALL={pad:6, name:'wit blok'}; // pad: half the width of a person (canvas units)
   const walls=new Map(); // bridge id -> {x, y, hw, hh, ar (radians), cs, sn, seen, held}
+  let wallsVer=0; // goes up whenever a wall appears, moves or disappears (the flow field is rebuilt then)
   const angDiff=(a,b)=>Math.abs(((a-b)%360+540)%360-180);
   // [ ] exposure, , . fine brightness, A auto exposure, B reference image: also usable from the game window
   const BRIDGE_KEYS=['[',']','-','=','+',',','.','a','A','b','B'];
@@ -531,7 +823,7 @@ window.CAM=(()=>{
   const LABEL={off:'Camera niet verbonden',on:'Camera verbonden',seen:'Camera verbonden · object in beeld',cal:'Camera kalibreren…'};
   const LABEL_UNCAL={on:'Camera verbonden · niet gekalibreerd (K)',seen:'Object in beeld · niet gekalibreerd (K)'};
   function status(s){ let txt=(!cal&&LABEL_UNCAL[s])||LABEL[s];
-    if(s==='cal'&&calib&&calib.auto) txt=`Camera kalibreren ${Math.min(calib.i+1,ACAL_GRID.length)}/${ACAL_GRID.length} · Esc = stoppen`;
+    if(s==='cal'&&calib&&calib.auto) txt=calib.phase==='edges'?'Camera kalibreren: lenscorrectie · Esc = stoppen':`Camera kalibreren ${Math.min(calib.i+1,ACAL_GRID.length)}/${ACAL_GRID.length} · Esc = stoppen`;
     if(s==='seen'&&(chips.size||walls.size)) txt=[...new Set([...chips.values()].map(c=>CHIPS[c.kind].name).concat(walls.size?[WALL.name+(walls.size>1?'en':'')]:[]))].join(' + ')+' in beeld'+(cal?'':' · niet gekalibreerd (K)'); if(el&&(el.dataset.s!==s||el.lastChild.textContent!==txt)){ el.dataset.s=s; el.lastChild.textContent=txt; } }
   const num=v=>typeof v==='number'&&Number.isFinite(v), c01=v=>Math.min(1,Math.max(0,v));
   // Only accept normalized values (0..1). Do not silently clamp values outside that range (e.g. pixels):
@@ -589,13 +881,39 @@ window.CAM=(()=>{
     const sign=Math.sign(hw(h,cam[0][0],cam[0][1])); if(!sign||!cam.every(([x,y])=>hw(h,x,y)*sign>0)) return null;
     return {h,sign};
   }
-  function fitCal(cam,canv,aspect){
+  // With only the 4 corners the perspective fits them exactly, so the corners alone cannot reveal lens curvature.
+  // The outline of the lit field can: on the screen its sides are straight lines (x=0, x=W, y=0, y=H). The lens
+  // (k1/k2) is chosen so the mapped outline is as straight as possible (spread per side; a uniform glow that
+  // shifts a whole side does not matter). Points near the rounded canvas corners are left out.
+  function edgeSides(base,edges){ const out=[];
+    for(const p of edges){ const q=applyCal(base,p[0],p[1]); if(!q) continue;
+      const d=[Math.abs(q[0]),Math.abs(W-q[0]),Math.abs(q[1]),Math.abs(H-q[1])], side=d.indexOf(Math.min(...d));
+      const along=side<2?q[1]/H:q[0]/W; if(d[side]>.06*Math.min(W,H)||along<.08||along>.92) continue;
+      out.push([p,side]); }
+    return out; }
+  function edgeRms(c,sides){ const v=[[],[],[],[]];
+    for(const [p,side] of sides){ const q=applyCal(c,p[0],p[1]); if(!q) return 1e9; v[side].push(side<2?q[0]:q[1]); }
+    let s=0,n=0; for(const a of v){ if(a.length<5) continue; const m=a.reduce((x,y)=>x+y,0)/a.length; for(const x of a){ s+=(x-m)**2; n++; } }
+    return n?Math.sqrt(s/n):1e9; }
+  function fitCal(cam,canv,aspect,edges){
     if(!cam||cam.length<4) return null;
     const A=aspect||16/9;
     const tryK=k=>{ const c0={k,aspect:A}, pts=cam.map(p=>undist(c0,p[0],p[1])), f=fitH(pts,canv); if(!f) return null;
       const c={...f,k,aspect:A}, e=Math.sqrt(cam.reduce((s,p,i)=>{ const q=applyCal(c,p[0],p[1]); return s+(q?(q[0]-canv[i][0])**2+(q[1]-canv[i][1])**2:1e6); },0)/cam.length);
       c.rms=e; return c; };
     let best=tryK([0,0]); if(!best) return null; const noLens=best.rms;
+    const sides=cam.length<8&&Array.isArray(edges)&&edges.length>=20?edgeSides(best,edges):[];
+    if(sides.length>=20){ // lens from the straight field edges (corners-only calibration)
+      const eK=k=>{ const c=tryK(k); return c?edgeRms(c,sides):1e9; }, g=(1+Math.sqrt(5))/2, e0=eK([0,0]);
+      const search=k2=>{ let a=-1, b=1, c=b-(b-a)/g, d=a+(b-a)/g, fc=eK([c,k2]), fd=eK([d,k2]);
+        for(let i=0;i<40;i++){ if(fc<fd){ b=d; d=c; fd=fc; c=b-(b-a)/g; fc=eK([c,k2]); } else { a=c; c=d; fc=fd; d=a+(b-a)/g; fd=eK([d,k2]); } }
+        const k=[(a+b)/2,k2]; return {k,e:eK(k)}; };
+      let bk={k:[0,0],e:e0};
+      for(let k2=-.4;k2<=.401;k2+=.1){ const r=search(+k2.toFixed(2)); if(r.e<bk.e) bk=r; }
+      for(let k2=bk.k[1]-.08;k2<=bk.k[1]+.081;k2+=.02){ const r=search(+k2.toFixed(3)); if(r.e<bk.e) bk=r; }
+      if(bk.e<e0*.7){ const c=tryK(bk.k); if(c) best=c; } // only use the lens model when it clearly straightens the edges
+      best.edgeRms=edgeRms(best,sides); best.edgeRmsNoLens=e0;
+    }
     if(cam.length>=8){ // search the lens curvature (golden-section search on k1 for a few k2 values)
       const g=(1+Math.sqrt(5))/2;
       const search=k2=>{ let a=-1, b=1, c=b-(b-a)/g, d=a+(b-a)/g; const f=k1=>{ const r=tryK([k1,k2]); return r?r.rms:1e9; };
@@ -605,11 +923,11 @@ window.CAM=(()=>{
       for(let k2=best.k[1]-.08;k2<=best.k[1]+.081;k2+=.02){ const r=search(+k2.toFixed(3)); if(r&&r.rms<best.rms) best=r; }
       if(!(best.rms<noLens*.9)) best=tryK([0,0]); // only use the lens model when it clearly helps
     }
-    best.rmsNoLens=noLens; best.auto={cam,canv,aspect:A}; best.lens=!!(best.k[0]||best.k[1]);
+    best.rmsNoLens=noLens; best.auto={cam,canv,aspect:A,...(Array.isArray(edges)&&edges.length?{edges}:{})}; best.lens=!!(best.k[0]||best.k[1]);
     return best;
   }
   function loadCal(){ try{ const c=JSON.parse(localStorage.getItem(CAL_KEY)||'null');
-    if(c&&c.auto&&Array.isArray(c.auto.cam)&&Array.isArray(c.auto.canv)) return fitCal(c.auto.cam,c.auto.canv,c.auto.aspect);
+    if(c&&c.auto&&Array.isArray(c.auto.cam)&&Array.isArray(c.auto.canv)) return fitCal(c.auto.cam,c.auto.canv,c.auto.aspect,c.auto.edges);
     return c&&Array.isArray(c.pts)&&c.pts.length===4&&c.pts.every(p=>Array.isArray(p)&&p.length===2&&p.every(num))?makeCal(c.pts):null; }catch(e){ return null; } }
   function saveCal(){ try{ if(!cal) localStorage.removeItem(CAL_KEY);
     else localStorage.setItem(CAL_KEY,JSON.stringify(cal.auto?{auto:cal.auto,rms:cal.rms,at:new Date().toISOString()}:{pts:cal.pts,at:new Date().toISOString()})); }catch(e){} }
@@ -627,34 +945,57 @@ window.CAM=(()=>{
   function startCal(){ calib={pts:[],buf:[],seen:false,near:false}; cur=null; console.info('[camera] kalibratie gestart'); }
   function stopCal(){ if(calib&&calib.auto) sendCal({cmd:'cancel'}); calib=null; }
   // Automatic: the field turns black, one bright square at a time is shown at a known spot, the bridge
-  // reports where the camera sees it. 12 points over the whole field; no object has to be placed.
-  const ACAL_GRID=[[.06,.08],[.36,.08],[.64,.08],[.94,.08],[.06,.5],[.36,.5],[.64,.5],[.94,.5],[.06,.92],[.36,.92],[.64,.92],[.94,.92]];
+  // reports where the camera sees it. Only the four corners of the field (clockwise from top left); no object
+  // has to be placed. Four points give an exact perspective transform; the lens curvature follows from the outline
+  // of the lit field afterwards (see edgeSides).
+  const ACAL_GRID=[[.06,.08],[.94,.08],[.94,.92],[.06,.92]];
   const ACAL_SIZE=44, ACAL_SHOW=150, ACAL_TIMEOUT=7000;
   const acalTarget=i=>[ACAL_GRID[i][0]*W, ACAL_GRID[i][1]*H];
   function sendCal(o){ if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'cal',...o})); }
   function startAutoCal(){
-    if(!ws||ws.readyState!==1){ if(typeof toast==='function') toast('<i>📷</i>Camera niet verbonden: handmatige kalibratie'); startCal(); return; }
+    if(!ws||ws.readyState!==1){ if(typeof toast==='function') sysToast('<i>📷</i>Camera niet verbonden: handmatige kalibratie'); startCal(); return; }
     calib={auto:true,phase:'black',t:performance.now(),sent:false,i:0,tries:0,cam:[],canv:[],missed:[]}; cur=null;
     console.info('[camera] automatische kalibratie gestart');
   }
-  function acalNext(now){ const s=calib; s.i++; s.tries=0; s.t=now; s.sent=false; if(s.i>=ACAL_GRID.length) acalFinish(); }
+  const ACAL_EDGES=99; // request id for the field outline
+  function acalNext(now){ const s=calib; s.i++; s.tries=0; s.t=now; s.sent=false;
+    if(s.i>=ACAL_GRID.length){ if(s.cam.length>=4){ s.phase='edges'; s.i=ACAL_EDGES; } else acalFinish(); } } // lit field for the lens correction
   function acalFinish(){ const s=calib; calib=null; sendCal({cmd:'cancel'});
     console.info('[camera] kalibratiepunten (camera -> scherm)',JSON.stringify(s.cam.map((p,k)=>[p.map(v=>+v.toFixed(3)),s.canv[k].map(Math.round)])));
-    const c=s.cam.length>=6?fitCal(s.cam,s.canv,s.aspect):null;
-    if(c){ cal=c; saveCal(); setObjs(objs);
-      console.info('[camera] automatische kalibratie',s.cam.length,'punten, gemiddelde afwijking',c.rms.toFixed(1),'px',c.lens?`(lenscorrectie k1=${c.k[0].toFixed(3)} k2=${c.k[1].toFixed(3)}; zonder: ${c.rmsNoLens.toFixed(1)} px)`:'',s.missed);
-      if(typeof toast==='function') toast(`<i>🎯</i><div>Camera gekalibreerd<small>${s.cam.length} punten · gemiddelde afwijking ${c.rms.toFixed(1).replace('.',',')} px${c.lens?' · met lenscorrectie':''}</small></div>`); }
-    else if(typeof toast==='function') toast(`<i>⚠️</i><div>Kalibratie mislukt<small>${s.cam.length} van ${ACAL_GRID.length} punten gezien${s.missed[0]?': '+s.missed[0]:''}. Staat de game op het volle scherm en ziet de camera het hele speelveld?</small></div>`);
+    const c=s.cam.length>=4?fitCal(s.cam,s.canv,s.aspect,s.edges):null; // all four corners are needed
+    const off=c&&Array.isArray(s.edges)&&s.edges.length>=20?outlineOffset(c,s.edges):null;
+    if(c&&off&&off.px>CAL_MAX_OFF){ // the lit field does not land on the field edges: outline or a corner measured wrong
+      // Use the four corners anyway (without lens correction): the old calibration is most likely worse. If the
+      // outline is now still off, the corner measurement is wrong; kalibratie_rand.png (bridge) shows the outline.
+      const c0=fitCal(s.cam,s.canv,s.aspect); if(c0){ cal=c0; saveCal(); setObjs(objs); }
+      console.warn('[camera] randcontrole mislukt: rand wijkt',off.px.toFixed(0),'px af, vooral aan de',off.side,'| per kant (links, rechts, boven, onder):',off.perSide,'px, punten:',off.n,'| gekalibreerd op 4 hoeken zonder lenscorrectie');
+      if(typeof toast==='function') sysToast(`<i>⚠️</i><div>Gekalibreerd op de 4 hoeken, zonder lenscorrectie<small>De randcontrole klopte niet (${off.px.toFixed(0)} px, vooral ${off.side}). Ligt de omtrek van een blok nog verkeerd? Stuur dan kalibratie_rand.png uit de map van camera_bridge.py.</small></div>`);
+      return; }
+    if(c){ if(off) c.outlinePx=off.px; cal=c; saveCal(); setObjs(objs);
+      console.info('[camera] automatische kalibratie',s.cam.length,'punten, gemiddelde afwijking',c.rms.toFixed(1),'px',c.lens?`(lenscorrectie k1=${c.k[0].toFixed(3)} k2=${c.k[1].toFixed(3)}; zonder: ${c.rmsNoLens.toFixed(1)} px)`:'',c.edgeRms!=null?`rand recht tot ${c.edgeRms.toFixed(1)} px (zonder lenscorrectie ${c.edgeRmsNoLens.toFixed(1)} px)`:'',s.missed);
+      if(typeof toast==='function') sysToast(`<i>🎯</i><div>Camera gekalibreerd<small>${s.cam.length} punten · gemiddelde afwijking ${c.rms.toFixed(1).replace('.',',')} px${c.lens?' · met lenscorrectie':''}${c.outlinePx!=null?` · rand ${c.outlinePx.toFixed(0)} px`:''}</small></div>`); }
+    else if(typeof toast==='function') sysToast(`<i>⚠️</i><div>Kalibratie mislukt<small>${s.cam.length} van ${ACAL_GRID.length} punten gezien${s.missed[0]?': '+s.missed[0]:''}. Staat de game op het volle scherm en ziet de camera het hele speelveld?</small></div>`);
   }
+  // Independent check of a calibration: the outline of the lit field must land on the canvas edges.
+  // Returns the distance (canvas px) of the worst side and which side that is.
+  const CAL_MAX_OFF=20;
+  function outlineOffset(c,edges){ const d=[], per=[[],[],[],[]];
+    for(const p of edges){ const q=applyCal(c,p[0],p[1]); if(!q){ d.push(1e4); continue; }
+      const e=[Math.abs(q[0]),Math.abs(W-q[0]),Math.abs(q[1]),Math.abs(H-q[1])], k=e.indexOf(Math.min(...e)); d.push(e[k]); per[k].push(e[k]); }
+    const median=a=>{ if(!a.length) return 0; const b=[...a].sort((x,y)=>x-y); return b[Math.floor(b.length/2)]; };
+    const m=per.map(median), worst=m.indexOf(Math.max(...m)); // median per side: a block lying on the edge (notch) does not count
+    return {px:Math.max(median(d),m[worst]), side:['linkerkant','rechterkant','bovenkant','onderkant'][worst], perSide:m.map(v=>Math.round(v)), n:per.map(a=>a.length)}; } // worst side counts: one wrong corner bends one or two sides
   function acalTick(now){ const s=calib; if(!s||!s.auto) return;
-    if(!connected){ calib=null; if(typeof toast==='function') toast('<i>⚠️</i>Kalibratie gestopt: camera niet verbonden'); return; }
-    if(!s.sent&&now-s.t>(s.phase==='black'?700:ACAL_SHOW)){ s.sent=true; s.sentT=now; sendCal(s.phase==='black'?{cmd:'ref'}:{cmd:'point',i:s.i}); }
+    if(!connected){ calib=null; if(typeof toast==='function') sysToast('<i>⚠️</i>Kalibratie gestopt: camera niet verbonden'); return; }
+    if(!s.sent&&now-s.t>(s.phase==='black'?700:ACAL_SHOW)){ s.sent=true; s.sentT=now; sendCal(s.phase==='black'?{cmd:'ref'}:s.phase==='edges'?{cmd:'edges',i:ACAL_EDGES,quad:s.cam}:{cmd:'point',i:s.i}); } // quad: search area for the outline
     if(s.sent&&now-s.sentT>ACAL_TIMEOUT){ // no answer
-      if(s.phase==='black'){ calib=null; if(typeof toast==='function') toast('<i>⚠️</i>Kalibratie: geen antwoord van camera_bridge.py (nieuwe versie nodig?)'); }
+      if(s.phase==='black'){ calib=null; if(typeof toast==='function') sysToast('<i>⚠️</i>Kalibratie: geen antwoord van camera_bridge.py (nieuwe versie nodig?)'); }
+      else if(s.phase==='edges') acalFinish(); // old camera_bridge.py: calibrate without lens correction
       else { s.missed.push('geen antwoord'); acalNext(now); } }
   }
   function onCalMsg(m){ const s=calib, now=performance.now(); if(!s||!s.auto) return;
     if(m.ref&&s.phase==='black'){ s.phase='point'; s.i=0; s.t=now; s.sent=false; return; }
+    if(s.phase==='edges'&&m.i===ACAL_EDGES){ if(m.ok&&Array.isArray(m.edges)) s.edges=m.edges.filter(p=>Array.isArray(p)&&p.length===2&&num(p[0])&&num(p[1])); acalFinish(); return; }
     if(s.phase!=='point'||m.i!==s.i) return;
     if(m.ok&&num(m.nx)&&num(m.ny)){ s.cam.push([m.nx,m.ny]); s.canv.push(acalTarget(s.i)); if(num(m.fw)&&num(m.fh)&&m.fh>0) s.aspect=m.fw/m.fh; acalNext(now); }
     else if(++s.tries<2){ s.t=now; s.sent=false; } // try this point once more
@@ -663,6 +1004,7 @@ window.CAM=(()=>{
   function drawAutoCal(c){ const s=calib;
     c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H); // nothing else may change on the field while measuring
     if(s.phase==='point'){ const [x,y]=acalTarget(s.i); c.fillStyle='#fff'; c.fillRect(x-ACAL_SIZE/2,y-ACAL_SIZE/2,ACAL_SIZE,ACAL_SIZE); }
+    if(s.phase==='edges'){ c.fillStyle='#bbb'; c.fillRect(0,0,W,H); } // whole field lit (grey: less glare than white)
     c.restore(); }
   function calSample(o){
     const s=calib, now=performance.now();
@@ -678,8 +1020,8 @@ window.CAM=(()=>{
     if(typeof tone==='function') tone(660+s.pts.length*90,.1);
     if(s.pts.length<4) return;
     const c=makeCal(s.pts); calib=null;
-    if(c){ cal=c; saveCal(); setObjs(objs); console.info('[camera] kalibratie opgeslagen',c.pts); if(typeof toast==='function') toast('<i>🎯</i>Camera gekalibreerd'); }
-    else if(typeof toast==='function') toast('<i>⚠️</i><div>Kalibratie mislukt<small>De vier punten waren niet goed te onderscheiden. Druk K om opnieuw te beginnen.</small></div>');
+    if(c){ cal=c; saveCal(); setObjs(objs); console.info('[camera] kalibratie opgeslagen',c.pts); if(typeof toast==='function') sysToast('<i>🎯</i>Camera gekalibreerd'); }
+    else if(typeof toast==='function') sysToast('<i>⚠️</i><div>Kalibratie mislukt<small>De vier punten waren niet goed te onderscheiden. Druk K om opnieuw te beginnen.</small></div>');
   }
   document.addEventListener('keydown',e=>{
     if(e.ctrlKey||e.metaKey||e.altKey||(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]'))) return;
@@ -687,9 +1029,9 @@ window.CAM=(()=>{
     else if(e.key==='Escape'&&calib){ e.preventDefault(); stopCal(); }
     else if(BRIDGE_KEYS.includes(e.key)){ // camera settings from the game window: forwarded to camera_bridge.py
       e.preventDefault();
-      if(!ws||ws.readyState!==1){ if(typeof toast==='function') toast('<i>📷</i>Camera niet verbonden'); return; }
+      if(!ws||ws.readyState!==1){ if(typeof toast==='function') sysToast('<i>📷</i>Camera niet verbonden'); return; }
       ws.send(JSON.stringify({type:'key',key:e.key}));
-      if(e.key==='b'||e.key==='B'){ if(typeof toast==='function') toast('<i>📷</i><div>Referentie vastgelegd<small>Wat nu in beeld is, telt niet als blok.</small></div>'); }
+      if(e.key==='b'||e.key==='B'){ if(typeof toast==='function') sysToast('<i>📷</i><div>Referentie vastgelegd<small>Wat nu in beeld is, telt niet als blok.</small></div>'); }
       else expoAsked=performance.now(); // the next message shows the new exposure
     }
   });
@@ -711,7 +1053,7 @@ window.CAM=(()=>{
     if(!m||typeof m!=='object'||typeof m.detected!=='boolean') return;
     lastMsg=performance.now(); raw=m;
     if(typeof m.exposure==='string'&&expoAsked&&m.exposure!==expoShown&&performance.now()-expoAsked<3000){
-      expoShown=m.exposure; expoAsked=0; if(typeof toast==='function') toast(`<i>📷</i>${m.exposure.replace(/[<>&]/g,'')}`); }
+      expoShown=m.exposure; expoAsked=0; if(typeof toast==='function') sysToast(`<i>📷</i>${m.exposure.replace(/[<>&]/g,'')}`); }
     else if(typeof m.exposure==='string'&&!expoShown) expoShown=m.exposure;
     let list=[];
     if(m.detected){
@@ -757,12 +1099,12 @@ window.CAM=(()=>{
     if(calib) return; // positions are not reliable during calibration
     for(const o of objs){ if(!CHIPS[o.kind]) continue;
       let c=chips.get(o.id);
-      if(!c){ c={kind:o.kind,b:{id:++bid,t:CHIPS[o.kind].t,x:o.x,y:o.y,a:o.a??90,alt:0,cam:o.kind,R:o.r+CHIP_PAD,inA:90,acc:0}}; chips.set(o.id,c); touch(); }
+      if(!c){ c={kind:o.kind,b:{id:++bid,t:CHIPS[o.kind].t,x:o.x,y:o.y,a:o.a??90,alt:0,cam:o.kind,R:o.r+CHIP_PAD,inA:90,acc:0}}; chips.set(o.id,c); touch(true); }
       const b=c.b; let moved=false;
       if(Math.hypot(o.x-b.x,o.y-b.y)>CHIP_POS_DB){ b.x=o.x; b.y=o.y; moved=true; }
       if(o.a!=null&&angDiff(o.a,b.a)>CHIP_ANG_DB){ b.a=o.a; moved=true; }
       b.R=o.r+CHIP_PAD; c.r=o.r; c.seen=now; c.held=o.held;
-      if(moved) touch(); // physical play counts as activity (no idle reset)
+      if(moved) touch(true); // physical play counts as activity (no idle reset)
     }
   }
   function updateChips(now){
@@ -781,37 +1123,16 @@ window.CAM=(()=>{
       if(!w){ w={}; walls.set(o.id,w); }
       // dead bands: small detection noise must not shake the wall
       if(fresh||Math.hypot(o.x-w.x,o.y-w.y)>CHIP_POS_DB||Math.abs(o.hw-w.hw)>CHIP_POS_DB||Math.abs(o.hh-w.hh)>CHIP_POS_DB||angDiff(o.ar*180/Math.PI*2,w.ar*180/Math.PI*2)/2>CHIP_ANG_DB){
-        Object.assign(w,{x:o.x,y:o.y,hw:o.hw,hh:o.hh,ar:o.ar,cs:Math.cos(o.ar),sn:Math.sin(o.ar)}); touch(); }
+        Object.assign(w,{x:o.x,y:o.y,hw:o.hw,hh:o.hh,ar:o.ar,cs:Math.cos(o.ar),sn:Math.sin(o.ar)}); if(fresh) w.born=now; wallsVer++; touch(true); }
       w.seen=now; w.held=o.held;
     }
   }
-  function updateWalls(now){ for(const [id,w] of walls) if(now-w.seen>CHIP_GRACE||calib) walls.delete(id); }
-  // Called by the simulation for every person, every frame (after moving).
-  // A white-block bounce triggers one jump and a short curve back into the downward stream.
+  function updateWalls(now){ for(const [id,w] of walls) if(now-w.seen>CHIP_GRACE||calib){ walls.delete(id); wallsVer++; if(!calib) touch(true); /* taking a block away is play too */ } }
+  // Flow movement (FLOW.on): a white block is a solid surface (see rectCollide in the main script).
+  function flowCollide(pp){ for(const [id,w] of walls) rectCollide(pp,w,id); } // shared with the level walls (main script)
+  // Called by the simulation for every person, every frame (after moving): bounce off the white blocks.
   // BOUNCE.on=false gives the old behaviour: walk along the edge.
-  function bounceOff(pp){
-    for(const w of walls.values()){
-      const dx=pp.x-w.x, dy=pp.y-w.y;
-      let lx=dx*w.cs+dy*w.sn, ly=-dx*w.sn+dy*w.cs;
-      const ex=w.hw+WALL.pad, ey=w.hh+WALL.pad;
-      if(!(Math.abs(lx)<ex&&Math.abs(ly)<ey)) continue;
-      let nlx=0, nly=0; // outward normal of the side that was hit (wall axes)
-      if(ex-Math.abs(lx)<ey-Math.abs(ly)){ nlx=Math.sign(lx||1); lx=nlx*(ex+1); } else { nly=Math.sign(ly||1); ly=nly*(ey+1); }
-      pp.x=w.x+lx*w.cs-ly*w.sn; pp.y=w.y+lx*w.sn+ly*w.cs;           // back out of the block
-      const nx=nlx*w.cs-nly*w.sn, ny=nlx*w.sn+nly*w.cs;              // the same normal in screen axes
-      const a=rad(pp.a), dxh=Math.cos(a), dyh=Math.sin(a), dot=dxh*nx+dyh*ny;
-      if(dot<0){ // curve around the collision, then resume the natural downward stream
-        const side=Math.abs(nx)>.2?Math.sign(nx):(pp.x>=w.x?1:-1); // fly off on the side that was hit
-        const sa=BOUNCE.curveAngle+(Math.random()-.5)*BOUNCE.curveSpread;
-        pp.bounceStartA=side>0?sa:180-sa;
-        pp.a=pp.bounceStartA; pp.bounceCurve=BOUNCE.curve;
-        if(!(pp.z>2)) pp.vz=BOUNCE.hop; // jump (squash & stretch follows vz/z)
-        pp.v=Math.min((pp.v||100)*1.08,160); // stream gets a bit of weight/energy from the hit
-        pp.bounceAt=performance.now(); pp.bx=pp.x; pp.by=pp.y;
-        pp.squash=1; // peak squash on impact frame
-      }
-    }
-  }
+  function bounceOff(pp){ for(const w of walls.values()) bounceRect(pp,w); } // shared with the level walls (main script)
   function collide(pp){
     if(BOUNCE.on) return bounceOff(pp);
     if(pp.wall&&(!walls.has(pp.wall)||angDiff(pp.a,pp.slideA)>30)){ // wall removed, or a chip gave a new direction meanwhile
@@ -845,7 +1166,16 @@ window.CAM=(()=>{
       pp.a=pp.slideA=Math.atan2(tx*w.sn+ty*w.cs,tx*w.cs-ty*w.sn)*180/Math.PI;  // walk along the edge
     }
   }
-  function drawWalls(c){ /* geen borders: witte blokken zijn onzichtbaar, alleen bounce */ }
+  // Outline around every detected white block: shows the player the block is seen (same style as the chips).
+  // It pops in when the block is placed and is dashed while a hand is on the block. Blue (saturated) and with a
+  // gap around the paper, so the camera never mistakes the outline for part of the white block.
+  function drawWalls(c){ const now=performance.now(), gap=10;
+    for(const w of walls.values()){ const k=Math.min(1,(now-(w.born||0))/250), grow=(1-k)*14; // pop-in after placing
+      c.save(); c.translate(w.x,w.y); c.rotate(w.ar); c.globalAlpha=k;
+      const x=-w.hw-gap-grow, y=-w.hh-gap-grow, ww=(w.hw+gap+grow)*2, hh=(w.hh+gap+grow)*2;
+      c.lineWidth=6; c.strokeStyle=VIS.shade; c.beginPath(); c.roundRect(x,y,ww,hh,10); c.stroke();
+      c.lineWidth=2.5; c.strokeStyle=w.held?VIS.held:VIS.line; if(w.held) c.setLineDash([7,7]); c.beginPath(); c.roundRect(x,y,ww,hh,10); c.stroke(); c.setLineDash([]);
+      c.restore(); } }
   // Split branch for a chip, called by the simulation when a person reaches it.
   function splitTurn(b,pp){
     const cfg=CHIPS.split, d=((pp.a-b.inA)%360+540)%360-180; b.inA+=d*.2; // smoothed incoming direction, for the visual
@@ -951,7 +1281,7 @@ window.CAM=(()=>{
   if(/[?&]camcal\b/.test(location.search)) startCal(); // index.html?camcal starts calibration right away
   return {
     _calMath:{fitCal,makeCal,applyCal,acalTarget,ACAL_GRID}, // for tests
-    draw, toCanvas, overlaps, coversScreen, splitTurn, collide, physicalCount:()=>chips.size+walls.size, setDebug:v=>{ debug=!!v; },
+    draw, toCanvas, overlaps, coversScreen, splitTurn, collide, flowCollide, wallsVer:()=>wallsVer, wallList:()=>[...walls.values()], physicalCount:()=>chips.size+walls.size, setDebug:v=>{ debug=!!v; },
     calibrate:startCal, resetCalibration:()=>{ cal=null; saveCal(); },
     state:()=>({connected, calibrated:!!cal, calibrating:!!calib, objects:objs.map(o=>({...o})), cursor:cur?{x:cur.x,y:cur.y,live:!!cur.live,a:cur.a}:null, ringR,
       chips:[...chips.entries()].map(([id,ch])=>({id,kind:ch.kind,x:ch.b.x,y:ch.b.y,angle:ch.b.a,r:ch.r,held:!!ch.held,active:blocks.includes(ch.b)})),

@@ -70,7 +70,7 @@ PROFILES = [
     {
         "color": "white",
         "ranges": [((0, 0, BRIGHTNESS_MIN), (180, SATURATION_MAX, 255))],
-        "max_objects": 4,
+        "max_objects": 12,  # white blocks (walls) that may be active at the same time (largest first)
     },
     # {"color": "red",    "ranges": [((0, 120, 70), (10, 255, 255)),
     #                                ((170, 120, 70), (180, 255, 255))], "max_objects": 4},
@@ -337,15 +337,54 @@ def profile_mask(hsv, profile):
     return mask
 
 
+def _split_strips(contour):
+    """Touching or crossing blocks (an L, T or cross) form one white blob that is not a
+    rectangle. Split it into straight strips: for every main direction of its outline, an
+    opening with a line longer than the strip thickness keeps only the strips that run in
+    that direction (the other strips are too short across). Returns the contours of the parts."""
+    x, y, w, h = cv2.boundingRect(contour)
+    p = 2
+    roi = np.zeros((h + 2 * p, w + 2 * p), np.uint8)
+    cv2.drawContours(roi, [contour - (x - p, y - p)], -1, 255, -1)
+    dt = cv2.distanceTransform(roi, cv2.DIST_L2, 3)
+    thick = 2.0 * float(np.percentile(dt[roi > 0], 90))  # about the strip thickness
+    k_len = int(max(9, 2 * thick)) | 1
+    # main directions: long edges of the simplified outline, weighted by length (mod 180 degrees)
+    poly = cv2.approxPolyDP(contour, 0.01 * cv2.arcLength(contour, True), True).reshape(-1, 2).astype(float)
+    hist = np.zeros(36)
+    for a, b in zip(poly, np.roll(poly, -1, axis=0)):
+        L = float(np.hypot(*(b - a)))
+        if L >= thick:
+            hist[int(np.degrees(np.arctan2(b[1] - a[1], b[0] - a[0])) % 180 // 5) % 36] += L
+    angles = []
+    while len(angles) < 4 and hist.max() > 0.1 * hist.sum() > 0:
+        i = int(hist.argmax())
+        angles.append(i * 5 + 2.5)
+        for d in range(-3, 4):  # suppress +-15 degrees around this direction
+            hist[(i + d) % 36] = 0
+    parts = []
+    c = k_len // 2
+    for th in angles:
+        kern = np.zeros((k_len, k_len), np.uint8)
+        dx, dy = np.cos(np.radians(th)) * c, np.sin(np.radians(th)) * c
+        cv2.line(kern, (int(round(c - dx)), int(round(c - dy))), (int(round(c + dx)), int(round(c + dy))), 1, 1)
+        opened = cv2.morphologyEx(roi, cv2.MORPH_OPEN, kern)
+        cs, _ = cv2.findContours(opened, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        parts += [cc + (x - p, y - p) for cc in cs]
+    return parts
+
+
 def find_candidates(mask, rejected=None, context=None):
     """Same contour filters as the original detect_case(),
     plus a check against the frame border."""
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     mask_h, mask_w = mask.shape[:2]
     candidates = []
-    for contour in contours:
+    todo = [(c, True) for c in contours]  # (contour, may still be split into strips)
+    while todo:
+        contour, splittable = todo.pop()
         area = cv2.contourArea(contour)
-        if not MIN_AREA <= area <= MAX_AREA:
+        if not MIN_AREA <= area <= MAX_AREA * (4 if splittable else 1):
             continue
         x, y, w, h = cv2.boundingRect(contour)
         if w == 0 or h == 0:
@@ -360,6 +399,12 @@ def find_candidates(mask, rejected=None, context=None):
         l0, l1 = float(np.hypot(*e0)), float(np.hypot(*e1))
         long_side, short_side = max(l0, l1), max(1.0, min(l0, l1))
         long_vec = e0 if l0 >= l1 else e1
+        not_rect = solidity < SOLIDITY_MIN or area / (long_side * short_side) < BLOCK_RECT_MIN
+        if splittable and (not_rect or area > MAX_AREA) and area >= 2 * MIN_AREA:
+            todo += [(part, False) for part in _split_strips(contour)]  # several blocks that touch
+            continue
+        if area > MAX_AREA:
+            continue
         if long_side / short_side > BLOCK_ASPECT_MAX or solidity < SOLIDITY_MIN:
             continue
         if area / (long_side * short_side) < BLOCK_RECT_MIN:
@@ -1094,7 +1139,7 @@ async def websocket_handler(websocket, *args):
             if isinstance(msg, dict) and msg.get("type") == "key" and isinstance(msg.get("key"), str) \
                     and len(msg["key"]) == 1 and msg["key"] in REMOTE_KEYS:
                 remote_keys.append(ord(msg["key"]))
-            elif isinstance(msg, dict) and msg.get("type") == "cal" and msg.get("cmd") in ("ref", "point", "cancel"):
+            elif isinstance(msg, dict) and msg.get("type") == "cal" and msg.get("cmd") in ("ref", "point", "edges", "cancel"):
                 remote_cal.append(msg)
     except websockets.exceptions.ConnectionClosed:
         pass
@@ -1249,8 +1294,10 @@ def window_closed():
 # ============================================================
 # The game blacks out the playing field and shows one bright square at a time at a known
 # position. The bridge finds that square as the difference with the black screen and reports
-# its camera position. From many such points the game computes the exact camera -> screen
-# mapping, including perspective and lens curvature.
+# its camera position. The game measures the four corners of the field and computes the
+# camera -> screen mapping (perspective) from them. Then it lights the whole field once: the
+# outline of that lit area (straight edges on the screen, bent by the webcam lens) lets the game
+# correct the lens curvature without extra points.
 CAL_SETTLE_S = 0.3       # minimum wait after a screen change (display + camera delay)
 CAL_REF_S = 1.0          # the black reference is the darkest value per pixel over this period
 CAL_STABLE = 3           # a marker counts when it is at the same spot in this many frames in a row
@@ -1280,6 +1327,69 @@ def measure_marker(ref, cur):
     ys, xs = np.nonzero(lab == big)
     w = diff[ys, xs] - diff[ys, xs].min() + 1e-3
     return (float((xs * w).sum() / w.sum()), float((ys * w).sum() / w.sum())), None
+
+
+CAL_EDGE_DEBUG_FILE = os.path.join(os.path.dirname(SETTINGS_FILE), "kalibratie_rand.png")
+
+
+def measure_field_edges(ref, cur, region=None, max_pts=240):
+    """Outline (camera px) of the lit playing field in `cur` compared with `ref`, or a reason.
+    Holes inside the field (dark reflections) do not matter: only the outer outline is used.
+    region: polygon (camera px) outside which nothing counts, so lamps or reflections elsewhere in the
+    image (which flicker or change with the camera exposure) cannot become part of the outline.
+    A picture of the measurement is saved as kalibratie_rand.png next to this script."""
+    diff = cv2.GaussianBlur(cur - ref, (0, 0), 1.5)
+    keep = np.ones(diff.shape, np.uint8)
+    if region is not None:
+        keep[:] = 0
+        cv2.fillPoly(keep, [np.round(region).astype(np.int32)], 1)
+        diff = np.where(keep > 0, diff, 0).astype(np.float32)
+    vals = diff[keep > 0]
+    if vals.size == 0:
+        return None, "zoekgebied valt buiten het camerabeeld"
+    # The lit field is far from evenly bright (vignetting, lamps reflected in the screen), so a threshold
+    # relative to the brightest spot cuts dim parts away. Instead: just above the dark background around
+    # the field (the search area is larger than the field, so its darkest 10% is background).
+    peak, bg = float(np.percentile(vals, 99.5)), float(np.percentile(vals, 10))
+    if peak - bg < CAL_DIFF_MIN:
+        return None, f"speelveld niet gezien (helderheidsverschil {peak - bg:.0f})"
+    mask = ((diff >= bg + 0.15 * (peak - bg)) & (keep > 0)).astype(np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))  # dark spots (reflected lamps) inside the field
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    if not contours:
+        return None, "speelveld niet gezien"
+    c = max(contours, key=cv2.contourArea)
+    try:  # picture of the measurement: brightness step (grey), search area (blue), outline found (green)
+        dbg = cv2.cvtColor(np.clip(diff * (200.0 / max(peak, 1.0)), 0, 255).astype(np.uint8), cv2.COLOR_GRAY2BGR)
+        if region is not None:
+            cv2.polylines(dbg, [np.round(region).astype(np.int32).reshape(-1, 1, 2)], True, (255, 120, 0), 2)
+        cv2.drawContours(dbg, [c], -1, (0, 255, 0), 2)
+        cv2.imwrite(CAL_EDGE_DEBUG_FILE, dbg)
+    except Exception:
+        pass
+    if cv2.contourArea(c) < 0.02 * mask.shape[0] * mask.shape[1]:
+        return None, "speelveld te klein in beeld"
+    pts = c.reshape(-1, 2).astype(np.float64)
+    return pts[::max(1, len(pts) // max_pts)], None
+
+
+def edge_region(quad, mapper, frame_w, frame_h, grow=1.45):
+    """Search area for the field outline: the quad of the four measured corner markers (normalized,
+    as sent by the game), back in camera px and enlarged around its centre (the markers sit a bit
+    inside the field; the field edges lie beyond them). None if no usable quad was sent."""
+    try:
+        q = np.array(quad, np.float64).reshape(4, 2)
+        if not np.all(np.isfinite(q)):
+            return None
+    except (TypeError, ValueError):
+        return None
+    if mapper.matrix is None:
+        px = q * [frame_w, frame_h]
+    else:
+        px = cv2.perspectiveTransform(q.reshape(-1, 1, 2).astype(np.float32), np.linalg.inv(mapper.matrix)).reshape(-1, 2)
+    c = px.mean(axis=0)
+    return c + (px - c) * grow
 
 
 # ============================================================
@@ -1480,7 +1590,8 @@ async def main(args):
                 if req["cmd"] == "cancel":
                     cal_job, cal_ref, cal_prev = None, None, None
                 else:
-                    cal_job = {"cmd": req["cmd"], "i": req.get("i"), "t": time.perf_counter(), "seen": [], "why": ""}
+                    cal_job = {"cmd": req["cmd"], "i": req.get("i"), "t": time.perf_counter(), "seen": [], "why": "",
+                               "quad": req.get("quad")}  # edges: the four measured corners (normalized) bound the search area
             if frame is None or new_seq == seq:
                 if preview:
                     key = cv2.waitKey(1) & 0xFF
@@ -1522,6 +1633,20 @@ async def main(args):
                 elif cal_ref is None:
                     await send_all({"type": "cal", "i": cal_job["i"], "ok": False, "reason": "geen referentie"})
                     cal_job = None
+                elif cal_job["cmd"] == "edges":
+                    # whole field lit: send its outline for the lens correction (wait a bit longer: big screen change)
+                    if elapsed >= CAL_SETTLE_S * 2:
+                        region = edge_region(cal_job.get("quad"), mapper, frame_w, frame_h)
+                        pts, why = measure_field_edges(cal_ref, v, region)
+                        if pts is not None:
+                            edges = [[round(a, 5) for a in mapper.raw(float(x), float(y), frame_w, frame_h)] for x, y in pts]
+                            await send_all({"type": "cal", "i": cal_job["i"], "ok": True, "edges": edges, "fw": frame_w, "fh": frame_h})
+                            print(f"Kalibratie: rand van het speelveld gemeten ({len(edges)} punten), beeld: {CAL_EDGE_DEBUG_FILE}")
+                            cal_job = None
+                        elif elapsed >= CAL_POINT_TIMEOUT_S:
+                            await send_all({"type": "cal", "i": cal_job["i"], "ok": False, "reason": why})
+                            print(f"Kalibratie rand: {why}")
+                            cal_job = None
                 elif elapsed >= CAL_SETTLE_S:
                     pt, why = measure_marker(cal_ref, v)
                     if pt is not None and cal_prev is not None and np.hypot(pt[0] - cal_prev[0], pt[1] - cal_prev[1]) < CAL_MOVED_PX:
