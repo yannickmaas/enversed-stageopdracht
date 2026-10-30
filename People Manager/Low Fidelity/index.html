@@ -57,6 +57,8 @@ button:focus-visible,a:focus-visible{outline:5px solid #fff;outline-offset:3px}
 .box p{font-size:20px;line-height:1.45;max-width:58ch}
 .go{font:inherit;font-weight:800;font-size:26px;background:#FFC93C;color:#3A2A1A;border:0;border-radius:22px;padding:12px 36px;cursor:pointer;margin-top:10px;box-shadow:0 7px 0 #C99418}
 .big{font-size:90px;font-weight:800;line-height:1}
+.take{margin:6px 0 0}.take .go{font-size:20px;padding:9px 24px;background:#2B3445;color:#fff;box-shadow:0 6px 0 #151B26}
+.qr{display:flex;align-items:center;gap:18px;justify-content:center;flex-wrap:wrap;margin:14px 0 4px}.qr img{width:220px;height:220px;background:#fff;padding:10px;border-radius:14px;image-rendering:pixelated}.qr p{max-width:320px;text-align:left;margin:0}
 .fin{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}
 .fin div{background:rgba(255,255,255,.12);border-radius:18px;padding:12px;font-size:15px}.fin b{display:block;font-size:34px}
 @media (max-width:1000px){header{flex-wrap:wrap}main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}aside{flex-direction:row;flex-wrap:wrap;align-items:flex-start}.tray{flex-direction:row;flex-wrap:wrap}#cases{flex:1 1 260px;max-height:16vh}.t-res{margin-top:0}.fin{grid-template-columns:1fr 1fr}body{overflow:auto}}
@@ -107,28 +109,35 @@ const W=792, H=1152, T=72;
 // The field has borders (left, right, top: people cannot leave there); the bottom is open: whoever falls past the
 // finish is 'verdwaald'. walls: fixed obstacles of the level, [x, y, width, height, rotation in degrees]
 // (centre and size before rotating; a negative rotation of a wide wall slopes down to the left).
-// hood(x,y,open): walls around a checkpoint so the falling stream cannot reach it by itself: a roof above it and
-// a wall on one side; only the `open` side ('l' or 'r') lets people in, so they have to be steered there with blocks.
-const HOOD=68; // half the width of the hood (the checkpoint tile is R_CP+10 = 52)
-// the side wall only reaches halfway down the checkpoint: below that people can also get in from the closed side
-function hood(x,y,open){ return [[x,y-HOOD,HOOD*2+18,18,0],[open==='l'?x+HOOD:x-HOOD,y-HOOD/2-4,18,HOOD+10,0]]; }
+// Levels: route puzzles with walls as obstacles. The three checkpoints lie loose in the field, zigzagging left and right and always away
+// from the line under the entrance, so without blocks nobody reaches one. Every checkpoint needs its own block:
+// the player builds a route START -> block -> c1 -> block -> c2 -> block -> c3 -> finish.
+// The walls stay off the intended routes and off the line under the entrance, and are checked not to create shortcuts.
+// Checked in a simulation: without blocks no checkpoint is reached; random placements of 1 or 2 blocks never take
+// all three; the intended route (3 blocks, angles in 15-degree steps as with the scroll wheel) completes the level
+// in 65-80 s. Levels 1-3 still work with blocks 20 px off; level 4 needs precision.
+// Intended routes ([type, x, y, degrees]):
+//  1: lang 340,240,15 · lang 580,420,-15 · kort 260,880,-15
+//  2: lang 452,240,-15 · lang 212,420,15 · kort 532,880,15   (mirror of level 1)
+//  3: kort 260,240,0 · lang 700,600,0 · lang 380,760,15
+//  4: kort 420,180,0 · lang 140,380,15 · kort 580,820,30
 const ZONES=[
  {n:'Level 1',inv:{},spawn:[396,-10],
-  water:[],cps:[['c1',300,380],['c2',620,600],['c3',430,960]],
-  walls:[...hood(300,380,'l'),...hood(620,600,'l'),...hood(430,960,'r')],
-  end:{r:[280,1040,300,90],n:'Finish',ic:'🏁'}},
- {n:'Level 2',inv:{},spawn:[200,-10],
-  water:[],cps:[['c1',460,200],['c2',110,760],['c3',510,440]],
-  walls:[...hood(460,200,'r'),...hood(110,760,'r'),...hood(510,440,'l')],
-  end:{r:[380,1040,330,90],n:'Finish',ic:'🏁'}},
- {n:'Level 3',inv:{},spawn:[396,-10],
-  water:[],cps:[['c1',230,520],['c2',570,520],['c3',396,860]],
-  walls:[...hood(230,520,'l'),...hood(570,520,'r'),...hood(396,860,'l')],
-  end:{r:[246,1040,300,90],n:'Finish',ic:'🏁'}},
- {n:'Level 4',inv:{},spawn:[600,-10],
-  water:[],cps:[['c1',600,290],['c2',240,640],['c3',540,900]],
-  walls:[...hood(600,290,'r'),...hood(240,640,'l'),...hood(540,900,'r')],
-  end:{r:[300,1040,320,90],n:'Finish',ic:'🏁'}}
+  water:[],cps:[['c1',546,340],['c2',156,720],['c3',78,960]],
+  walls:[[619,256,180,18,25],[527,616,120,18,0]],
+  end:{r:[22,1040,300,90],n:'Finish',ic:'🏁'}},
+ {n:'Level 2',inv:{},spawn:[396,-10],
+  water:[],cps:[['c1',246,340],['c2',636,720],['c3',714,960]],
+  walls:[[174,255,180,18,-25],[212,499,120,18,0],[534,287,18,120,0]],
+  end:{r:[470,1040,300,90],n:'Finish',ic:'🏁'}},
+ {n:'Level 3',inv:{},spawn:[300,-10],
+  water:[],cps:[['c1',465,360],['c2',465,700],['c3',676,960]],
+  walls:[[571,299,140,18,25],[430,577,18,120,0],[615,716,120,18,0]],
+  end:{r:[470,1040,300,90],n:'Finish',ic:'🏁'}},
+ {n:'Level 4',inv:{},spawn:[396,-10],
+  water:[],cps:[['c1',198,320],['c2',707,640],['c3',688,940]],
+  walls:[[640,560,160,18,0],[100,240,180,18,-25],[582,597,120,18,0],[168,460,200,18,0]],
+  end:{r:[440,1040,300,90],n:'Finish',ic:'🏁'}}
 ];
 // Waves: size people per wave, one every `every` s. The next wave follows `pause` s after the last person of the
 // wave has left the field (finish or verdwaald), or at the latest maxWait s after the last one entered.
@@ -145,7 +154,7 @@ const SOLID_PAD=6, BORDER=16; // SOLID_PAD: half the width of a person; BORDER: 
 // airSpeed: ground speed while in the air (wider arc); curve: seconds to turn back to 90°.
 // Water feel: a hit near the middle of a block sprays high and wide, a hit near its edge only bends around it
 // (glance: extra launch angle towards 90° for edge hits); every person gets its own height/speed/curve (vary).
-const BOUNCE={on:true, hop:260, gravity:800, curve:2.6, curveAngle:8, curveSpread:30, airSpeed:240, glance:55, vary:.35, border:.2};
+const BOUNCE={on:true, hop:340, gravity:800, curve:2.9, curveAngle:8, curveSpread:10, airSpeed:290, glance:55, vary:.1, border:.28}; // muisversie: iets meer bounce (was hop 260, curve 2.6, airSpeed 240, border .2); weinig willekeur (spread 10, vary .1) zodat een route voorspelbaar is
 const HOP_LIFT=.75; // how far a jumping person is drawn above their floor position (z * HOP_LIFT); used by drawing and checkpoints
 const GOAL=10, R_TRI=34, R_ROL=30, R_CUBE=30, R_CP=42, PLANK_L=160, PLANK_W=48;
 const SHIRTS=['#E8453C','#2F7FD1','#23A99A','#F2A100','#7A5CFA','#E8457A','#3A9D4E'];
@@ -162,7 +171,19 @@ function tone(f,d=.08,t='triangle',v=.06){const c=ac(); if(!c||c.state!=='runnin
 function camAvoid(el){ el.classList.remove('cam-low'); if(window.CAM&&CAM.coversScreen(el.getBoundingClientRect())) el.classList.add('cam-low'); }
 function freeY(w,h){ if(window.CAM) for(const y of [H/2,H*.25,H*.75]) if(!CAM.overlaps(W/2-w/2,y-h/2,w,h)) return y; return H/2; }
 const ACTIVE_FOR=20; // actief = binnen zoveel seconden na de laatste aanraking/sleepactie; alleen dan meldingen en scoretelling
-const isActive=()=>performance.now()-lastTouch<=ACTIVE_FOR*1000;
+// With blocks of the player on the field, a game is going on even if nobody touches anything (waiting for the
+// persons to fill up): it then stays active for ACTIVE_WITH_BLOCKS s after the last block action.
+const ACTIVE_WITH_BLOCKS=300;
+const isActive=()=>{ const t=performance.now()-lastTouch; return t<=ACTIVE_FOR*1000||(t<=ACTIVE_WITH_BLOCKS*1000&&!!window.CAM&&CAM.physicalCount()>0); };
+// While a game is going, its results keep it active: a person reaching the finish or taking a checkpoint counts as
+// play. So a player who has set up the blocks can watch the persons run without touching anything, and the level
+// still counts up to the end. Without results (no one gets through) it still goes inactive after ACTIVE_FOR s.
+function keepActive(){ if(isActive()) lastTouch=performance.now(); }
+let arrivalShown=false; // 'Er komt iemand aan' alleen één keer, bij de eerste persoon na het opstarten
+// Messages per person (arrived, checkpoint taken) only for the first wave somebody plays in a level, so they do
+// not repeat with every person. Level and finish messages are not affected.
+let toastWave=null;
+const waveToasts=Wv=>{ if(!toastWave&&isActive()) toastWave=Wv; return Wv===toastWave; };
 // force=true: system messages (camera, calibration) always show, also when nobody is playing
 function sysToast(html){ toast(html,true); }
 function toast(html,force){ if(!force&&!isActive()) return; /* niemand aan het spelen: geen meldingen voor voorbijgangers */ const t=document.createElement('div'); t.className='t'; t.innerHTML=html; $('toast').appendChild(t); camAvoid($('toast')); setTimeout(()=>t.remove(),2700); while($('toast').children.length>3) $('toast').firstChild.remove(); }
@@ -264,7 +285,7 @@ function entrance(t){ const [sx]=Z.spawn;
   ctx.fillStyle='#22344F'; ctx.fillRect(sx-82,0,14,62); ctx.fillRect(sx+68,0,14,62);
   ctx.fillStyle='#FF6B5B'; ctx.beginPath(); ctx.roundRect(sx-96,24,192,36,8); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='800 19px "Baloo 2",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('START',sx,43);
   ctx.fillStyle='#9AA3AF'; [-40,0,40].forEach(dx=>{ ctx.fillRect(sx+dx-2,64,4,16); }); }
-function loadZone(i){
+function loadZone(i){ toastWave=null; /* new level: show the per-person messages again for its first played wave */
   zi=i; Z=ZONES[i]; blocks=[]; people=[]; spawnT=0; inv={...Z.inv}; zoneT=0; cps={}; zoneArrived=0; zoneFull=0; zoneFill=[0,0,0];
   solids=buildSolids(); solidsVer++; bg=makeBg(); wave=newWave(1);
   for(const [k,x,y] of Z.cps) cps[k]={x,y,n:0,done:false};
@@ -273,12 +294,12 @@ function loadZone(i){
 }
 function newWave(no){ return {no, spawned:0, t:0, lastSpawn:0, pause:0, hits:{}, taken:{}, st:0, stats:{fill:[0,0,0],lost:0}}; }
 function waveTick(dt){ // spawns the people of the current wave, then waits for them before the next wave
-  if(wave.pause>0){ wave.pause-=dt; if(wave.pause<=0){ const idle=!isActive(); wave=newWave(idle?1:wave.no+1); for(const cp of Object.values(cps)){ cp.n=0; cp.done=false; } spawnT=0; toast(`<i>🚶</i><div>Er komt iemand aan<small>Stuur de persoon langs de checkpoints</small></div>`); } return; }
+  if(wave.pause>0){ wave.pause-=dt; if(wave.pause<=0){ const idle=!isActive(); wave=newWave(idle?1:wave.no+1); for(const cp of Object.values(cps)){ cp.n=0; cp.done=false; } spawnT=0;  } return; }
   wave.t+=dt;
   if(wave.spawned<WAVE.size){ spawnT-=dt; while(spawnT<=0&&wave.spawned<WAVE.size){ if(!spawn()) { spawnT=.1; break; } wave.spawned++; wave.lastSpawn=wave.t; spawnT+=WAVE.every; } return; }
   if(!people.some(p=>p.W===wave)||wave.t-wave.lastSpawn>WAVE.maxWait){ const f=wave.stats.fill;
     const res=wave.stats.lost?'is verdwaald':f[2]?'is vol aangekomen':f[1]?'is halfvol aangekomen':f[0]?'is leeg aangekomen':'is weg';
-    toast(`<i>🚶</i><div>Persoon ${res}<small>${f[2]?'Goed gedaan!':'Probeer alle 3 de checkpoints te halen'}</small></div>`);
+    if(waveToasts(wave)) toast(`<i>🚶</i><div>Persoon ${res}<small>${f[2]?'Goed gedaan!':'Probeer alle 3 de checkpoints te halen'}</small></div>`);
     wave.pause=WAVE.pause; }
 }
 function inRect(x,y,[rx,ry,rw,rh]){ return x>=rx&&x<=rx+rw&&y>=ry&&y<=ry+rh; }
@@ -316,6 +337,7 @@ cv.addEventListener('pointerup',()=>{});
 function spawn(){
   if(people.length>=240||celebrate>0) return false;
   const [sx,sy]=Z.spawn;
+  if(!arrivalShown){ arrivalShown=true; toast(`<i>🚶</i><div>Er komt iemand aan<small>Stuur de persoon langs de checkpoints</small></div>`,true); }
   people.push({wave:wave.no,W:wave,st:wave.st,x:sx+(Math.random()-.5)*26,y:sy,a:90+(Math.random()-.5)*8,v:(130+Math.random()*40)*SPEED,lat:(Math.random()-.5)*16,
     shirt:SHIRTS[Math.floor(Math.random()*SHIRTS.length)],skin:SKIN[Math.floor(Math.random()*SKIN.length)],hair:Math.random()<.5?'#3A2A1A':'#6B4A2A',
     ph:Math.random()*6,seen:{},hit:{},fall:0,alpha:1});
@@ -517,7 +539,7 @@ function update(dt){
     for(const [k,cp] of Object.entries(cps)) if(!pp.seen[k] && atCheckpoint(pp,cp)){ pp.seen[k]=1; const Wv=pp.W;
       Wv.hits[k]=(Wv.hits[k]||0)+1; if(Wv===wave) cp.n=Wv.hits[k];
       if(!Wv.taken[k]&&Wv.hits[k]>=CP_NEED) takeCheckpoint(Wv,k); }
-    if(inRect(pp.x,pp.y,Z.end.r)){ pp.gone=true; if(!isActive()) continue; /* inactief: niets tellen */ const st=pp.st||0; // everyone may finish; the fill state decides the points
+    if(inRect(pp.x,pp.y,Z.end.r)){ pp.gone=true; if(!isActive()) continue; /* inactief: niets tellen */ keepActive(); const st=pp.st||0; // everyone may finish; the fill state decides the points
       totals.out++; totals.fill[st]++; zoneArrived++; zoneFill[st]++; pp.W.stats.fill[st]++; totals.score+=FILL_PTS[st];
       if(st===2){ zoneFull++; tone(880+Math.random()*300,.05,'sine',.03); if(zoneFull===GOAL){ toast(`<i>${Z.end.ic}</i><div>Finish gehaald!<small>${GOAL} volle mensen aangekomen</small></div>`); tone(988,.2); } }
       checkGoal(); continue; }
@@ -525,13 +547,13 @@ function update(dt){
   }
   people=people.filter(p=>!p.gone);
   if(celebrate>0){ celebrate-=dt; if(celebrate<=0){ celebrate=0; const n=(zi+1)%ZONES.length; if(n===0) round++; loadZone(n); toast(`<i>➡️</i>${ZONES[n].n}`); } }
-  if(performance.now()-lastTouch>90000 && (zi!==0||blocks.length)){ lastTouch=-1e9; round=1; totals=newTotals(); loadZone(0); }
+  if(!isActive() && performance.now()-lastTouch>90000 && (zi!==0||blocks.length)){ /* no reset while a game is going on */ lastTouch=-1e9; round=1; totals=newTotals(); loadZone(0); }
 }
-function takeCheckpoint(Wv,k){ // CP_NEED people of wave Wv passed checkpoint k: the whole wave fills up
+function takeCheckpoint(Wv,k){ keepActive(); // CP_NEED people of wave Wv passed checkpoint k: the whole wave fills up
   Wv.taken[k]=1; if(Wv===wave) cps[k].done=true;
   const st=fillState(Object.keys(Wv.taken).length), now=performance.now();
   if(st!==Wv.st){ Wv.st=st; for(const q of people) if(q.W===Wv){ q.st=st; q.popAt=now; } fillSound(st); }
-  toast(`<i>✅</i><div>Checkpoint ${Object.keys(cps).indexOf(k)+1} gepakt<small>De persoon is nu ${FILL_NAMES[Wv.st]}</small></div>`);
+  if(waveToasts(Wv)) toast(`<i>✅</i><div>Checkpoint ${Object.keys(cps).indexOf(k)+1} gepakt<small>De persoon is nu ${FILL_NAMES[Wv.st]}</small></div>`);
   renderCases();
 }
 let fillSoundAt=0;
@@ -606,9 +628,14 @@ $('resBtn').onclick=()=>{ touch();
   $('endBox').innerHTML=`<h2>Jouw stroom</h2><div class="big">${totals.score}</div>
    <div class="fin"><div><b>${totals.out}</b>aangekomen</div><div><b>${totals.lost}</b>verdwaald</div><div><b>${eff}%</b>doorstroming</div><div><b>${totals.arenas}</b>levels voltooid</div><div><b>${wave.no}</b>personen op rij</div></div>
    <p>Aangekomen: <b>${totals.fill[2]}</b> vol · <b>${totals.fill[1]}</b> halfvol · <b>${totals.fill[0]}</b> leeg</p>
+   <div class="take"><button class="go" id="takeBtn" aria-expanded="false">📱 Neem de game mee</button></div>
+   <div class="qr" id="takeQr" hidden><img src="${QR_PHONE}" alt="QR-code naar People Manager op je telefoon"><p>Scan de QR-code en speel People Manager verder op je telefoon. Zo ontdek je ook wat Enversed Studios maakt.</p></div>
    <button class="go" id="back">Verder spelen</button>`;
+  $('takeBtn').onclick=()=>{ const q=$('takeQr'), open=q.hidden; q.hidden=!open; $('takeBtn').setAttribute('aria-expanded',String(open)); touch(); }; // optional: only on request
   $('end').hidden=false; $('back').onclick=()=>{ $('end').hidden=true; touch(); };
 };
+// QR code to the phone version of the game (call to action: take the game along, get to know Enversed Studios), shown in the result screen on request
+const QR_PHONE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUoAAAFKAQAAAABTUiuoAAAEFElEQVR42u2bT3KjRhTGfw8oi6maKrPMDm6Q3ACOMkfIDdS6ia+QE4S5QXIDtJvNVPAOT7X6ZdEggQQIx3Zm011lS0Ifz898fO9fS6JsXF8jNq8ADdAADdAAfS30IP0qTiIVwCnimOlwWMyKVQvNHQfGkC5QsA5NoBiep+vQCCqAh4jfMm7MAI8tAIL4lHv81UrZKGUNoNGKr02nQTAfBF0SzElEEi8/eikeM+BZRLIFqwp2mwNjWJDhe0LNduihAq23OdAECl4Lla3QIt1k9ZhC/j1Rs9EB63xIDmy9WzbcCo0W+B9BY1W1gDhydXJm6lFV2wVfJbD1QUGzWIJ60p+HK6+x+z1rLzMBWbbqlLZ7fTYMbG2VoS6xNRZMlmK0g9s0p1fLlFa0AdhN36hncqzV+YwYEueboEWyFjSPff/31WiidexAVHlJfbFaMWohnvpf9ZM7eQsPUPPDa+0v1ds20tzIsANwga3/Bq0ACh9bzVDm1AAtkE1k2Ihqu/OJr/SqA0QbUFXLfiTDCFrrjUx1Jte+ZjcyDG3kNhlOqo1oCfrLwDIYeKAguSSzSSg+/NmlCnAsxO2BXFXmo7bJ1wJnYGsJunprZ8lKiTPJhnXpRLXDF6fA3gK5g103kSHUjdNJ/VLbXtxpEtj6X7qNqogEIpme1jnI7Bj6LFLW4g7yyR0q8IE2dvCSUP6dXlk1w08Dk8FfFdh6K9Qs5qwL9LHjIBLtTd/0s7McC5S4u7GaeO1/GR9vwXx+2ORrx3RGENiKtg3TRtD+IUsx56RpexmebaiqarvzAbO0oqpKqQ6ItQb2rUy6DetPbCaB3b2+jYwCsXPQYlaCbpQNm1LV7FpK7egL0thXqqqqLXJh66kB0nQsJTcuP8fdRtun44k3aQias9BsLht2c7VLnavy2LFXry0DotoysOVB/cue5vIM6xt/YtUrGbpzMWpAIR0KU/e6fyvIcAUqq/Vr7B++QA0RfMNUg6w+J7PTHDsotp/mtL7lmJvmzAXNNsjwDUXpMqndGHrZ6Y+d32b0gVIMKC8iS77aoRhVQM7V6p19mDrE1+3Q6k6x/+CP14gxo2Q61K/nCQ4H+eTI1YqBPUDeLFk1IBTjWyYLbL0D1CxuL/RqPiUQW4A9JvLX/0UA4Vh26YID1ZW4mzZZHyddVh3Y2g6t7iXO0XWeNv3ndYog7rcYd5ayhfym6b+MkZKFvxg2rd4kw8aOiv20b9NnoYfqlOgfBeTfI9hZkSEszjngaL9BYYchoCz7er1pFYrSzdlwdSNI5p9f7fTDvo7dpSd8SdSgshS1k5HF8SjhfnwNMrwDPX/gJo2us+Hz1UQu/yeCnYOdvevAj0DBz+w2Un9KNVKtAYbPm25Y4SseARqgARqgHwT9F/7R+G+jqNuNAAAAAElFTkSuQmCC';
 // ===== Phaser view =====
 // The game rules above stay framework-free (model). This scene runs the game loop, renders the hall and feeds
 // pointer input to the model. Textures are generated in code with the existing drawing helpers:
