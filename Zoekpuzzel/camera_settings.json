@@ -1,6 +1,12 @@
 {
   "auto": false,
-  "exposure": -6,
+  "exposure": -11,
   "gain": 0,
-  "brightness": 1.4
+  "brightness": 1.4,
+  "flashlight": {
+    "v_min": 214,
+    "diff_min": 154,
+    "min_area": 150,
+    "max_area": 120000
+  }
 }

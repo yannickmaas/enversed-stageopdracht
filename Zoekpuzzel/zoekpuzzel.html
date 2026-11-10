@@ -24,6 +24,7 @@ h1{margin:0;font-size:28px;font-weight:800}
 main{flex:1;display:grid;grid-template-columns:1fr 300px;gap:16px;padding:0 24px 20px;min-height:0}
 #stageWrap{position:relative;min-height:0;border-radius:18px;overflow:hidden;background:#000}
 svg#scene{width:100%;height:100%;display:block;touch-action:none;cursor:none}
+html.no-mouse,html.no-mouse *{cursor:none!important}
 #uvBtn{position:absolute;left:16px;bottom:16px;font:inherit;font-weight:800;font-size:20px;border:3px solid var(--uv);background:rgba(11,16,32,.8);color:#fff;border-radius:40px;padding:12px 22px;cursor:pointer;z-index:3}
 #uvBtn.on{background:var(--uv)}
 #card{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:min(560px,92%);background:#141B33;border:3px solid var(--beam);border-radius:20px;padding:18px 20px;z-index:4}
@@ -46,6 +47,57 @@ aside h2{margin:0;font-size:18px}
 button:focus-visible,a:focus-visible{outline:4px solid var(--beam);outline-offset:3px}
 .overlay{position:fixed;inset:0;background:rgba(5,8,18,.94);display:grid;place-items:center;z-index:10;padding:24px}
 .overlay[hidden]{display:none}
+.tabs{display:flex;gap:6px;background:#121831;border-radius:14px;padding:5px}
+.tabs button{font:inherit;font-weight:800;font-size:16px;border:0;border-radius:10px;padding:10px 18px;background:transparent;color:var(--mut);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--beam);color:var(--night)}
+.tabs button:disabled{opacity:.35;cursor:not-allowed}
+main[hidden]{display:none}
+.panel{flex:1;min-height:0;overflow:auto;display:flex;padding:24px}
+.panel>.box{margin:auto;max-height:none}
+.panel[hidden]{display:none}
+#calOv{position:fixed;inset:0;background:#03050C;z-index:100}#calOv[hidden]{display:none}
+#calOv.screen{background:#000;cursor:none}
+#calMark{position:absolute;width:7vmin;height:7vmin;background:#fff;transform:translate(-50%,-50%);display:none}
+#calOv.screen #calT,#calOv.screen #calCur,#calOv.screen #calCam{display:none}
+#calOv.aim #calMark{display:none!important}
+#calBar{display:none;position:absolute;left:50%;top:50%;width:min(520px,70vw);height:14px;transform:translate(-50%,-60px);border-radius:7px;
+  background:linear-gradient(90deg,#A8966A calc(var(--p,0)*100%),#2A2E40 0)}
+#calOv.sweep #calBar{display:block}
+#calOv.sweep #calT,#calOv.sweep #calCur{display:none}
+#calOv.sweep #calInfo{transform:translate(-50%,-50%)}
+#calOv.sweep #calCam{left:50%;right:auto;top:50%;bottom:auto;width:360px;transform:translate(-50%,110px)}
+/* bewust gedempte kleuren: een camera die het scherm ziet, mag de cirkel en het puntje niet voor de zaklamp aanzien */
+#calT{position:absolute;width:150px;height:150px;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,#7A6E50 0 14%,transparent 15%),conic-gradient(#A8966A calc(var(--p,0)*360deg),#2A2E40 0);
+  -webkit-mask:radial-gradient(circle,#000 0 15%,transparent 16% 60%,#000 61%);mask:radial-gradient(circle,#000 0 15%,transparent 16% 60%,#000 61%)}
+#calCur{position:absolute;width:40px;height:40px;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;border:4px solid #8C7F5C;box-shadow:0 0 0 3px #03050C}
+#calCur[hidden]{display:none}
+#calCam{position:absolute;right:24px;bottom:24px;width:240px;aspect-ratio:16/9;border:2px solid #2A3358;border-radius:10px;background:#0B1020}
+#calCam span{position:absolute;left:8px;bottom:4px;font-size:12px;color:var(--mut)}
+#calCamDot{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#A8966A}
+#calCamDot[hidden]{display:none}
+#calInfo{position:absolute;left:50%;top:50%;transform:translate(-50%,calc(-50% + 150px));display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;max-width:min(720px,90vw)}
+#calOv.screen #calInfo{transform:translate(-50%,-50%);color:#444}
+#calOv.screen #calInfo span,#calOv.screen #calInfo b{color:#444}
+#calOv.screen #calCancel{background:#111;color:#444}
+#calInfo b{font-family:Unbounded,sans-serif;font-size:22px}#calInfo span{color:var(--mut);font-size:18px}#calInfo small{color:#C9A8FF;font-size:16px}
+#calInfo .btn{flex:none;font-size:15px;padding:10px 16px}
+body.cam-screen #lightCur{background:conic-gradient(#8C7F5C calc(var(--p,0)*360deg),transparent 0)}
+.tut{max-width:880px}
+.tut .lead{font-size:20px;line-height:1.45;color:#C9CFE6;margin:14px 0 6px}
+.steps{list-style:none;counter-reset:st;padding:0;margin:14px 0;display:grid;gap:10px}
+.steps li{counter-increment:st;display:grid;grid-template-columns:44px 1fr;gap:4px 14px;background:#121831;border-radius:16px;padding:14px 16px;align-items:start}
+.steps li::before{content:counter(st);grid-row:span 2;width:44px;height:44px;border-radius:50%;background:#1B2345;color:var(--beam);display:grid;place-items:center;font:800 20px Unbounded,sans-serif}
+.steps b{font-size:19px}.steps span{color:#C9CFE6;font-size:16px;line-height:1.45}
+.steps .btn{flex:none;font-size:15px;padding:8px 14px;margin-left:6px;vertical-align:middle}
+.steps .btn.done{background:var(--ok);color:var(--night)}
+.startRow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.startRow .btn{flex:none;font-size:16px;padding:12px 18px;margin-top:12px}
+#lightCur{position:fixed;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;pointer-events:none;z-index:90;
+  background:radial-gradient(circle,rgba(255,231,163,.55) 0 18%,transparent 19%),conic-gradient(var(--beam,#FFE7A3) calc(var(--p,0)*360deg),rgba(255,231,163,.18) 0);
+  -webkit-mask:radial-gradient(circle,#000 0 20%,transparent 21% 62%,#000 63%);mask:radial-gradient(circle,#000 0 20%,transparent 21% 62%,#000 63%)}
+#lightCur[hidden]{display:none}
+.lightHover{outline:4px solid var(--beam,#FFE7A3);outline-offset:3px}
 .box{max-width:900px;width:100%;max-height:92vh;overflow:auto}
 .box h2{font-family:Unbounded,sans-serif;font-size:clamp(34px,6vw,70px);margin:0;line-height:1.02}
 .box p{font-size:20px;line-height:1.5;color:#C9CFE6;max-width:60ch}
@@ -65,8 +117,13 @@ button:focus-visible,a:focus-visible{outline:4px solid var(--beam);outline-offse
 </head>
 <body>
 <header><h1 class="d">Zoekpuzzel</h1><span id="caseT">Project Atlas · 6 weken te laat</span>
+  <nav class="tabs" role="tablist" aria-label="Schermen">
+    <button role="tab" id="tabGame" data-tab="game" aria-selected="true">Onderzoek</button>
+    <button role="tab" id="tabStart" data-tab="start" aria-selected="false">Uitleg</button>
+    <button role="tab" id="tabResult" data-tab="result" aria-selected="false" disabled>Resultaat</button>
+  </nav>
   <div class="hud"><div><b id="found">0</b><span>knelpunten</span></div><div><b id="score">0</b><span>score</span></div><div><div id="bat"><div id="batF"></div></div><span>batterij</span></div></div></header>
-<main>
+<main id="game">
   <div id="stageWrap">
     <svg id="scene" viewBox="0 0 1600 900" role="img" aria-label="Donkere werkplek, gebruik de zaklamp">
       <defs>
@@ -88,13 +145,21 @@ button:focus-visible,a:focus-visible{outline:4px solid var(--beam);outline-offse
   </div>
   <aside><h2>Dossier</h2><div id="dossier"><div class="empty">Houd de lichtbundel stil op iets wat opvalt. Na een seconde weet je wat het is.</div></div><button id="recon" disabled>Reconstrueer de oorzaak</button></aside>
 </main>
-<div class="overlay" id="intro"><div class="box">
+<section class="panel" id="intro" role="tabpanel" aria-labelledby="tabStart" hidden><div class="box tut">
   <h2>Het licht is uit. Het project loopt vast.</h2>
-  <p>Zoek met je zaklamp naar knelpunten. Sommige sporen zie je alleen met UV-licht. Pas op: de batterij raakt leeg, en UV kost dubbel.</p>
-  <button class="go" id="startBtn">Zaklamp aan</button>
-  <p class="phys">In de installatie volg je met een rode cirkel (LED of sticker) de zaklamp op het scherm — zoals een Wii-remote. Muis werkt als fallback.</p></div></div>
+  <p class="lead">Project Atlas loopt zes weken achter. Zoek met je zaklamp in de donkere werkplek naar knelpunten en ontdek wat de echte oorzaak is.</p>
+  <ol class="steps">
+    <li><b>Richt je zaklamp</b><span>De lichtbundel in het spel volgt je zaklamp. Alleen waar je schijnt, zie je de werkplek. Geen licht op het scherm is donker.</span></li>
+    <li><b>Houd stil om te onderzoeken</b><span>Houd de bundel ongeveer 1 seconde stil op iets wat opvalt. Er verschijnt een kaartje: kies <em>Knelpunt</em> of <em>Niets aan de hand</em>.</span></li>
+    <li><b>Knoppen indrukken met licht</b><span>Houd het licht ongeveer 1 seconde op een knop tot de ring vol is. Probeer het hier: <button class="btn n" id="tryBtn">Oefenknop</button></span></li>
+    <li><b>UV-licht</b><span>Sommige sporen zie je alleen met UV. Zet UV aan met de knop linksonder in het spel (of toets U). UV kost dubbel zoveel batterij.</span></li>
+    <li><b>Reconstrueer de oorzaak</b><span>Heb je minstens twee knelpunten in je dossier, kies dan welk knelpunt de rest verklaart. Juist gekozen met batterij over levert extra punten op.</span></li>
+  </ol>
+  <div class="startRow"><button class="go" id="startBtn">Start het onderzoek</button><button class="btn n" id="calBtn" hidden>Opnieuw kalibreren (K)</button></div>
+  <p class="phys">Het spel opent direct in het tabblad Onderzoek. Is de zaklamp nog niet gekalibreerd, dan gebeurt dat eerst vanzelf (een paar seconden). Opnieuw kalibreren: knop hierboven of toets K. Beweegt de bundel te snel of te traag? Toetsen - en + stellen de gevoeligheid bij. De muis staat uit; de begeleider gebruikt Enter, K en Esc.</p>
+</div></section>
 <div class="overlay" id="reconOv" hidden><div class="box"><h2>Wat is de echte oorzaak?</h2><p>De meeste knelpunten zijn symptomen. Eén ervan verklaart de rest.</p><div class="opts" id="opts"></div></div></div>
-<div class="overlay" id="end" hidden><div class="box" id="endBox"></div></div>
+<section class="panel" id="end" role="tabpanel" aria-labelledby="tabResult" hidden><div class="box" id="endBox"><h2>Nog geen resultaat.</h2><p>Speel eerst een onderzoek uit.</p></div></section>
 <script>// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
 const RESULTS = (() => {
   const GAME = document.documentElement.dataset.game || 'game';
@@ -289,7 +354,7 @@ const $=id=>document.getElementById(id);
 function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
 function tone(f,d=.1,t='sine',v=.06){const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
 
-/* ===== Camera bridge: rode cirkel = zaklamp (Wii-remote-stijl) ===== */
+/* ===== Camera bridge: een echte zaklamp, herkend als fel licht ===== */
 const CAM = {
   url: (location.search.match(/[?&]ws=([^&]+)/)||[])[1]
     ? decodeURIComponent(location.search.match(/[?&]ws=([^&]+)/)[1])
@@ -299,7 +364,12 @@ const CAM = {
   fromCam: false,   // true zolang de camera de pointer stuurt
   lastTs: 0,
   reconnectT: null,
+  client: null,     // positie van de lichtvlek op het scherm (px)
+  inScene: false,   // valt het licht op het speelveld (anders: alleen UI-besturing)
+  beamR: 170,       // straal van de bundel, volgt de grootte van de echte lichtvlek
 };
+const BEAM_R = 170, BEAM_R_MIN = 130, BEAM_R_MAX = 230;
+let mouseT = -1e9;  // laatste muis-/toetsbediening (fallback)
 function camStatus(txt, ok){
   let el = $('camStatus');
   if(!el){
@@ -322,35 +392,345 @@ function connectCamera(){
     return;
   }
   camStatus('Camera: verbinden…', null);
-  CAM.ws.onopen = ()=>{ CAM.connected=true; camStatus('Camera: verbonden — rode cirkel = zaklamp', true); };
-  CAM.ws.onclose = ()=>{ CAM.connected=false; CAM.fromCam=false; camStatus('Camera: offline (muis/toetsen werken)', false); scheduleReconnect(); };
+  CAM.ws.onopen = ()=>{ CAM.connected=true; camStatus('Camera: verbonden — schijn met de zaklamp op het scherm', true); updateCalBtn(); if(!CAL.H) calStart(); };
+  CAM.ws.onclose = ()=>{ CAM.connected=false; CAM.fromCam=false; if(CAL.phase){ calClose(); } camStatus('Camera: offline (muis/toetsen werken)', false); updateCalBtn(); scheduleReconnect(); };
   CAM.ws.onerror = ()=>{ /* onclose volgt */ };
   CAM.ws.onmessage = (ev)=>{
     let msg;
     try{ msg = JSON.parse(ev.data); }catch(e){ return; }
-    if(!msg || msg.type!=='camera') return;
-    // Prefer flashlight object; fallback to primary nx/ny
-    let nx = msg.nx, ny = msg.ny;
-    if(Array.isArray(msg.objects)){
-      const fl = msg.objects.find(o=>o.kind==='flashlight');
-      if(fl){ nx=fl.nx; ny=fl.ny; }
-    }
-    if(nx==null || ny==null || !msg.detected){
-      // pointer even kwijt: laat muis weer toe na korte timeout
-      if(performance.now()-CAM.lastTs > 400) CAM.fromCam = false;
+    if(!msg) return;
+    if(msg.type==='cal'){ calOnMsg(msg); return; }
+    if(msg.type!=='camera') return;
+    CAM.flashInfo = msg.flash_info || '';
+    // Alleen de lichtvlek van de zaklamp stuurt (geen witte blokken of fiches)
+    const fl = Array.isArray(msg.objects) ? msg.objects.find(o=>o.kind==='flashlight') : null;
+    if(CAL.phase){ if(CAL.phase==='aim' && fl && fl.nx!=null) calSample(fl.nx, fl.ny, performance.now()); return; }
+    if(performance.now()<CAL.ignoreUntil) return;
+    if(!fl || fl.nx==null || fl.ny==null){
+      if(performance.now()-CAM.lastTs > 400) CAM.fromCam = false; // lichtvlek even kwijt
       return;
     }
+    const p = camToClient(fl.nx, fl.ny);
+    if(!p) return;
     CAM.fromCam = true;
     CAM.lastTs = performance.now();
-    // genormaliseerd 0..1 → SVG viewBox 1600×900
-    L.x = Math.max(0, Math.min(1600, nx * 1600));
-    L.y = Math.max(0, Math.min(900, ny * 900));
+    CAM.client = p;
+    // schermpositie → speelveld (SVG). Buiten het speelveld = bundel uit, wel UI-besturing.
+    const q = clientToSvg(p.x, p.y);
+    CAM.inScene = q.x>-40 && q.x<1640 && q.y>-40 && q.y<940 && !overlayOpen();
+    L.x = Math.max(0, Math.min(1600, q.x));
+    L.y = Math.max(0, Math.min(900, q.y));
+    // grootte van de echte vlek → grootte van de bundel (dichterbij = kleiner, verder weg = groter)
+    if(Array.isArray(fl.rim)){
+      const pr = camToClient(fl.rim[0], fl.rim[1]);
+      if(pr){
+        const qr = clientToSvg(pr.x, pr.y), rr = Math.hypot(qr.x-q.x, qr.y-q.y);
+        if(isFinite(rr) && rr>0) CAM.beamR += (Math.max(BEAM_R_MIN, Math.min(BEAM_R_MAX, rr*2.2)) - CAM.beamR) * .25;
+      }
+    }
   };
 }
 function scheduleReconnect(){
   if(CAM.reconnectT) return;
   CAM.reconnectT = setTimeout(()=>{ CAM.reconnectT=null; connectCamera(); }, 2000);
 }
+
+/* ===== Zaklamp → scherm: kalibratie in twee stappen =====
+   Stap 1 (automatisch, ±5 s): het scherm wordt zwart en toont 9 witte vierkantjes. Ziet de camera het
+     scherm (camera boven een liggend scherm, lichtvlek op het scherm), dan meet de bridge waar elk vierkantje
+     zit. Dat is de nauwkeurigste kalibratie: de bundel valt precies waar je echte lichtvlek valt.
+   Stap 2 (alleen als stap 1 niets ziet): de camera kijkt naar de speler. Je richt de zaklamp op 5 cirkels;
+     de game meet waar de camera de lamp dan ziet.
+   Spiegelen, draaien en schuin hangen zitten er in beide gevallen automatisch in.
+   Na een geslaagde kalibratie start meteen het onderzoek. Opnieuw: K of de knop op de startpagina. Esc = annuleren. */
+const CAL_KEY = 'zoekpuzzel-camcal-v3';
+const CAL_GRID = [[.1,.12],[.5,.12],[.9,.12],[.1,.5],[.5,.5],[.9,.5],[.1,.88],[.5,.88],[.9,.88]];
+const CAL_TARGETS = [[.12,.5],[.5,.15],[.88,.5],[.5,.85],[.5,.5]]; // links en boven eerst: daarna ligt de richting vast
+const CAL_SWEEP_S = 4;    // seconden rondzwaaien om het bereik van de zaklamp te meten
+const CAL_HOLD = 1.0;     // seconden richten per cirkel
+const CAL_TOL = .06;      // zo ver (deel van het camerabeeld) mag het licht afdwalen tijdens het richten
+const CAL_GRACE = 350;    // ms: zo lang mag het licht even weg zijn of verspringen zonder dat de ring terugloopt
+const CAL = { H: null, mode: null, phase: null, i: 0, pts: [], fails: [], buf: [], hold: 0, ignoreUntil: 0,
+              lastRaw: 0, anchor: null, got: [], outT: 0, view: null, timer: null };
+try{ const c = JSON.parse(localStorage.getItem(CAL_KEY)||'null'); if(c && Array.isArray(c.H) && c.H.length===8){ CAL.H = c.H; CAL.mode = c.mode||null; } }catch(e){}
+document.body.classList.toggle('cam-screen', CAL.mode==='screen');
+function camSend(o){ if(CAM.ws && CAM.ws.readyState===WebSocket.OPEN) CAM.ws.send(JSON.stringify(o)); }
+function overlayOpen(){ return !$('reconOv').hidden || TAB!=='game'; }
+function sceneCTM(){ return TAB==='game' ? $('scene').getScreenCTM() : null; }
+function svgToClient(x,y){ const m=sceneCTM(); return m ? {x:m.a*x+m.c*y+m.e, y:m.b*x+m.d*y+m.f} : {x:x/1600*innerWidth, y:y/900*innerHeight}; }
+function clientToSvg(x,y){ const m0=sceneCTM(); if(!m0) return {x:-1e4,y:-1e4}; const m=m0.inverse(); return {x:m.a*x+m.c*y+m.e, y:m.b*x+m.d*y+m.f}; }
+// camera (0..1) → schermpunt in px. Zonder kalibratie: de oude, rechtstreekse koppeling aan het speelveld.
+// Gevoeligheid (alleen als de camera de lamp zelf ziet): lager = je moet de zaklamp verder bewegen voor
+// dezelfde verplaatsing op het scherm. Bijstellen met toetsen - en + (wordt onthouden).
+const GAIN_KEY='zoekpuzzel-gevoeligheid', GAIN_DEF=.6;
+let GAIN=GAIN_DEF;
+try{ const g=parseFloat(localStorage.getItem(GAIN_KEY)); if(g>=.2 && g<=1.5) GAIN=g; }catch(e){}
+function camToClient(u,v){
+  if(!CAL.H) return svgToClient(u*1600, v*900);
+  const h=CAL.H, w=h[6]*u+h[7]*v+1;
+  if(Math.abs(w)<1e-9) return null;
+  let fx=(h[0]*u+h[1]*v+h[2])/w, fy=(h[3]*u+h[4]*v+h[5])/w;
+  if(CAL.mode==='aim'){ fx=.5+(fx-.5)*GAIN; fy=.5+(fy-.5)*GAIN; } // vanuit het midden van het scherm
+  return {x:fx*innerWidth, y:fy*innerHeight};
+}
+function setGain(g){
+  GAIN=Math.round(Math.min(1.5,Math.max(.2,g))*20)/20;
+  try{ localStorage.setItem(GAIN_KEY, GAIN); }catch(e){}
+  camStatus(`Gevoeligheid zaklamp: ${Math.round(GAIN*100)}% (toetsen - en +)`, true);
+}
+function applyH(h,u,v){ const w=(h[6]||0)*u+(h[7]||0)*v+1; return {x:(h[0]*u+h[1]*v+h[2])/w, y:(h[3]*u+h[4]*v+h[5])/w}; }
+function rmsH(h,pts){ return Math.sqrt(pts.reduce((s,p)=>{ const q=applyH(h,p.u,p.v); return s+(q.x-p.x)**2+(q.y-p.y)**2; },0)/pts.length); }
+function solveH(pts){ // homografie (perspectief), kleinste kwadraten, h33 = 1
+  const A=[], B=[];
+  for(const p of pts){ A.push([p.u,p.v,1,0,0,0,-p.u*p.x,-p.v*p.x]); B.push(p.x); A.push([0,0,0,p.u,p.v,1,-p.u*p.y,-p.v*p.y]); B.push(p.y); }
+  const M=[...Array(8)].map((_,i)=>[...Array(9)].map((_,j)=>A.reduce((s,r,k)=>s+r[i]*(j<8?r[j]:B[k]),0)));
+  for(let c=0;c<8;c++){
+    let piv=c; for(let r=c+1;r<8;r++) if(Math.abs(M[r][c])>Math.abs(M[piv][c])) piv=r;
+    if(Math.abs(M[piv][c])<1e-12) return null;
+    [M[c],M[piv]]=[M[piv],M[c]];
+    for(let r=0;r<8;r++) if(r!==c){ const f=M[r][c]/M[c][c]; for(let j=c;j<9;j++) M[r][j]-=f*M[c][j]; }
+  }
+  return M.map((r,i)=>r[8]/r[i]);
+}
+function fitAffine(pts){ // kleinste kwadraten: x = a·u + b·v + c, y = d·u + e·v + f
+  const N=[[0,0,0],[0,0,0],[0,0,0]], bx=[0,0,0], by=[0,0,0];
+  for(const p of pts){ const r=[p.u,p.v,1]; for(let i=0;i<3;i++){ for(let j=0;j<3;j++) N[i][j]+=r[i]*r[j]; bx[i]+=r[i]*p.x; by[i]+=r[i]*p.y; } }
+  const det=m=>m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])-m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])+m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+  const D=det(N); if(Math.abs(D)<1e-12) return null;
+  const solve=b=>[0,1,2].map(k=>det(N.map((row,i)=>row.map((x,j)=>j===k?b[i]:x)))/D);
+  const [a,b_,c]=solve(bx), [d,e,f]=solve(by);
+  return [a,b_,c,d,e,f,0,0];
+}
+function calOverlay(){
+  if($('calOv')) return;
+  const ov=document.createElement('div'); ov.id='calOv'; ov.hidden=true;
+  ov.innerHTML='<div id="calMark"></div><div id="calT"></div><div id="calCur" hidden></div>'+
+    '<div id="calCam"><i id="calCamDot" hidden></i><span>zo ziet de camera je zaklamp</span></div>'+
+    '<div id="calBar"></div><div id="calInfo"><b id="calStep"></b><span id="calTxt"></span><small id="calNote"></small><button class="btn n" id="calCancel">Annuleren (Esc)</button></div>';
+  document.body.appendChild(ov);
+  $('calCancel').onclick=()=>calCancel();
+}
+function calStart(){
+  if(CAL.phase) return;
+  if(!CAM.connected){ calGo(); return; } // geen camera: gewoon spelen met muis/toetsen
+  calOverlay(); $('calOv').hidden=false; CAM.fromCam=false;
+  calScreenStart();
+}
+// ---- Stap 1: ziet de camera het scherm? ----
+function calScreenStart(){
+  CAL.phase='screen'; CAL.i=-1; CAL.pts=[]; CAL.fails=[];
+  $('calOv').className='screen'; $('calMark').style.display='none';
+  $('calStep').textContent='Camera meten…';
+  $('calTxt').textContent='Zaklamp even uit of weg van het scherm. Dit duurt een paar seconden.';
+  $('calNote').textContent='';
+  clearTimeout(CAL.timer);
+  CAL.timer=setTimeout(()=>{ camSend({type:'cal',cmd:'ref'}); calWatch(); }, 800);
+}
+function calWatch(){ clearTimeout(CAL.timer); CAL.timer=setTimeout(calScreenDone, 5000); }
+function calScreenNext(){
+  CAL.i++;
+  if(CAL.i>=CAL_GRID.length) return calScreenDone();
+  const [fx,fy]=CAL_GRID[CAL.i], m=$('calMark');
+  m.style.left=(fx*100)+'%'; m.style.top=(fy*100)+'%'; m.style.display='block';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ camSend({type:'cal',cmd:'point',i:CAL.i}); calWatch(); }));
+}
+function calOnMsg(m){
+  if(CAL.phase!=='screen') return;
+  if(m.ref){ calScreenNext(); return; }
+  if(m.i!==CAL.i) return;
+  if(m.ok) CAL.pts.push({u:m.nx, v:m.ny, x:CAL_GRID[m.i][0], y:CAL_GRID[m.i][1]});
+  else CAL.fails.push(m.reason);
+  if(!CAL.pts.length && CAL.fails.length>=1) return calScreenDone(); // eerste vierkantje niet gezien: camera ziet het scherm niet
+  calScreenNext();
+}
+function calScreenDone(){
+  if(CAL.phase!=='screen') return;
+  clearTimeout(CAL.timer); camSend({type:'cal',cmd:'cancel'});
+  $('calMark').style.display='none';
+  if(CAL.pts.length>=6){
+    const H=solveH(CAL.pts);
+    if(H && rmsH(H,CAL.pts)<.03) return calSave(H,'screen');
+  }
+  calAimStart('De camera kijkt niet naar het scherm, dus we kalibreren door te richten.');
+}
+// ---- Stap 2: richten op cirkels ----
+function calAimStart(note){
+  CAL.phase='aim'; CAL.step='sweep'; CAL.sw=[]; CAL.swT=0; CAL.base=null;
+  CAL.i=0; CAL.pts=[]; CAL.buf=[]; CAL.hold=0; CAL.anchor=null; CAL.got=[]; CAL.view=null;
+  $('calOv').className='aim sweep';
+  $('calNote').textContent=note||'';
+  $('calStep').textContent='Stap 1 · Zwaai de zaklamp rond';
+  $('calBar').style.setProperty('--p',0);
+}
+// Na het rondzwaaien: bereik (schaal en midden) van de zaklamp in het camerabeeld.
+function calSweepDone(){
+  const pc=(a,q)=>{ const b=[...a].sort((x,y)=>x-y); return b[Math.min(b.length-1,Math.max(0,Math.round(q*(b.length-1))))]; };
+  const us=CAL.sw.map(p=>p.u), vs=CAL.sw.map(p=>p.v);
+  const u0=pc(us,.05), u1=pc(us,.95), v0=pc(vs,.05), v1=pc(vs,.95);
+  if(u1-u0<.03 || v1-v0<.03){
+    CAL.sw=[]; CAL.swT=0;
+    $('calNote').textContent='De camera zag de zaklamp te weinig bewegen. Zwaai ruimer: naar links, rechts, boven en onder.';
+    return;
+  }
+  // richting: vorige kalibratie door te richten, anders een gok (camera kijkt naar de speler = links/rechts gespiegeld)
+  const prev = CAL.mode==='aim' && CAL.H;
+  CAL.base={ uc:(u0+u1)/2, vc:(v0+v1)/2, su:.8/(u1-u0), sv:.8/(v1-v0),
+             dx: prev ? Math.sign(CAL.H[0])||-1 : -1, dy: prev ? Math.sign(CAL.H[4])||1 : 1 };
+  CAL.step='targets'; $('calOv').className='aim'; $('calNote').textContent='';
+  calPlace();
+}
+function calPlace(){
+  const [x,y]=CAL_TARGETS[CAL.i], t=$('calT');
+  t.style.left=(x*100)+'%'; t.style.top=(y*100)+'%'; t.style.setProperty('--p',0);
+  $('calStep').textContent=`Stap 2 · Richt de zaklamp op de cirkel (${CAL.i+1} van ${CAL_TARGETS.length})`;
+}
+// Koppeling tijdens het richten, zodat het puntje je zaklamp volgt. Schaal en midden komen uit het rondzwaaien;
+// de cirkel links legt links/rechts vast, de cirkel boven legt boven/onder vast; vanaf 3 cirkels de echte koppeling.
+function calPreviewH(){
+  const P=CAL.pts, B=CAL.base;
+  if(P.length>=3){ const A=fitAffine(P); if(A && rmsH(A,P)<.1) return A; }
+  if(P.length>=1){ const p=P[0]; if(Math.abs(p.u-B.uc)>.005) B.dx=Math.sign((p.u-B.uc)*(p.x-.5)); }
+  if(P.length>=2){ const p=P[1]; if(Math.abs(p.v-B.vc)>.005) B.dy=Math.sign((p.v-B.vc)*(p.y-.5)); }
+  const a=B.dx*B.su, e=B.dy*B.sv;
+  return [a,0,.5-a*B.uc, 0,e,.5-e*B.vc];
+}
+function calSample(u,v,now){ CAL.lastRaw=now; CAL.buf.push({u,v,t:now}); while(CAL.buf.length>7) CAL.buf.shift(); }
+const median=a=>{ const b=[...a].sort((x,y)=>x-y), m=b.length>>1; return b.length%2 ? b[m] : (b[m-1]+b[m])/2; };
+function calTick(now,dt){
+  if(CAL.phase!=='aim') return;
+  const B=CAL.buf, fresh=now-CAL.lastRaw<CAL_GRACE && B.length>=2;
+  const pos = fresh ? {u:median(B.map(p=>p.u)), v:median(B.map(p=>p.v))} : null; // één verspringend beeld telt niet
+  const live = fresh ? {u:median(B.slice(-3).map(p=>p.u)), v:median(B.slice(-3).map(p=>p.v))} : null; // voor het puntje: sneller
+  const dot=$('calCamDot');
+  if(live){ dot.hidden=false; dot.style.left=live.u*100+'%'; dot.style.top=live.v*100+'%'; } else dot.hidden=true;
+  if(CAL.step==='sweep'){
+    if(live){ CAL.sw.push(live); CAL.swT+=dt; $('calTxt').textContent='Beweeg de zaklamp rustig naar alle vier de randen van het scherm, alsof je ze aanwijst.'; }
+    else $('calTxt').textContent = !CAM.connected ? 'Geen verbinding met camera_bridge.py. Draait die nog?'
+      : 'De camera ziet je zaklamp niet' + (CAM.flashInfo ? ': '+CAM.flashInfo+'.' : '.') + ' Richt de lamp naar de camera.';
+    $('calBar').style.setProperty('--p', Math.min(1, CAL.swT/CAL_SWEEP_S));
+    if(CAL.swT>=CAL_SWEEP_S) calSweepDone();
+    return;
+  }
+  if(pos){
+    if(CAL.pts.some(p=>Math.hypot(p.u-pos.u,p.v-pos.v)<.03)){ // nog op de vorige cirkel
+      CAL.anchor=null; CAL.got=[]; CAL.hold=Math.max(0,CAL.hold-dt*2);
+      $('calTxt').textContent='Richt de zaklamp nu op deze nieuwe cirkel.';
+    } else {
+      if(!CAL.anchor){ CAL.anchor={...pos}; CAL.got=[]; CAL.hold=0; CAL.outT=0; }
+      if(Math.hypot(pos.u-CAL.anchor.u, pos.v-CAL.anchor.v) <= CAL_TOL){
+        CAL.outT=0; CAL.hold+=dt; CAL.got.push(pos);
+        CAL.anchor.u+=(pos.u-CAL.anchor.u)*.1; CAL.anchor.v+=(pos.v-CAL.anchor.v)*.1;
+        $('calTxt').textContent='Goed zo, even zo houden…';
+      } else {
+        CAL.outT+=dt*1000;
+        if(CAL.outT>CAL_GRACE){ CAL.anchor=null; CAL.hold=0; }
+        $('calTxt').textContent='Houd de zaklamp rustig op de cirkel.';
+      }
+    }
+  } else {
+    CAL.hold=Math.max(0,CAL.hold-dt);
+    if(CAL.hold===0) CAL.anchor=null;
+    $('calTxt').textContent = !CAM.connected ? 'Geen verbinding met camera_bridge.py. Draait die nog?'
+      : 'De camera ziet je zaklamp niet' + (CAM.flashInfo ? ': '+CAM.flashInfo+'.' : '.') + ' Richt de lamp naar de camera.';
+  }
+  const cur=$('calCur');
+  if(live){
+    const h=calPreviewH(), tx=h[0]*live.u+h[1]*live.v+h[2], ty=h[3]*live.u+h[4]*live.v+h[5];
+    if(!CAL.view || cur.hidden) CAL.view={x:tx,y:ty};
+    const k=Math.min(1,dt*25); CAL.view.x+=(tx-CAL.view.x)*k; CAL.view.y+=(ty-CAL.view.y)*k;
+    cur.hidden=false;
+    cur.style.left=Math.max(0,Math.min(1,CAL.view.x))*100+'%';
+    cur.style.top=Math.max(0,Math.min(1,CAL.view.y))*100+'%';
+  } else cur.hidden=true;
+  $('calT').style.setProperty('--p', Math.min(1, CAL.hold/CAL_HOLD));
+  if(CAL.hold>=CAL_HOLD && CAL.got.length>=3){
+    const [x,y]=CAL_TARGETS[CAL.i];
+    CAL.pts.push({u:median(CAL.got.map(p=>p.u)), v:median(CAL.got.map(p=>p.v)), x, y});
+    tone(700+CAL.i*80,.1,'triangle');
+    CAL.i++; CAL.hold=0; CAL.anchor=null; CAL.got=[]; CAL.buf=[];
+    if(CAL.i>=CAL_TARGETS.length) calAimFinish(); else calPlace();
+  }
+}
+function calAimFinish(){
+  const P=CAL.pts, us=P.map(p=>p.u), vs=P.map(p=>p.v);
+  if(Math.max(...us)-Math.min(...us)<.04 || Math.max(...vs)-Math.min(...vs)<.04)
+    return calAimStart('Dat ging niet goed: de camera zag de zaklamp bijna niet bewegen. Beweeg de lamp zelf mee naar elke cirkel, niet alleen je pols. Nog een keer.');
+  const H=fitAffine(P);
+  if(!H || !(rmsH(H,P)<.08))
+    return calAimStart('Dat ging niet goed: de metingen kloppen niet met elkaar. Houd de lamp bij elke cirkel rustig. Nog een keer.');
+  calSave(H,'aim');
+}
+// ---- Afronden ----
+function calSave(H,mode){
+  CAL.H=H; CAL.mode=mode;
+  try{ localStorage.setItem(CAL_KEY, JSON.stringify({H, mode, at:Date.now()})); }catch(e){}
+  calClose();
+  camStatus(mode==='screen' ? 'Gekalibreerd: de bundel valt waar je lichtvlek valt' : 'Gekalibreerd: de bundel volgt je zaklamp', true);
+  calGo();
+}
+function calCancel(){ calClose(); camStatus('Kalibratie geannuleerd — druk K om opnieuw te kalibreren', false); }
+function calClose(){
+  clearTimeout(CAL.timer);
+  if(CAL.phase==='screen') camSend({type:'cal',cmd:'cancel'});
+  CAL.phase=null; CAL.ignoreUntil=performance.now()+700;
+  if($('calOv')) $('calOv').hidden=true;
+  document.body.classList.toggle('cam-screen', CAL.mode==='screen');
+  updateCalBtn();
+}
+// Na kalibreren: meteen naar het onderzoek (lopend onderzoek gaat verder, anders start een nieuw).
+function calGo(){ if(S && !S.over) showTab('game'); else start(); }
+function updateCalBtn(){
+  const b=$('calBtn'), st=$('startBtn');
+  if(b) b.hidden=!CAM.connected || !CAL.H;
+  if(st) st.textContent = CAM.connected && !CAL.H ? 'Kalibreren en verder' : 'Terug naar het onderzoek';
+}
+
+/* ===== Zaklamp als UI-besturing: licht stilhouden op een knop = klikken ===== */
+const UI_DWELL = 1.1;   // seconden
+const UI = { el:null, t:0, last:performance.now() };
+function uiTarget(x,y){
+  const el=document.elementFromPoint(x,y)?.closest('button,[data-light-click]');
+  if(!el || el.disabled || el.getAttribute('aria-disabled')==='true' || el.closest('[hidden]')) return null;
+  return el;
+}
+function uiLoop(now){
+  const dt=Math.min(.1,(now-UI.last)/1000); UI.last=now;
+  calTick(now,dt);
+  const cur=$('lightCur');
+  const p=CAM.client, live=CAM.fromCam && !CAL.phase && p && now-CAM.lastTs<=400;
+  const el=live ? uiTarget(p.x,p.y) : null;
+  if(el!==UI.el){ if(UI.el) UI.el.classList.remove('lightHover'); UI.el=el; UI.t=0; if(el) el.classList.add('lightHover'); }
+  if(el){
+    UI.t+=dt;
+    if(UI.t>=UI_DWELL){ UI.t=-1e9; tone(760,.08,'triangle'); el.click(); } // pas opnieuw na wegbewegen
+  }
+  if(live && (el || !CAM.inScene)){
+    cur.hidden=false; cur.style.left=p.x+'px'; cur.style.top=p.y+'px';
+    cur.style.setProperty('--p', el ? Math.max(0,Math.min(1,UI.t/UI_DWELL)) : 0);
+  } else cur.hidden=true;
+  requestAnimationFrame(uiLoop);
+}
+document.body.insertAdjacentHTML('beforeend','<div id="lightCur" hidden></div>');
+requestAnimationFrame(uiLoop);
+addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea')) return;
+  if(e.key.toLowerCase()==='k') calStart();
+  if(e.key==='Escape' && CAL.phase) calCancel();
+  if(!CAL.phase && (e.key==='-' || e.key==='_')) setGain(GAIN-.05);
+  if(!CAL.phase && (e.key==='+' || e.key==='=')) setGain(GAIN+.05);
+  if(e.key==='Enter' && TAB==='start' && !CAL.phase){ e.preventDefault(); $('startBtn').click(); }
+});
+
+/* ===== Tabs: Start · Onderzoek · Resultaat ===== */
+let TAB='game';
+function showTab(t){
+  TAB=t;
+  $('intro').hidden = t!=='start'; $('game').hidden = t!=='game'; $('end').hidden = t!=='result';
+  document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===t));
+  if(t!=='game') CAM.inScene=false;
+}
+document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.closest('[data-tab]'); if(b && !b.disabled) showTab(b.dataset.tab); });
+
 connectCamera();
 
 function drawBase(){
@@ -376,17 +756,28 @@ const uvArt=`<g font-family="Manrope,sans-serif" font-weight="800" fill="#C9A8FF
   <text x="120" y="520" font-size="16" opacity=".7">✗</text><text x="1100" y="640" font-size="16" opacity=".7">vingerafdruk</text></g>`;
 
 function start(){
-  S={bat:BAT,uv:false,marks:{},scanned:new Set(),dwellOn:null,dwell:0,score:0,card:null,over:false};
-  $('base').innerHTML=drawBase(); $('uvLayer').innerHTML=uvArt; $('intro').hidden=true; $('end').hidden=true; $('card').hidden=true;
+  S={bat:BAT,uv:false,marks:{},scanned:new Set(),dwellOn:null,dwell:0,score:0,card:null,over:false,beam:1};
+  $('base').innerHTML=drawBase(); $('uvLayer').innerHTML=uvArt; $('card').hidden=true; $('tabGame').disabled=false; showTab('game');
   setUV(false); renderDossier(); ac(); last=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
 }
 function svgPt(e){ const r=$('scene').getBoundingClientRect(); const vb=1600/900, rb=r.width/r.height; let w,h,ox=0,oy=0; if(rb>vb){ h=r.height; w=h*vb; ox=(r.width-w)/2; } else { w=r.width; h=w/vb; oy=(r.height-h)/2; } return {x:(e.clientX-r.left-ox)/w*1600, y:(e.clientY-r.top-oy)/h*900}; }
-// Muis/toetsen alleen als de camera geen rode cirkel ziet (fallback)
-$('scene').addEventListener('pointermove',e=>{ if(!CAM.fromCam) L=svgPt(e); });
-$('scene').addEventListener('pointerdown',e=>{ if(!CAM.fromCam) L=svgPt(e); });
+// Muis/toetsen alleen als de camera geen zaklamplicht ziet (fallback)
+// Muis staat UIT: alleen de zaklamp (en het toetsenbord voor de begeleider) bedient het spel.
+// Echte muisklikken worden genegeerd; klikken van de zaklamp (stilhouden op een knop) en Enter/spatie werken wel.
+// Muis tijdelijk weer aan voor testen: open de pagina met ?muis=1
+const MOUSE = /[?&]muis=1/.test(location.search);
+if(MOUSE){
+  $('scene').addEventListener('pointermove',e=>{ if(!CAM.fromCam){ L=svgPt(e); mouseT=performance.now(); } });
+  $('scene').addEventListener('pointerdown',e=>{ if(!CAM.fromCam){ L=svgPt(e); mouseT=performance.now(); } });
+} else {
+  document.documentElement.classList.add('no-mouse');
+  const block=e=>{ if(e.isTrusted && (e.pointerType ? e.pointerType!=='touch' && e.pointerType!=='pen' : e.detail>0)){ e.preventDefault(); e.stopImmediatePropagation(); } };
+  ['pointerdown','mousedown','click','dblclick','contextmenu','auxclick'].forEach(t=>addEventListener(t,block,true));
+}
 addEventListener('keydown',e=>{
   if(e.key.toLowerCase()==='u'&&S&&!S.over) setUV(!S.uv);
   if(CAM.fromCam) return; // pijltjes niet over camera heen
+  if(e.key.startsWith('Arrow')) mouseT=performance.now();
   const s=40;
   if(e.key==='ArrowLeft') L.x-=s; if(e.key==='ArrowRight') L.x+=s;
   if(e.key==='ArrowUp') L.y-=s; if(e.key==='ArrowDown') L.y+=s;
@@ -412,10 +803,18 @@ function renderDossier(){
   $('dossier').innerHTML = ks.length ? ks.map(i=>`<div class="dz ${i.uv?'uv':''}">${i.n}<small>${i.d}</small></div>`).join('') : '<div class="empty">Houd de lichtbundel stil op iets wat opvalt. Na een seconde weet je wat het is.</div>';
   $('found').textContent=ks.length; $('score').textContent=S.score; $('recon').disabled=ks.length<2;
 }
+// Zoals een echte zaklamp: geen licht op het scherm = donker. Met camera brandt de bundel alleen
+// als de camera de lichtvlek ziet (of de muis net bewoog); zonder camera altijd (muis/toetsen).
+function beamOn(now){ return CAM.fromCam ? CAM.inScene : (!CAM.connected || now-mouseT < 3000); }
 function loop(now){
+  if(TAB!=='game' || CAL.phase){ last=now; raf=requestAnimationFrame(loop); return; } // ander tabblad of kalibreren: pauze
   const dt=Math.min(.05,(now-last)/1000); last=now;
+  if(CAM.fromCam && now-CAM.lastTs > 400) CAM.fromCam=false; // lichtvlek kwijt
+  const on=beamOn(now); S.beam += ((on?1:0)-S.beam)*Math.min(1,dt*(on?14:8));
+  const baseR = CAM.fromCam ? CAM.beamR : BEAM_R;
   $('hole').setAttribute('cx',L.x); $('hole').setAttribute('cy',L.y); $('uvHole').setAttribute('cx',L.x); $('uvHole').setAttribute('cy',L.y); $('tintC').setAttribute('cx',L.x); $('tintC').setAttribute('cy',L.y);
-  if(!S.card){
+  if(!S.card && S.beam<.5){ S.dwellOn=null; $('dwell').setAttribute('opacity',0); }
+  else if(!S.card){
     S.bat-=dt*(S.uv?2:1);
     const it=ITEMS.find(i=>!S.scanned.has(i.id) && Math.hypot(i.x-L.x,i.y-L.y)<i.r && (!i.uv||S.uv));
     if(it){ if(S.dwellOn!==it){ S.dwellOn=it; S.dwell=0; } S.dwell+=dt; const d=$('dwell'); d.setAttribute('opacity',1); d.setAttribute('transform',`translate(${L.x} ${L.y}) rotate(-90)`); d.setAttribute('stroke-dashoffset',289*(1-Math.min(1,S.dwell/1))); d.setAttribute('stroke',it.uv?'#9B6BFF':'#FFE7A3');
@@ -423,7 +822,8 @@ function loop(now){
     else { S.dwellOn=null; $('dwell').setAttribute('opacity',0); }
   }
   const p=Math.max(0,S.bat/BAT); $('batF').style.width=(p*100)+'%'; $('batF').style.background=p<.2?'#FF5C6C':S.uv?'#9B6BFF':'#FFE7A3';
-  if(p<.2 && Math.random()<.04) $('hole').setAttribute('r',120+Math.random()*50); else $('hole').setAttribute('r',170);
+  const R = baseR*S.beam*((p<.2 && Math.random()<.04) ? .7+Math.random()*.3 : 1);
+  $('hole').setAttribute('r',R); $('tintC').setAttribute('r',R); $('uvHole').setAttribute('r',R*.7);
   if(S.bat<=0 && !S.card){ $('hole').setAttribute('r',0); return openRecon(true); }
   raf=requestAnimationFrame(loop);
 }
@@ -440,12 +840,15 @@ function finish(choice){
    <div class="fin"><div><b>${found.length}/${knel.length}</b>knelpunten gevonden</div><div><b>${uvFound}/2</b>UV-sporen</div><div><b>${wrong}</b>verkeerd ingeschat</div><div><b>${batLeft}s</b>batterij over</div></div>
    <p>${verdict}</p><div class="chain">${knel.filter(i=>!i.root).map(i=>`<span>${S.marks[i.id]?.v===1?'✓':'·'} ${i.n}</span>`).join('')}<span>→</span><span class="root">Niemand is eigenaar van de planning</span></div>
    <p style="font-size:17px">${WHY}</p><div id="rsSlot"></div><button class="go" id="again">Nieuw onderzoek</button>`;
-  $('end').hidden=false; $('again').onclick=start;
+  $('tabResult').disabled=false; showTab('result'); $('again').onclick=start;
   RESULTS.mount($('rsSlot'), {score:S.score, lines:[`Gekozen oorzaak: ${choice.t} (${choice.ok?'juist':'onjuist'})`, `${found.length} van ${knel.length} knelpunten gevonden, waarvan ${uvFound} met UV-licht`, `${wrong} keer verkeerd ingeschat`, `Batterij over: ${batLeft} seconden`, ...found.map(i=>`Knelpunt: ${i.n} — ${i.d}`), WHY],
     outro:'Zoeken, ontdekken en zelf de puzzel leggen: zo combineert Enversed Studios storytelling, fysieke interactie en technologie in onderzoeksgames zoals AI Murder Mystery.'});
 }
-$('startBtn').onclick=start;
-$('base').innerHTML=drawBase();
+$('startBtn').onclick=()=>{ if(CAM.connected && !CAL.H) calStart(); else calGo(); };
+$('calBtn').onclick=()=>calStart();
+$('tryBtn').onclick=()=>{ const b=$('tryBtn'); b.textContent='Goed zo! ✓'; b.classList.add('done'); tone(880,.12,'triangle'); setTimeout(()=>{ b.textContent='Oefenknop'; b.classList.remove('done'); },2500); };
+updateCalBtn();
+start(); // het spel opent direct op het tabblad Onderzoek
 </script>
 </body>
 </html>

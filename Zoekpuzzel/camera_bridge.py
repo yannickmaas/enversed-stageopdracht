@@ -96,26 +96,44 @@ TABLE_CORNERS = None
 # a pixel and fine-tune these ranges for your own lighting.
 CHIP_DETECTION = False
 # ------------------------------------------------------------
-# Zaklamp-pointer (rode cirkel, Wii-remote-stijl)
+# Zaklamp: een echte zaklamp, herkend als fel licht
 # ------------------------------------------------------------
-# Eén ronde rode blob (LED, sticker, plastic schijf) stuurt de zaklamp in de
-# zoekpuzzel. Geen geel segment nodig — anders dan de redirect-fiche.
-# Klik in het cameravenster om HSV te tunen; de waarden hieronder zijn startpunten.
+# Een echte zaklamp die op het scherm schijnt geeft een felle lichtvlek. De vorm doet er niet
+# toe (rond, ovaal als je schuin schijnt, met of zonder rand): de bridge zoekt de plek die fel is
+# EN duidelijk lichter dan dezelfde plek zonder zaklamp (een achtergrondmodel dat zich steeds
+# bijwerkt), en stuurt het helderheidszwaartepunt van die vlek door. Vaste lichtbronnen (lamp,
+# raam, witte vlakken in de game) worden na een paar seconden deel van de achtergrond en tellen
+# dan niet meer mee.
+# Toets C in het cameravenster: kalibreren (2 s zonder zaklamp, daarna 2 s met zaklamp op het scherm).
 FLASHLIGHT_DETECTION = True
-# Rood in OpenCV HSV — streng genoeg om huid/gezicht uit te sluiten, ruim genoeg
-# voor een glanzend rood lippenstift-dopje. Huid heeft lage saturatie; plastic-rood niet.
-# Klik in het cameravenster op het bolletje: terminal toont HSV=(h,s,v).
-FLASH_RANGES = [
-    ((0, 110, 70), (12, 255, 255)),     # fel rood (geen huid)
-    ((168, 110, 70), (180, 255, 255)),  # diep rood
-]
-FLASH_MIN_RADIUS = 8       # px; klein dopje op afstand
-FLASH_MAX_RADIUS = 70      # px; groter = hoofd/hand, geen dopje
-FLASH_FILL_MIN = 0.45      # logo + glans laten gaten; niet te streng
-FLASH_SURROUND_MAX = 0.35  # moet los staan van huid/achtergrond
-FLASH_S_MEAN_MIN = 130     # gemiddelde saturatie in de cirkel: fel rood, geen huid
-FLASH_TRACK_SMOOTH_S = 0.03
+FLASH_V_MIN = 225          # minimale helderheid (0..255, felste kleurkanaal) van de lichtvlek
+FLASH_DIFF_MIN = 60        # zoveel lichter dan de achtergrond op die plek
+FLASH_MIN_AREA = 150       # px (camerabeeld, volledige resolutie); kleiner = spikkel of glinstering
+FLASH_MAX_AREA = 400000    # px; ruim: een lamp die recht in de camera schijnt geeft een grote, overstraalde vlek
+FLASH_GLOBAL_MAX = 0.50    # meer dan dit deel van het beeld ineens fel: lichtwissel, niets melden
+FLASH_SCALE = 0.5          # detectie op een verkleind beeld (snel; het zwaartepunt blijft nauwkeurig)
+FLASH_BG_RISE_S = 6.0      # zo snel wordt een vaste lichtbron deel van de achtergrond
+FLASH_BG_SPOT_S = 40.0     # ... en op de plek van de zaklamp zelf (stilhouden op een spoor mag dus)
+FLASH_BG_FALL_S = 0.5      # donkerder worden gaat snel: het spoor van de zaklamp verdwijnt meteen
+FLASH_STILL_S = 8.0        # een vlek die zo lang op de pixel stil ligt is geen zaklamp in een hand
+                           # (maar bv. een lamp die aanging): die wordt dan gewoon achtergrond
+FLASH_STILL_PX = 2.5       # zo weinig beweging telt als stil (een hand trilt altijd meer, ook als de
+                           # camera naar de speler kijkt en de lamp zelf ziet)
+FLASH_PEAK_MARGIN = 12     # alleen vlekken die (bijna) net zo fel zijn als de felste tellen als zaklamp
+FLASH_JOIN_PX = 12         # px (verkleind beeld): losse stukken van één overstraalde vlek (strepen, ring) horen bij elkaar
+# Afvlakking van de positie (One Euro-filter): bij stilhouden sterk afgevlakt (geen trillen),
+# bij snel bewegen nauwelijks (geen vertraging).
+FLASH_FILTER_MIN_HZ = 0.8  # afvlakking bij stilstand (lager = rustiger)
+FLASH_FILTER_BETA = 0.02   # hoe snel de afvlakking afneemt bij beweging (per px/s)
 FLASH_HOLD_S = 0.35
+FLASH_CAL_S = 2.0          # duur van elke kalibratiestap (seconden)
+# Runtime-waarden (worden overschreven door kalibratie / camera_settings.json)
+_flash_cfg = {
+    "v_min": FLASH_V_MIN,
+    "diff_min": FLASH_DIFF_MIN,
+    "min_area": FLASH_MIN_AREA,
+    "max_area": FLASH_MAX_AREA,
+}
 
 # Red chip: first the whole warm chip (red, orange and yellow together) is found with
 # low thresholds; then the yellow segment is the part that is clearly more yellow
@@ -1002,124 +1020,164 @@ def block_corners(b):
 
 
 # ============================================================
-# Zaklamp-pointer: één rode cirkel (Wii-remote-stijl)
+# Zaklamp: fel licht (een echte zaklamp op het scherm)
 # ============================================================
-def detect_flashlight(hsv, rejected=None):
-    """Vindt de grootste ronde rode blob die als zaklamp-pointer dient.
-    Strenge saturatie (geen huid), max-straal (geen hoofd), morphologische close
-    voor logo/glansgaten op een lippenstift-dopje.
-    Returns (list of candidates, red mask)."""
-    red = ranges_mask(hsv, FLASH_RANGES)
-    # Kleine open: ruis weg; close: logo-groeven en glansvlekken dichten
-    red = cv2.morphologyEx(red, cv2.MORPH_OPEN, KERNEL_OPEN)
-    red = cv2.morphologyEx(red, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9)))
-    prev_k = _scale["k"]
-    _scale["k"] = 1.0
-    try:
-        found = _flashlight_circles(red, red, hsv, rejected)
-    finally:
-        _scale["k"] = prev_k
-    return found, red
+_flash_bg = {"bg": None, "t": None, "cur": None, "frozen": False, "still_pos": None, "still_t": 0.0}
 
 
-def _flashlight_circles(mask, colored, hsv, rejected=None):
-    """Ingeschreven-cirkel-kandidaten met FLASH_* limieten + saturatie-check."""
-    dt = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
-    h_img, w_img = mask.shape[:2]
-    sat = hsv[..., 1]
-    found = []
-    for _ in range(8):
-        _, r, _, (px, py) = cv2.minMaxLoc(dt)
-        if r < FLASH_MIN_RADIUS:
-            break
-        x0, x1 = max(0, int(px - r)), min(w_img, int(px + r + 1))
-        y0, y1 = max(0, int(py - r)), min(h_img, int(py + r + 1))
-        win = dt[y0:y1, x0:x1]
-        ys, xs = np.nonzero(win >= r * 0.9)
-        if xs.size == 0:
-            cv2.circle(dt, (int(px), int(py)), int(r * 2.2), 0, -1)
-            continue
-        cx, cy = x0 + xs.mean(), y0 + ys.mean()
-        cv2.circle(dt, (int(px), int(py)), int(r * 2.2), 0, -1)
-        box = (int(cx - r), int(cy - r), int(2 * r), int(2 * r))
-        R = int(1.7 * r) + 2
-        wx0, wx1 = max(0, int(cx) - R), min(w_img, int(cx) + R + 1)
-        wy0, wy1 = max(0, int(cy) - R), min(h_img, int(cy) + R + 1)
-        yy, xx = np.ogrid[wy0:wy1, wx0:wx1]
-        d2 = (xx - cx) ** 2 + (yy - cy) ** 2
-        disc = d2 <= r * r
-        ring = (d2 >= (1.3 * r) ** 2) & (d2 <= (1.7 * r) ** 2)
-        disc_n = max(1, np.count_nonzero(disc))
-        fill = np.count_nonzero(colored[wy0:wy1, wx0:wx1][disc]) / disc_n
-        solid = cv2.morphologyEx(
-            mask[wy0:wy1, wx0:wx1], cv2.MORPH_OPEN,
-            cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (max(3, int(r / 4) | 1),) * 2),
-        )
-        around = np.count_nonzero(solid[ring]) / max(1, np.count_nonzero(ring))
-        # Gemiddelde saturatie in de cirkel: huid is dof, plastic-rood is fel
-        s_mean = float(sat[wy0:wy1, wx0:wx1][disc].mean()) if disc.any() else 0.0
-        reason = None
-        if r > FLASH_MAX_RADIUS:
-            reason = "te groot"
-        elif fill < FLASH_FILL_MIN:
-            reason = "niet gevuld"
-        elif around > FLASH_SURROUND_MAX:
-            reason = "niet rond (deel van groter vlak)"
-        elif s_mean < FLASH_S_MEAN_MIN:
-            reason = f"te weinig verzadiging ({s_mean:.0f})"
-        elif REJECT_BORDER_TOUCHING and (
-            cx - r <= BORDER_MARGIN or cy - r <= BORDER_MARGIN
-            or cx + r >= w_img - BORDER_MARGIN or cy + r >= h_img - BORDER_MARGIN
-        ):
-            reason = "raakt rand"
-        if reason:
-            if rejected is not None:
-                rejected.append({"box": box, "reason": f"zaklamp: {reason}"})
-            continue
-        found.append({
-            "center": (float(cx), float(cy)),
-            "r": float(r),
-            "area": float(np.pi * r * r),
-            "box": box,
-            "kind": "flashlight",
-            "color": "red",
-            "s_mean": s_mean,
-        })
-    # Meest verzadigde compacte cirkel wint (niet de grootste = hoofd)
-    found.sort(key=lambda c: (c["s_mean"], -c["r"]), reverse=True)
-    kept = []
-    for c in found:
-        if all(np.hypot(c["center"][0] - k["center"][0], c["center"][1] - k["center"][1]) > 0.9 * k["r"] for k in kept):
-            kept.append(c)
-    return kept[:1]
+def _flash_image(sensor):
+    """Helderheid (felste kleurkanaal, dus ook warm of blauwig zaklamplicht) op FLASH_SCALE, licht vervaagd."""
+    small = cv2.resize(sensor, None, fx=FLASH_SCALE, fy=FLASH_SCALE, interpolation=cv2.INTER_AREA)
+    b, g, r = cv2.split(small)
+    return cv2.GaussianBlur(cv2.max(cv2.max(b, g), r), (0, 0), 1.2).astype(np.float32)
+
+
+def detect_flashlight(sensor, rejected=None, now=None):
+    """Vindt de lichtvlek van een echte zaklamp: fel, en duidelijk lichter dan de achtergrond op die
+    plek. Geen vormeis. Positie = helderheidszwaartepunt (de hotspot), ook bij een ovale bundel.
+    Returns (lijst met hoogstens één kandidaat, lichtmasker op volledige resolutie)."""
+    now = time.perf_counter() if now is None else now
+    st = _flash_bg
+    cur = _flash_image(sensor)
+    if st["bg"] is None or st["bg"].shape != cur.shape:
+        st["bg"], st["t"] = cur.copy(), now
+    bg = st["bg"]
+    st["cur"] = cur
+    diff = cur - bg
+    h_s, w_s = cur.shape
+    k = 1.0 / FLASH_SCALE
+    bright = ((cur >= _flash_cfg["v_min"]) & (diff >= _flash_cfg["diff_min"])).astype(np.uint8) * 255
+    bright = cv2.morphologyEx(bright, cv2.MORPH_OPEN, KERNEL_OPEN)
+    # stukken van dezelfde vlek samenvoegen, zodat de 'grootste' vlek niet per beeld wisselt
+    joined = cv2.morphologyEx(bright, cv2.MORPH_CLOSE,
+                              cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (FLASH_JOIN_PX | 1, FLASH_JOIN_PX | 1)))
+    found, labels = [], None
+    if cv2.countNonZero(bright) > FLASH_GLOBAL_MAX * bright.size:
+        if rejected is not None:
+            rejected.append({"box": (10, 130, 0, 0), "reason": "zaklamp: overal ineens licht (lamp aan?)"})
+    else:
+        n, labels, stats, _ = cv2.connectedComponentsWithStats(joined)
+        for i in range(1, n):
+            x, y, w, h, a = (int(v) for v in stats[i])
+            area = a * k * k
+            if area < _flash_cfg["min_area"]:
+                continue  # spikkels: niet tonen, te veel ruis in de preview
+            box = (int(x * k), int(y * k), int(w * k), int(h * k))
+            reason = None
+            if area > _flash_cfg["max_area"]:
+                reason = "te groot"
+            # Geen rand-check: een lamp die recht in de camera schijnt straalt vaak tot de beeldrand door.
+            if reason:
+                if rejected is not None:
+                    rejected.append({"box": box, "reason": f"zaklamp: {reason}"})
+                continue
+            sub = (labels[y:y + h, x:x + w] == i) & (bright[y:y + h, x:x + w] > 0)
+            if not sub.any():
+                continue
+            # Midden = het meest massieve deel van de vlek (de lamp/hotspot), niet het zwaartepunt van de
+            # hele vlek: strepen, een halo of een ring van overstraling verschuiven dat midden dan niet.
+            dist = cv2.distanceTransform(np.pad(sub.astype(np.uint8), 1), cv2.DIST_L2, 5)[1:-1, 1:-1]
+            core = dist >= 0.6 * float(dist.max())
+            ys, xs = np.nonzero(core)
+            wt = dist[core] * (np.maximum(cur[y:y + h, x:x + w][core] - _flash_cfg["v_min"], 0) + 8.0)
+            ws = float(wt.sum())
+            cx = (x + float((xs * wt).sum()) / ws + 0.5) * k - 0.5
+            cy = (y + float((ys * wt).sum()) / ws + 0.5) * k - 0.5
+            r = float(np.sqrt(area / np.pi))
+            found.append({
+                "center": (cx, cy), "r": r, "area": float(area), "box": box,
+                "peak": float(cur[y:y + h, x:x + w][sub].max()),
+                "kind": "flashlight", "color": "light", "label": i,
+                "score": float(np.maximum(diff[y:y + h, x:x + w][sub], 0).sum()),
+            })
+    prev = st.get("prev")
+    if found:
+        # De zaklamp is het felste licht in beeld. Wat de game zelf op het scherm tekent (de onthulde werkplek,
+        # een cursor) is minder fel en mag nooit 'de zaklamp' worden, ook niet als het vlak bij de vorige plek ligt.
+        top = max(c["peak"] for c in found)
+        found = [c for c in found if c["peak"] >= top - FLASH_PEAK_MARGIN]
+    found.sort(key=lambda c: c["score"], reverse=True)
+    if prev is not None and now - prev[2] < 0.5:
+        # De zaklamp is waar hij net nog was: een vlek daar wint altijd van een ander (nieuw) licht,
+        # zodat de positie niet heen en weer springt tussen twee lichten.
+        near = [c for c in found if np.hypot(c["center"][0] - prev[0], c["center"][1] - prev[1]) < max(3 * c["r"], 120)]
+        if near:
+            found = near
+    found = found[:1]
+    if found:
+        st["prev"] = (found[0]["center"][0], found[0]["center"][1], now)
+    # Uitleg voor de game (kalibratiescherm) als er geen zaklamp is gevonden.
+    if found:
+        st["info"] = ""
+    else:
+        why = [r["reason"][len("zaklamp: "):] for r in (rejected or []) if r["reason"].startswith("zaklamp")]
+        if why:
+            st["info"] = why[0]
+        else:
+            st["info"] = (f"geen fel licht gezien (felste plek {float(cur.max()):.0f}, nodig {_flash_cfg['v_min']}; "
+                          f"grootste verschil met achtergrond {float(diff.max()):.0f}, nodig {_flash_cfg['diff_min']})")
+
+    # Achtergrond bijwerken: vaste lichtbronnen worden langzaam achtergrond, de zaklampvlek zelf
+    # nog veel langzamer (stilhouden op een spoor moet blijven werken).
+    dt = min(0.5, max(0.0, now - st["t"]))
+    st["t"] = now
+    if not st["frozen"] and dt > 0:
+        up = cur > bg
+        rate = np.where(up, 1 - np.exp(-dt / FLASH_BG_RISE_S), 1 - np.exp(-dt / FLASH_BG_FALL_S)).astype(np.float32)
+        if found and labels is not None:
+            r_s = found[0]["r"] * FLASH_SCALE
+            ks = max(9, int(r_s * 1.5) | 1)
+            spot = cv2.dilate((labels == found[0]["label"]).astype(np.uint8),
+                              cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ks, ks))) > 0
+            cx, cy = found[0]["center"]
+            sp = st["still_pos"]
+            if sp is None or np.hypot(cx - sp[0], cy - sp[1]) > FLASH_STILL_PX:
+                st["still_pos"], st["still_t"] = (cx, cy), now
+            if now - st["still_t"] < FLASH_STILL_S:
+                rate[spot & up] = 1 - np.exp(-dt / FLASH_BG_SPOT_S)
+        else:
+            st["still_pos"] = None
+        bg += (cur - bg) * rate
+    mask = cv2.resize(bright, (sensor.shape[1], sensor.shape[0]), interpolation=cv2.INTER_NEAREST)
+    return found, mask
 
 
 class FlashlightTracker:
-    """Stabiele tracking van de rode cirkel-pointer (sneller en korter vasthouden
-    dan fiches, zodat de zaklamp soepel volgt)."""
+    """Stabiele tracking van de zaklampvlek. Positie via een One Euro-filter: rustig bij stilhouden,
+    direct bij snel bewegen. Geen 'sprong'-reset bij gewone bewegingen, dus de stip verspringt niet."""
 
     def __init__(self):
         self.track = None
         self.next_id = 1
 
+    @staticmethod
+    def _alpha(hz, dt):
+        tau = 1.0 / (2 * np.pi * hz)
+        return 1.0 / (1.0 + tau / dt)
+
     def update(self, detections, now):
-        dets = sorted(detections, key=lambda d: d["area"], reverse=True)
+        dets = sorted(detections, key=lambda d: d.get("score", d["area"]), reverse=True)
         d = dets[0] if dets else None
         t = self.track
         if d is not None:
-            if t is None or np.hypot(d["center"][0] - t["x"], d["center"][1] - t["y"]) > max(3 * t["r"], 80):
-                t = {
-                    "id": self.next_id, "x": d["center"][0], "y": d["center"][1],
-                    "r": d["r"], "hits": 0, "last": now, "box": d["box"],
-                }
+            cx, cy = d["center"]
+            if t is None or (now - t["last"] > FLASH_HOLD_S):
+                t = {"id": self.next_id, "x": cx, "y": cy, "rx": cx, "ry": cy, "dx": 0.0, "dy": 0.0,
+                     "r": d["r"], "hits": 0, "last": now, "box": d["box"]}
                 self.next_id += 1
                 self.track = t
-            dt = max(0.0, now - t["last"]) or 1 / 30
-            jump = np.hypot(d["center"][0] - t["x"], d["center"][1] - t["y"]) > t["r"]
-            k = 1.0 if jump else 1 - np.exp(-dt / FLASH_TRACK_SMOOTH_S)
-            t["x"] += (d["center"][0] - t["x"]) * k
-            t["y"] += (d["center"][1] - t["y"]) * k
-            t["r"] += (d["r"] - t["r"]) * (1.0 if jump else 0.35)
+            else:
+                dt = max(1 / 120, now - t["last"])
+                # snelheid (zelf afgevlakt), daaruit de afvlakking van de positie
+                ad = self._alpha(1.0, dt)
+                t["dx"] += ((cx - t["rx"]) / dt - t["dx"]) * ad
+                t["dy"] += ((cy - t["ry"]) / dt - t["dy"]) * ad
+                hz = FLASH_FILTER_MIN_HZ + FLASH_FILTER_BETA * float(np.hypot(t["dx"], t["dy"]))
+                a = self._alpha(hz, dt)
+                t["x"] += (cx - t["x"]) * a
+                t["y"] += (cy - t["y"]) * a
+                t["rx"], t["ry"] = cx, cy
+                t["r"] += (d["r"] - t["r"]) * 0.2
             t["hits"] += 1
             t["last"] = now
             t["box"] = d["box"]
@@ -1129,7 +1187,7 @@ class FlashlightTracker:
         if t is None or t["hits"] < 2:
             return []
         return [{
-            "kind": "flashlight", "color": "red", "id": t["id"],
+            "kind": "flashlight", "color": "light", "id": t["id"],
             "center": (t["x"], t["y"]), "r": t["r"],
             "heading": None, "held": t["last"] < now,
             "box": t.get("box", (0, 0, 0, 0)), "area": np.pi * t["r"] ** 2,
@@ -1170,7 +1228,7 @@ exposure_text = {"value": ""}  # current exposure description, sent along to the
 
 def build_payload(blocks, mapper, frame_w, frame_h, chips=(), flashlights=()):
     items = []
-    # Zaklamp-pointer (rode cirkel) eerst: primaire nx/ny voor de game (Wii-stijl).
+    # Zaklamp (lichtvlek) eerst: primaire nx/ny voor de game. rim = rand van de vlek (grootte).
     for c in flashlights:
         norm = mapper.normalize(*c["center"], frame_w, frame_h)
         if norm is None:
@@ -1180,7 +1238,7 @@ def build_payload(blocks, mapper, frame_w, frame_h, chips=(), flashlights=()):
         items.append({
             "id": f'flashlight-{c["id"]}',
             "kind": "flashlight",
-            "color": "red",
+            "color": "light",
             "nx": round(norm[0], 4),
             "ny": round(norm[1], 4),
             "rim": [round(rim[0], 4), round(rim[1], 4)],
@@ -1300,19 +1358,126 @@ async def broadcast(data):
 
 
 # ============================================================
+# Zaklamp-kalibratie (toets C)
+# ============================================================
+# Stap 1 (2 s): zaklamp uit of weg van het scherm -> hoe fel is het scherm zelf, en hoeveel
+#               schommelt het (game, mensen, ruis)?
+# Stap 2 (2 s): schijn met de zaklamp op het scherm en beweeg een beetje -> hoe fel is de vlek?
+# De drempels komen daartussen te liggen en worden opgeslagen. Esc = annuleren.
+_lcal = {"phase": None, "t": 0.0, "off_v": 0.0, "off_d": 0.0, "on_v": 0.0, "on_d": 0.0}
+
+
+def start_flash_calibration():
+    _lcal.update(phase="off", t=time.perf_counter(), off_v=0.0, off_d=0.0, on_v=0.0, on_d=0.0)
+    _flash_bg["frozen"] = True  # meet tegen een vaste achtergrond
+    print("=" * 60)
+    print("KALIBRATIE ZAKLAMP")
+    print(f"  Stap 1: zaklamp UIT of weg van het scherm ({FLASH_CAL_S:.0f} s)...")
+    print("=" * 60)
+
+
+def cancel_flash_calibration():
+    _lcal["phase"] = None
+    _flash_bg["frozen"] = False
+    print("Zaklamp-kalibratie geannuleerd.")
+
+
+def flash_calibration_step(now):
+    """Eén stap per camerabeeld (na detect_flashlight)."""
+    c, cur, bg = _lcal, _flash_bg["cur"], _flash_bg["bg"]
+    if c["phase"] is None or cur is None or bg is None:
+        return
+    d = cur - bg
+    el = now - c["t"]
+    if c["phase"] == "off":
+        if el >= 0.3:
+            c["off_v"] = max(c["off_v"], float(np.percentile(cur, 99.9)))
+            c["off_d"] = max(c["off_d"], float(np.percentile(d, 99.9)))
+        if el >= 0.3 + FLASH_CAL_S:
+            c.update(phase="on", t=now)
+            print(f"  Stap 2: schijn nu met de zaklamp op het scherm en beweeg een beetje ({FLASH_CAL_S:.0f} s)...")
+    elif c["phase"] == "on":
+        if el >= 0.5:
+            i = int(np.argmax(d))
+            if float(d.flat[i]) > c["on_d"]:
+                c["on_d"], c["on_v"] = float(d.flat[i]), float(cur.flat[i])
+        if el >= 0.5 + FLASH_CAL_S:
+            c["phase"] = None
+            _flash_bg["frozen"] = False
+            _finish_flash_calibration(c)
+
+
+def _finish_flash_calibration(c):
+    print(f"  Zonder zaklamp: felste scherm {c['off_v']:.0f}, schommeling {c['off_d']:.0f} | "
+          f"met zaklamp: vlek {c['on_v']:.0f}, verschil {c['on_d']:.0f}")
+    if c["on_d"] < c["off_d"] + 25:
+        print("  Kalibratie mislukt: de zaklamp is niet duidelijk feller dan het scherm zelf.\n"
+              "  Tips: druk [ voor minder belichting (het scherm wordt donkerder, de zaklamp blijft fel),\n"
+              "  schijn dichter bij het scherm, of zet de monitorhelderheid lager.")
+        return
+    _flash_cfg["diff_min"] = int(np.clip(round((c["off_d"] + c["on_d"]) / 2), 25, 200))
+    _flash_cfg["v_min"] = int(np.clip(round(c["on_v"] * 0.85), 80, 250))
+    print(f"Zaklamp gekalibreerd: helderheid >= {_flash_cfg['v_min']}, "
+          f">= {_flash_cfg['diff_min']} lichter dan de achtergrond.")
+    _save_flash_settings()
+
+
+def _save_flash_settings():
+    data = {}
+    try:
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, encoding="utf-8") as f:
+                data = json.load(f)
+    except (OSError, ValueError):
+        data = {}
+    data["flashlight"] = dict(_flash_cfg)  # vervangt ook een oude kalibratie van de rode cirkel
+    try:
+        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        print(f"Zaklamp-kalibratie opgeslagen in {os.path.basename(SETTINGS_FILE)}.")
+    except OSError as e:
+        print(f"Kon kalibratie niet opslaan: {e}")
+
+
+def load_flash_settings():
+    """Laad eerdere zaklamp-kalibratie uit camera_settings.json (een oude rode-cirkelkalibratie wordt genegeerd)."""
+    try:
+        with open(SETTINGS_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+    except (FileNotFoundError, OSError, ValueError):
+        return
+    fl = data.get("flashlight")
+    if not isinstance(fl, dict) or "v_min" not in fl:
+        return
+    for k in _flash_cfg:
+        if isinstance(fl.get(k), (int, float)) and not isinstance(fl.get(k), bool):
+            _flash_cfg[k] = int(fl[k])
+    print(f"Zaklamp-kalibratie geladen (helderheid >= {_flash_cfg['v_min']}, "
+          f"verschil >= {_flash_cfg['diff_min']}).")
+
+
+# ============================================================
 # Preview
 # ============================================================
 _last_hsv = {"img": None}
 
 
 def on_mouse(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        hsv = _last_hsv["img"]
-        extra = ""
-        if hsv is not None and 0 <= y < hsv.shape[0] and 0 <= x < hsv.shape[1]:
-            h, s, v = (int(n) for n in hsv[y, x])
-            extra = f"  HSV=({h}, {s}, {v})"
-        print(f"Klik in camerabeeld: ({x}, {y}){extra}")
+    if event != cv2.EVENT_LBUTTONDOWN:
+        return
+    hsv = _last_hsv["img"]
+    if hsv is None or not (0 <= y < hsv.shape[0] and 0 <= x < hsv.shape[1]):
+        print(f"Klik in camerabeeld: ({x}, {y})")
+        return
+    h, s_, v = (int(c) for c in hsv[y, x])
+    extra = ""
+    cur, bg = _flash_bg["cur"], _flash_bg["bg"]
+    if cur is not None and bg is not None:
+        sx = min(cur.shape[1] - 1, int(x * FLASH_SCALE))
+        sy = min(cur.shape[0] - 1, int(y * FLASH_SCALE))
+        extra = f"  |  zaklamp: helderheid {cur[sy, sx]:.0f} (drempel {_flash_cfg['v_min']}), " \
+                f"verschil met achtergrond {cur[sy, sx] - bg[sy, sx]:.0f} (drempel {_flash_cfg['diff_min']})"
+    print(f"Klik in camerabeeld: ({x}, {y})  HSV=({h}, {s_}, {v}){extra}")
 
 
 DRAW_LIMIT = 100000  # px; OpenCV 5 rejects coordinates beyond 32 bits, and nothing that far away is visible anyway
@@ -1372,10 +1537,10 @@ def draw_chips(frame, chips):
 def draw_flashlights(frame, flashlights):
     for c in flashlights:
         cx, cy, r = _ints(c["center"][0], c["center"][1], c["r"])
-        col = (0, 140, 255)  # oranje-rood voor de zaklamp-pointer
+        col = (0, 230, 255)  # geel voor de zaklampvlek
         cv2.circle(frame, (cx, cy), r + 6, (255, 255, 255) if not c["held"] else (160, 160, 160), 2)
-        cv2.circle(frame, (cx, cy), r, col, 3)
-        cv2.circle(frame, (cx, cy), 4, col, -1)
+        cv2.line(frame, (cx - 14, cy), (cx + 14, cy), col, 2)
+        cv2.line(frame, (cx, cy - 14), (cx, cy + 14), col, 2)
         label = "zaklamp"
         if c["held"]:
             label += " (vastgehouden)"
@@ -1521,9 +1686,18 @@ def load_exposure(args):
 
 
 def save_exposure(st):
+    """Slaat belichting op zonder eventuele flashlight-kalibratie te wissen."""
+    data = {}
+    try:
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, encoding="utf-8") as f:
+                data = json.load(f)
+    except (OSError, ValueError):
+        data = {}
+    data.update(st)
     try:
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(st, f, indent=2)
+            json.dump(data, f, indent=2)
     except OSError as e:
         print(f"Kon {os.path.basename(SETTINGS_FILE)} niet opslaan: {e}")
 
@@ -1540,7 +1714,17 @@ def describe_exposure(st, reader):
 
 def handle_key(key, st, reader, sensor, state):
     """Keys from the camera window or the game. Returns True to stop."""
-    if key in (ord("q"), 27):
+    # --- Zaklamp-kalibratie ---
+    if key in (ord("c"), ord("C")):
+        if _lcal["phase"] is None:
+            start_flash_calibration()
+        return False
+    if key == 27:  # Esc
+        if _lcal["phase"] is not None:
+            cancel_flash_calibration()
+            return False
+        return True  # Esc buiten kalibratie = stop
+    if key in (ord("q"),):
         return True
     if key in (ord("b"), ord("B")) and sensor is not None:
         state["reference"] = save_reference(sensor)
@@ -1586,6 +1770,7 @@ async def main(args):
 
     reader = CameraReader(args.camera, FRAME_WIDTH, FRAME_HEIGHT)
     exposure = load_exposure(args)
+    load_flash_settings()
     reader.request(auto=exposure["auto"], gain=exposure["gain"],
                    **({} if exposure["auto"] else {"exposure": exposure["exposure"]}),
                    **({"dialog": True} if args.camera_settings else {}))
@@ -1603,7 +1788,8 @@ async def main(args):
               "  instellingenvenster van de webcam, of verlaag de helderheid van de monitor.")
     print("Toetsen werken in het cameravenster én in de game (behalve S, F en Q: alleen in het cameravenster).\n"
           "Belichting: [ / ] = grote stap donkerder/lichter, , / . = fijn (10%), A = automatisch aan/uit, S = webcaminstellingen.\n"
-          "F = camerabeeld opslaan (onbewerkt, voor het afstellen). B = referentie van het lege speelveld vastleggen.")
+          "F = camerabeeld opslaan. B = referentie leeg speelveld.\n"
+          "Zaklamp-kalibratie: C (2 s zonder zaklamp, dan 2 s met zaklamp op het scherm).")
     if (FRAME_WIDTH, FRAME_HEIGHT) != reader.size:
         print("  Let op: de camera levert een andere resolutie dan gevraagd. "
               "MIN_AREA/MAX_AREA en TABLE_CORNERS gelden voor de werkelijke resolutie.")
@@ -1636,7 +1822,7 @@ async def main(args):
     if args.no_flashlight:
         FLASHLIGHT_DETECTION = False
     print(f"Fiche-detectie: {'aan (rood = stroming wijzigen, groen = splitsen)' if CHIP_DETECTION else 'uit'}.")
-    print(f"Zaklamp-pointer (rode cirkel): {'aan' if FLASHLIGHT_DETECTION else 'uit'}.")
+    print(f"Zaklamp (fel licht): {'aan' if FLASHLIGHT_DETECTION else 'uit'}.")
     tracker = ChipTracker()
     block_tracker = BlockTracker()
     flash_tracker = FlashlightTracker()
@@ -1750,13 +1936,15 @@ async def main(args):
                     detect_scale = 1.0  # nothing in view: full resolution, so small chips are found too
             flashlights, flash_mask = [], None
             if FLASHLIGHT_DETECTION:
-                flash_found, flash_mask = detect_flashlight(hsv, rejected)
-                flashlights = flash_tracker.update(flash_found, time.perf_counter())
+                now_f = time.perf_counter()
+                flash_found, flash_mask = detect_flashlight(sensor, rejected, now_f)
+                flash_calibration_step(now_f)
+                flashlights = flash_tracker.update(flash_found, now_f)
                 if chip_masks is None:
                     chip_masks = {}
-                if flash_mask is not None:
-                    chip_masks["red"] = cv2.bitwise_or(chip_masks.get("red", np.zeros_like(flash_mask)), flash_mask)
-                    chip_masks.setdefault("yellow", np.zeros_like(flash_mask))
+                if flash_mask is not None:  # lichtvlek geel in het maskervenster
+                    chip_masks["yellow"] = cv2.bitwise_or(chip_masks.get("yellow", np.zeros_like(flash_mask)), flash_mask)
+                    chip_masks.setdefault("red", np.zeros_like(flash_mask))
                     chip_masks.setdefault("green", np.zeros_like(flash_mask))
             # a white area inside a chip/flashlight is glare, not a block
             skip_circles = chips + flashlights
@@ -1764,6 +1952,7 @@ async def main(args):
                 np.hypot(o["center"][0] - c["center"][0], o["center"][1] - c["center"][1]) < c["r"] * 1.2 for c in skip_circles)]
             blocks = block_tracker.update(objects, time.perf_counter())
             payload = build_payload(blocks, mapper, frame_w, frame_h, chips, flashlights)
+            payload["flash_info"] = _flash_bg.get("info", "") if FLASHLIGHT_DETECTION else "zaklampdetectie staat uit"
 
             if args.debug and time.perf_counter() - last_debug >= 0.5:
                 last_debug = time.perf_counter()
@@ -1811,6 +2000,17 @@ async def main(args):
                 cv2.putText(frame, f"{describe_exposure(exposure, reader)} | overbelicht {clipped:.0%}"
                             f"{'  -> druk [ voor minder licht' if warn else ''}",
                             (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255) if warn else (0, 255, 0), 2)
+                if _lcal["phase"] == "off":
+                    left = max(0.0, 0.3 + FLASH_CAL_S - (time.perf_counter() - _lcal["t"]))
+                    cv2.putText(frame, f"KALIBRATIE stap 1: zaklamp UIT / weg van het scherm ({left:.1f} s)  Esc=annuleren",
+                                (20, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 230, 255), 2)
+                elif _lcal["phase"] == "on":
+                    left = max(0.0, 0.5 + FLASH_CAL_S - (time.perf_counter() - _lcal["t"]))
+                    cv2.putText(frame, f"KALIBRATIE stap 2: schijn met de zaklamp op het scherm ({left:.1f} s)",
+                                (20, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 230, 255), 2)
+                else:
+                    cv2.putText(frame, "C = kalibreer zaklamp (fel licht)",
+                                (20, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (180, 180, 180), 1)
                 cv2.imshow(WINDOW_CAMERA, frame)
                 cv2.imshow(WINDOW_MASK, mask_preview(mask, chip_masks))
                 key = cv2.waitKey(1) & 0xFF
@@ -1849,7 +2049,7 @@ def parse_args():
     p.add_argument("--camera-settings", action="store_true", help="instellingenvenster van de webcam openen (Windows)")
     p.add_argument("--no-chips", action="store_true", help="fiche-detectie uitschakelen (alleen het witte testobject)")
     p.add_argument("--no-flashlight", action="store_true",
-                   help="zaklamp-pointer (rode cirkel) uitschakelen")
+                   help="zaklamp-detectie (fel licht) uitschakelen")
     p.add_argument("--no-preview", action="store_true", default=not SHOW_PREVIEW,
                    help="geen OpenCV-vensters tonen")
     return p.parse_args()
@@ -1859,4 +2059,4 @@ if __name__ == "__main__":
     try:
         sys.exit(asyncio.run(main(parse_args())))
     except KeyboardInterrupt:
-        print("Camera-server gestopt.")
+        print("Camera-server gestopt.")
