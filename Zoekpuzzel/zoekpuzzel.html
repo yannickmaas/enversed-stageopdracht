@@ -25,11 +25,8 @@ main{flex:1;display:grid;grid-template-columns:1fr 300px;gap:16px;padding:0 24px
 #stageWrap{position:relative;min-height:0;border-radius:18px;overflow:hidden;background:#000}
 svg#scene{width:100%;height:100%;display:block;touch-action:none;cursor:none}
 html.no-mouse,html.no-mouse *{cursor:none!important}
-#uvBtn{position:absolute;left:16px;bottom:16px;font:inherit;font-weight:800;font-size:20px;border:3px solid var(--uv);background:rgba(11,16,32,.8);color:#fff;border-radius:40px;padding:12px 22px;cursor:pointer;z-index:3}
-#uvBtn.on{background:var(--uv)}
 #card{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:min(560px,92%);background:#141B33;border:3px solid var(--beam);border-radius:20px;padding:18px 20px;z-index:4}
 #card[hidden]{display:none}
-#card.uv{border-color:var(--uv)}
 #card h3{margin:0 0 4px;font-size:24px}
 #card p{margin:0 0 14px;font-size:18px;line-height:1.35;color:#C9CFE6}
 .acts{display:flex;gap:10px}
@@ -39,7 +36,6 @@ aside{background:#121831;border-radius:18px;padding:16px;display:flex;flex-direc
 aside h2{margin:0;font-size:18px}
 #dossier{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px}
 .dz{background:#1B2345;border-radius:12px;padding:9px 12px;font-size:15px;line-height:1.3;border-left:5px solid var(--bad)}
-.dz.uv{border-left-color:var(--uv)}
 .dz small{display:block;color:var(--mut);font-size:13px}
 .empty{color:var(--mut);font-size:15px;line-height:1.4}
 #recon{font:inherit;font-weight:800;font-size:20px;border:0;border-radius:16px;padding:16px;background:var(--beam);color:var(--night);cursor:pointer}
@@ -83,16 +79,21 @@ main[hidden]{display:none}
 #calInfo b{font-family:Unbounded,sans-serif;font-size:22px}#calInfo span{color:var(--mut);font-size:18px}#calInfo small{color:#C9A8FF;font-size:16px}
 #calInfo .btn{flex:none;font-size:15px;padding:10px 16px}
 body.cam-screen #lightCur{background:conic-gradient(#8C7F5C calc(var(--p,0)*360deg),transparent 0)}
-.tut{max-width:880px}
-.tut .lead{font-size:20px;line-height:1.45;color:#C9CFE6;margin:14px 0 6px}
-.steps{list-style:none;counter-reset:st;padding:0;margin:14px 0;display:grid;gap:10px}
-.steps li{counter-increment:st;display:grid;grid-template-columns:44px 1fr;gap:4px 14px;background:#121831;border-radius:16px;padding:14px 16px;align-items:start}
-.steps li::before{content:counter(st);grid-row:span 2;width:44px;height:44px;border-radius:50%;background:#1B2345;color:var(--beam);display:grid;place-items:center;font:800 20px Unbounded,sans-serif}
-.steps b{font-size:19px}.steps span{color:#C9CFE6;font-size:16px;line-height:1.45}
-.steps .btn{flex:none;font-size:15px;padding:8px 14px;margin-left:6px;vertical-align:middle}
+/* Uitleg: past altijd volledig in beeld. Alles is in em; fitTut() verkleint de lettergrootte tot het past. */
+#intro{overflow:hidden;padding:2vh 3vw}
+.box.tut{max-width:1400px;max-height:none;overflow:visible;font-size:var(--tf,16px);margin:auto}
+.box.tut h2{font-size:2.6em;line-height:1.05}
+.tut .lead{font-size:1.15em;line-height:1.4;color:#C9CFE6;margin:.5em 0 .7em;max-width:none}
+.steps{list-style:none;counter-reset:st;padding:0;margin:0 0 .8em;display:grid;gap:.6em;grid-template-columns:repeat(auto-fit,minmax(15em,1fr))}
+.steps li{counter-increment:st;display:grid;grid-template-columns:2.4em 1fr;gap:.2em .7em;background:#121831;border-radius:.9em;padding:.8em .9em;align-items:start;align-content:start;grid-template-rows:auto 1fr}
+.steps li::before{content:counter(st);grid-row:span 2;width:2.4em;height:2.4em;border-radius:50%;background:#1B2345;color:var(--beam);display:grid;place-items:center;font:800 1.05em Unbounded,sans-serif}
+.steps b{font-size:1.1em;line-height:1.25}.steps span{color:#C9CFE6;font-size:.95em;line-height:1.4}
+.steps .btn{flex:none;font-size:.95em;padding:.45em .8em;margin-top:.4em;display:inline-block}
 .steps .btn.done{background:var(--ok);color:var(--night)}
-.startRow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.startRow .btn{flex:none;font-size:16px;padding:12px 18px;margin-top:12px}
+.startRow{display:flex;gap:.8em;align-items:center;flex-wrap:wrap}
+.tut .go{font-size:1.3em;padding:.6em 1.6em;margin:0;border-radius:.7em}
+.startRow .btn{flex:none;font-size:1em;padding:.7em 1.1em}
+.tut .phys{font-size:.9em;margin:.6em 0 0;max-width:none}
 #lightCur{position:fixed;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;pointer-events:none;z-index:90;
   background:radial-gradient(circle,rgba(255,231,163,.55) 0 18%,transparent 19%),conic-gradient(var(--beam,#FFE7A3) calc(var(--p,0)*360deg),rgba(255,231,163,.18) 0);
   -webkit-mask:radial-gradient(circle,#000 0 20%,transparent 21% 62%,#000 63%);mask:radial-gradient(circle,#000 0 20%,transparent 21% 62%,#000 63%)}
@@ -129,38 +130,34 @@ body.cam-screen #lightCur{background:conic-gradient(#8C7F5C calc(var(--p,0)*360d
       <defs>
         <radialGradient id="beamG"><stop offset="0" stop-color="#000"/><stop offset=".55" stop-color="#000"/><stop offset="1" stop-color="#fff"/></radialGradient>
         <mask id="dark"><rect width="1600" height="900" fill="#fff"/><circle id="hole" cx="800" cy="450" r="170" fill="url(#beamG)"/></mask>
-        <clipPath id="uvClip"><circle id="uvHole" cx="800" cy="450" r="120"/></clipPath>
         <radialGradient id="tint"><stop offset="0" stop-color="#FFE7A3" stop-opacity=".18"/><stop offset="1" stop-color="#FFE7A3" stop-opacity="0"/></radialGradient>
-        <radialGradient id="tintUV"><stop offset="0" stop-color="#9B6BFF" stop-opacity=".35"/><stop offset="1" stop-color="#9B6BFF" stop-opacity="0"/></radialGradient>
       </defs>
       <g id="base"></g>
-      <g id="uvLayer" clip-path="url(#uvClip)" style="display:none"></g>
       <rect width="1600" height="900" fill="#03050C" opacity=".96" mask="url(#dark)"/>
       <circle id="tintC" cx="800" cy="450" r="170" fill="url(#tint)" pointer-events="none"/>
       <g id="rings"></g>
       <circle id="dwell" cx="0" cy="0" r="46" fill="none" stroke="#FFE7A3" stroke-width="7" stroke-dasharray="289" stroke-dashoffset="289" transform="rotate(-90)" opacity="0"/>
     </svg>
-    <button id="uvBtn" aria-pressed="false">🔦 UV-licht</button>
     <div id="card" hidden></div>
   </div>
-  <aside><h2>Dossier</h2><div id="dossier"><div class="empty">Houd de lichtbundel stil op iets wat opvalt. Na een seconde weet je wat het is.</div></div><button id="recon" disabled>Reconstrueer de oorzaak</button></aside>
+  <aside><h2>Dossier</h2><div id="dossier"><div class="empty">Houd de lichtbundel stil op iets wat opvalt. Na ruim een seconde weet je wat het is.</div></div><button id="recon" disabled>Reconstrueer de oorzaak</button></aside>
 </main>
 <section class="panel" id="intro" role="tabpanel" aria-labelledby="tabStart" hidden><div class="box tut">
   <h2>Het licht is uit. Het project loopt vast.</h2>
   <p class="lead">Project Atlas loopt zes weken achter. Zoek met je zaklamp in de donkere werkplek naar knelpunten en ontdek wat de echte oorzaak is.</p>
   <ol class="steps">
     <li><b>Richt je zaklamp</b><span>De lichtbundel in het spel volgt je zaklamp. Alleen waar je schijnt, zie je de werkplek. Geen licht op het scherm is donker.</span></li>
-    <li><b>Houd stil om te onderzoeken</b><span>Houd de bundel ongeveer 1 seconde stil op iets wat opvalt. Er verschijnt een kaartje: kies <em>Knelpunt</em> of <em>Niets aan de hand</em>.</span></li>
+    <li><b>Houd stil om te onderzoeken</b><span>Houd de bundel ruim een seconde stil op iets wat opvalt. Er verschijnt een kaartje: kies <em>Knelpunt</em> of <em>Niets aan de hand</em>.</span></li>
     <li><b>Knoppen indrukken met licht</b><span>Houd het licht ongeveer 1 seconde op een knop tot de ring vol is. Probeer het hier: <button class="btn n" id="tryBtn">Oefenknop</button></span></li>
-    <li><b>UV-licht</b><span>Sommige sporen zie je alleen met UV. Zet UV aan met de knop linksonder in het spel (of toets U). UV kost dubbel zoveel batterij.</span></li>
-    <li><b>Reconstrueer de oorzaak</b><span>Heb je minstens twee knelpunten in je dossier, kies dan welk knelpunt de rest verklaart. Juist gekozen met batterij over levert extra punten op.</span></li>
+    <li><b>Kijk goed: niet alles valt op</b><span>Sommige sporen zijn klein, vaag of zitten ergens achter. Je batterij is beperkt, dus zoek gericht. Een verkeerde inschatting kost punten.</span></li>
+    <li><b>Reconstrueer de oorzaak</b><span>Heb je minstens drie knelpunten in je dossier, kies dan welk knelpunt de rest verklaart. Pas op: de meeste knelpunten zijn symptomen. Juist gekozen met batterij over levert extra punten op.</span></li>
   </ol>
   <div class="startRow"><button class="go" id="startBtn">Start het onderzoek</button><button class="btn n" id="calBtn" hidden>Opnieuw kalibreren (K)</button></div>
   <p class="phys">Het spel opent direct in het tabblad Onderzoek. Is de zaklamp nog niet gekalibreerd, dan gebeurt dat eerst vanzelf (een paar seconden). Opnieuw kalibreren: knop hierboven of toets K. Beweegt de bundel te snel of te traag? Toetsen - en + stellen de gevoeligheid bij. De muis staat uit; de begeleider gebruikt Enter, K en Esc.</p>
 </div></section>
 <div class="overlay" id="reconOv" hidden><div class="box"><h2>Wat is de echte oorzaak?</h2><p>De meeste knelpunten zijn symptomen. Eén ervan verklaart de rest.</p><div class="opts" id="opts"></div></div></div>
 <section class="panel" id="end" role="tabpanel" aria-labelledby="tabResult" hidden><div class="box" id="endBox"><h2>Nog geen resultaat.</h2><p>Speel eerst een onderzoek uit.</p></div></section>
-<script>// ===== Resultaten: opslaan, ranglijst en mailen (gedeeld door alle Enversed-games) =====
+<script>// ===== Resultaten: opslaan, ranglijst en QR-code (gedeeld door alle Enversed-games) =====
 const RESULTS = (() => {
   const GAME = document.documentElement.dataset.game || 'game';
   const TITLE = document.title.split(' — ')[0];
@@ -193,6 +190,11 @@ const RESULTS = (() => {
   .rs-simple .rs-send{font-size:20px;padding:14px 22px}
   .rs-rank{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}.rs-rank b{font-size:34px}.rs-rank span{opacity:.8}
   .rs-top{display:flex;gap:14px;list-style:decimal inside;padding:0;margin:0 0 14px;font-size:15px;opacity:.8;flex-wrap:wrap}
+  .rs-qr{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin:6px 0 4px}
+  .rs-qrcode{width:200px;height:200px;background:#fff;border-radius:14px;padding:8px;flex:none}
+  .rs-qrcode svg{width:100%;height:100%;display:block}
+  .rs-qr h3{font-size:24px;margin:0 0 6px}.rs-qr p{margin:0 0 4px;font-size:17px;opacity:.85}
+  .rs-qr .rs-url{font-weight:800;opacity:1;color:var(--rs-acc,#FFE7A3)}
   .rs-outro{margin:18px 0 0;font-size:15px;line-height:1.45;opacity:.75;max-width:60ch}
   @media (max-width:560px){.rs .rs-grid{grid-template-columns:1fr}}`;
   document.head.appendChild(css);
@@ -300,55 +302,49 @@ const RESULTS = (() => {
       b.onclick = () => exportCsv(b); box.appendChild(b);
     }
   }
+  // Resultaatblok: plek op de ranglijst en een QR-code om verder te gaan (in plaats van het resultaat te mailen).
+  const QR_URL = 'https://plaats-delict-lac.vercel.app/';
+  const QR_SVG = `<svg viewBox="-4 -4 37 37" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="QR-code naar plaats-delict-lac.vercel.app"><rect x="-4" y="-4" width="37" height="37" fill="#fff"/><path fill="#000" d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM9 0h1v1h-1zM10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM13 0h1v1h-1zM14 0h1v1h-1zM15 0h1v1h-1zM16 0h1v1h-1zM17 0h1v1h-1zM18 0h1v1h-1zM19 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM25 0h1v1h-1zM26 0h1v1h-1zM27 0h1v1h-1zM28 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM11 1h1v1h-1zM13 1h1v1h-1zM14 1h1v1h-1zM15 1h1v1h-1zM16 1h1v1h-1zM17 1h1v1h-1zM18 1h1v1h-1zM20 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM9 2h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM14 2h1v1h-1zM16 2h1v1h-1zM17 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM25 2h1v1h-1zM26 2h1v1h-1zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM9 3h1v1h-1zM13 3h1v1h-1zM15 3h1v1h-1zM16 3h1v1h-1zM18 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM25 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM12 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM16 4h1v1h-1zM18 4h1v1h-1zM20 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM26 4h1v1h-1zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM9 5h1v1h-1zM10 5h1v1h-1zM15 5h1v1h-1zM19 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM27 6h1v1h-1zM28 6h1v1h-1zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM16 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM20 7h1v1h-1zM0 8h1v1h-1zM3 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM8 8h1v1h-1zM9 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM20 8h1v1h-1zM21 8h1v1h-1zM23 8h1v1h-1zM3 9h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM13 9h1v1h-1zM16 9h1v1h-1zM17 9h1v1h-1zM20 9h1v1h-1zM22 9h1v1h-1zM25 9h1v1h-1zM28 9h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM12 10h1v1h-1zM13 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM18 10h1v1h-1zM19 10h1v1h-1zM21 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM25 10h1v1h-1zM26 10h1v1h-1zM27 10h1v1h-1zM0 11h1v1h-1zM2 11h1v1h-1zM7 11h1v1h-1zM9 11h1v1h-1zM10 11h1v1h-1zM11 11h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM15 11h1v1h-1zM18 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM26 11h1v1h-1zM27 11h1v1h-1zM3 12h1v1h-1zM4 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM7 12h1v1h-1zM11 12h1v1h-1zM14 12h1v1h-1zM16 12h1v1h-1zM17 12h1v1h-1zM18 12h1v1h-1zM20 12h1v1h-1zM21 12h1v1h-1zM22 12h1v1h-1zM25 12h1v1h-1zM27 12h1v1h-1zM28 12h1v1h-1zM1 13h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM10 13h1v1h-1zM12 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM19 13h1v1h-1zM20 13h1v1h-1zM0 14h1v1h-1zM1 14h1v1h-1zM2 14h1v1h-1zM3 14h1v1h-1zM4 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM7 14h1v1h-1zM8 14h1v1h-1zM13 14h1v1h-1zM14 14h1v1h-1zM16 14h1v1h-1zM20 14h1v1h-1zM22 14h1v1h-1zM24 14h1v1h-1zM25 14h1v1h-1zM26 14h1v1h-1zM27 14h1v1h-1zM28 14h1v1h-1zM0 15h1v1h-1zM2 15h1v1h-1zM4 15h1v1h-1zM7 15h1v1h-1zM9 15h1v1h-1zM10 15h1v1h-1zM11 15h1v1h-1zM12 15h1v1h-1zM16 15h1v1h-1zM17 15h1v1h-1zM19 15h1v1h-1zM22 15h1v1h-1zM23 15h1v1h-1zM25 15h1v1h-1zM27 15h1v1h-1zM0 16h1v1h-1zM1 16h1v1h-1zM2 16h1v1h-1zM3 16h1v1h-1zM5 16h1v1h-1zM6 16h1v1h-1zM9 16h1v1h-1zM10 16h1v1h-1zM11 16h1v1h-1zM13 16h1v1h-1zM15 16h1v1h-1zM17 16h1v1h-1zM20 16h1v1h-1zM27 16h1v1h-1zM1 17h1v1h-1zM2 17h1v1h-1zM3 17h1v1h-1zM7 17h1v1h-1zM8 17h1v1h-1zM9 17h1v1h-1zM10 17h1v1h-1zM11 17h1v1h-1zM12 17h1v1h-1zM13 17h1v1h-1zM14 17h1v1h-1zM18 17h1v1h-1zM21 17h1v1h-1zM22 17h1v1h-1zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h1v1h-1zM0 18h1v1h-1zM3 18h1v1h-1zM4 18h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM7 18h1v1h-1zM8 18h1v1h-1zM9 18h1v1h-1zM11 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM17 18h1v1h-1zM20 18h1v1h-1zM21 18h1v1h-1zM24 18h1v1h-1zM27 18h1v1h-1zM28 18h1v1h-1zM2 19h1v1h-1zM3 19h1v1h-1zM9 19h1v1h-1zM10 19h1v1h-1zM14 19h1v1h-1zM15 19h1v1h-1zM17 19h1v1h-1zM20 19h1v1h-1zM22 19h1v1h-1zM24 19h1v1h-1zM27 19h1v1h-1zM28 19h1v1h-1zM0 20h1v1h-1zM2 20h1v1h-1zM4 20h1v1h-1zM5 20h1v1h-1zM6 20h1v1h-1zM7 20h1v1h-1zM9 20h1v1h-1zM11 20h1v1h-1zM15 20h1v1h-1zM16 20h1v1h-1zM19 20h1v1h-1zM20 20h1v1h-1zM21 20h1v1h-1zM22 20h1v1h-1zM23 20h1v1h-1zM24 20h1v1h-1zM26 20h1v1h-1zM8 21h1v1h-1zM12 21h1v1h-1zM14 21h1v1h-1zM16 21h1v1h-1zM17 21h1v1h-1zM19 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM26 21h1v1h-1zM27 21h1v1h-1zM28 21h1v1h-1zM0 22h1v1h-1zM1 22h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM4 22h1v1h-1zM5 22h1v1h-1zM6 22h1v1h-1zM10 22h1v1h-1zM16 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM27 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h1v1h-1zM9 23h1v1h-1zM10 23h1v1h-1zM11 23h1v1h-1zM12 23h1v1h-1zM14 23h1v1h-1zM15 23h1v1h-1zM16 23h1v1h-1zM18 23h1v1h-1zM20 23h1v1h-1zM24 23h1v1h-1zM25 23h1v1h-1zM26 23h1v1h-1zM0 24h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM6 24h1v1h-1zM11 24h1v1h-1zM12 24h1v1h-1zM16 24h1v1h-1zM17 24h1v1h-1zM20 24h1v1h-1zM21 24h1v1h-1zM22 24h1v1h-1zM23 24h1v1h-1zM24 24h1v1h-1zM27 24h1v1h-1zM28 24h1v1h-1zM0 25h1v1h-1zM2 25h1v1h-1zM3 25h1v1h-1zM4 25h1v1h-1zM6 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM11 25h1v1h-1zM12 25h1v1h-1zM13 25h1v1h-1zM17 25h1v1h-1zM18 25h1v1h-1zM19 25h1v1h-1zM22 25h1v1h-1zM23 25h1v1h-1zM24 25h1v1h-1zM25 25h1v1h-1zM26 25h1v1h-1zM27 25h1v1h-1zM0 26h1v1h-1zM2 26h1v1h-1zM3 26h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM10 26h1v1h-1zM11 26h1v1h-1zM13 26h1v1h-1zM18 26h1v1h-1zM19 26h1v1h-1zM24 26h1v1h-1zM25 26h1v1h-1zM26 26h1v1h-1zM28 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM9 27h1v1h-1zM11 27h1v1h-1zM13 27h1v1h-1zM14 27h1v1h-1zM17 27h1v1h-1zM19 27h1v1h-1zM20 27h1v1h-1zM23 27h1v1h-1zM27 27h1v1h-1zM0 28h1v1h-1zM1 28h1v1h-1zM2 28h1v1h-1zM3 28h1v1h-1zM4 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM9 28h1v1h-1zM12 28h1v1h-1zM14 28h1v1h-1zM17 28h1v1h-1zM20 28h1v1h-1zM24 28h1v1h-1zM27 28h1v1h-1z"/></svg>`;
   async function mountSimple(container, result, runId) {
     const box = document.createElement('div'); box.className = 'rs rs-simple';
     box.innerHTML = `
       <div class="rs-rankwrap"></div>
-      <div class="rs-row">
-        <input type="email" class="rs-mail" placeholder="jouw@email.nl" aria-label="E-mailadres" autocomplete="email" inputmode="email">
-        <a class="rs-send" href="#" target="_blank" rel="noopener" aria-disabled="true">Stuur mijn resultaat</a>
-      </div>
-      <label class="rs-ok"><input type="checkbox" class="rs-consent"> Enversed Studios mag mijn e-mailadres bewaren (optioneel)</label>
-      <div class="rs-status" role="status"></div>
+      <div class="rs-qr"><div class="rs-qrcode">${QR_SVG}</div>
+        <div><h3>Scan en speel verder</h3><p>Richt de camera van je telefoon op de QR-code.</p><p class="rs-url">${esc(QR_URL.replace(/^https:\/\//,'').replace(/\/$/,''))}</p></div></div>
       ${result.outro ? `<p class="rs-outro">${esc(result.outro)}</p>` : ''}`;
     container.appendChild(box);
-    const $m = box.querySelector('.rs-mail'), $c = box.querySelector('.rs-consent'), $send = box.querySelector('.rs-send'), $st = box.querySelector('.rs-status');
-    const refresh = () => { const ok = validEmail($m.value.trim()); $send.setAttribute('aria-disabled', ok ? 'false' : 'true'); $send.href = ok ? mailHref($m.value.trim(), result, '') : '#'; };
-    $m.addEventListener('input', refresh);
-    $m.addEventListener('keydown', e => { if (e.key === 'Enter' && $send.getAttribute('aria-disabled') === 'false') $send.click(); });
     await saveScore(runId, { ...result, naam: '' });
     renderRank(box.querySelector('.rs-rankwrap'), runId, result.score);
-    $send.addEventListener('click', async e => {
-      if ($send.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
-      const email = $m.value.trim();
-      let kept = false; if ($c.checked) kept = await saveContact(result, '', email);
-      $st.textContent = `Je mailprogramma opent met je resultaat. Klik daar op verzenden.${kept ? ' Je e-mailadres is bewaard.' : ''}`;
-    });
-    const user = await userP;
-    if (user && user.canEdit && await user.canEdit()) { const b = document.createElement('button'); b.className = 'rs-admin'; b.type = 'button'; b.textContent = 'Beheer: inzendingen exporteren (CSV)'; b.onclick = () => exportCsv(b); box.appendChild(b); }
   }
   return { mount };
 })();
 </script>
 <script>
 const ITEMS=[
- {id:'inbox',x:250,y:330,r:70,n:'Mailbox van de planner',d:'312 ongelezen berichten. Een paar zijn al weken oud.',k:1},
- {id:'bord',x:470,y:205,r:90,n:'Planningsbord',d:'Er staan twee verschillende einddatums op hetzelfde bord.',k:1},
- {id:'bordUV',x:560,y:250,r:60,uv:1,n:'Onder de nieuwe datum',d:'In onzichtbare inkt: "eigenaar planning?? → niemand".',k:1,root:1},
- {id:'akkoord',x:660,y:455,r:60,n:'Bakje "Wacht op akkoord"',d:'14 aanvragen wachten op één handtekening.',k:1},
- {id:'prullenbak',x:770,y:690,r:55,n:'Prullenbak',d:'Een geprinte mail van de leverancier: onderdeel komt 4 weken later.',k:1},
- {id:'testbank',x:1190,y:500,r:95,n:'Testbank',d:'Negen producten staan in de rij voor één testopstelling.',k:1},
- {id:'postitUV',x:1430,y:300,r:55,uv:1,n:'Achter de koffieautomaat',d:'UV-notitie: "overleg geschrapt — wie belt de klant?"',k:1},
- {id:'plant',x:95,y:640,r:60,n:'Plant',d:'Gewoon een plant. Heeft wel water nodig.'},
- {id:'taart',x:360,y:580,r:55,n:'Verjaardagstaart',d:'Iemand is jarig. Gezellig, niet het probleem.'},
- {id:'kalender',x:110,y:215,r:60,n:'Vakantierooster',d:'Iedereen is deze weken gewoon aanwezig.'},
- {id:'lamp',x:1080,y:110,r:55,n:'Knipperende lamp',d:'De lamp knippert. Vervelend, maar niet de oorzaak.'},
- {id:'koffie',x:1420,y:470,r:65,n:'Koffieautomaat',d:'Werkt prima. Volle bonenbak.'},
- {id:'fiets',x:980,y:740,r:70,n:'Fiets',d:'De fiets van een stagiair. Niks mis mee.'}
+ // knelpunten (k:1). verborgen sporen (hidden:1) zijn klein en vaag: alleen te vinden als je echt zoekt.
+ {id:'inbox',x:250,y:330,r:55,n:'Mailbox van de planner',d:'312 ongelezen berichten. Een paar zijn al weken oud.',k:1},
+ {id:'bord',x:470,y:205,r:65,n:'Planningsbord',d:'Er staan twee verschillende einddatums op hetzelfde bord.',k:1},
+ {id:'bordNotitie',x:540,y:258,r:34,hidden:1,n:'Potloodkrabbel onder de datum',d:'Klein geschreven: "eigenaar planning?? → niemand".',k:1,root:1},
+ {id:'akkoord',x:660,y:455,r:45,n:'Bakje "Wacht op akkoord"',d:'14 aanvragen wachten op één handtekening.',k:1},
+ {id:'prullenbak',x:770,y:690,r:42,n:'Prullenbak',d:'Een geprinte mail van de leverancier: onderdeel komt 4 weken later. Niemand heeft gereageerd.',k:1},
+ {id:'testbank',x:1190,y:500,r:70,n:'Testbank',d:'Negen producten staan in de rij voor één testopstelling.',k:1},
+ {id:'postit',x:1440,y:300,r:34,hidden:1,n:'Briefje achter de koffieautomaat',d:'"Weekoverleg geschrapt — wie belt de klant?"',k:1},
+ // afleiders: klinken als een probleem, maar zijn het niet
+ {id:'plant',x:95,y:640,r:45,n:'Plant',d:'De bladeren hangen. Heeft water nodig, verder niets.'},
+ {id:'taart',x:360,y:570,r:42,n:'Verjaardagstaart',d:'Iemand is jarig. Het team viert het in de lunchpauze.'},
+ {id:'kalender',x:110,y:215,r:48,n:'Vakantierooster',d:'Twee mensen zijn een week weg, maar hun vervanging is netjes geregeld.'},
+ {id:'lamp',x:1080,y:110,r:42,n:'Knipperende lamp',d:'De lamp knippert. Er is al een melding gedaan bij facilitair.'},
+ {id:'koffie',x:1420,y:470,r:50,n:'Koffieautomaat',d:'Vaak een rij ervoor, maar binnen een minuut heb je koffie.'},
+ {id:'fiets',x:980,y:745,r:55,n:'Fiets',d:'De fiets van een stagiair. Hij staat in de weg, maar dat is alles.'},
+ {id:'machine',x:980,y:430,r:55,n:'Freesmachine',d:'Oud model, maar het onderhoudslogboek is bijgewerkt en hij draait volgens schema.'},
+ {id:'storing',x:1350,y:500,r:30,hidden:1,n:'Rood lampje',d:'Volgens de handleiding is dit de stand-by-indicator. Normaal.'}
 ];
-const OPTS=[{t:'Te weinig testcapaciteit'},{t:'De leverancier is te laat'},{t:'Niemand is eigenaar van de planning',ok:1},{t:'De manager tekent te traag'}];
+const OPTS=[{t:'Te weinig testcapaciteit'},{t:'De leverancier is te laat'},{t:'Niemand is eigenaar van de planning',ok:1},{t:'De manager tekent te traag'},{t:'Te veel e-mail'},{t:'Verouderde machines in de werkplaats'}];
 const WHY='Mails blijven liggen, deadlines spreken elkaar tegen, de leverancier wordt niet opgevolgd en het overleg is geschrapt. Ze hebben één ding gemeen: niemand voelt zich eigenaar van de planning. De testbank en de handtekening zijn knelpunten, maar geen oorzaak.';
-const BAT=120;
+const BAT=80;          // seconden batterij (moeilijker: was 120)
+const DWELL=1.4;       // seconden stilhouden om iets te onderzoeken (was 1)
+const RECON_MIN=3;     // knelpunten nodig voor de reconstructie (was 2)
+const PENALTY=75;      // punten eraf bij een verkeerde inschatting (was 50)
 let S, raf, last, L={x:800,y:450};
 const $=id=>document.getElementById(id);
 function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
@@ -366,9 +362,9 @@ const CAM = {
   reconnectT: null,
   client: null,     // positie van de lichtvlek op het scherm (px)
   inScene: false,   // valt het licht op het speelveld (anders: alleen UI-besturing)
-  beamR: 170,       // straal van de bundel, volgt de grootte van de echte lichtvlek
+  beamR: 125,       // straal van de bundel, volgt de grootte van de echte lichtvlek
 };
-const BEAM_R = 170, BEAM_R_MIN = 130, BEAM_R_MAX = 230;
+const BEAM_R = 125, BEAM_R_MIN = 100, BEAM_R_MAX = 165; // kleinere bundel: moeilijker
 let mouseT = -1e9;  // laatste muis-/toetsbediening (fallback)
 function camStatus(txt, ok){
   let el = $('camStatus');
@@ -393,7 +389,7 @@ function connectCamera(){
   }
   camStatus('Camera: verbinden…', null);
   CAM.ws.onopen = ()=>{ CAM.connected=true; camStatus('Camera: verbonden — schijn met de zaklamp op het scherm', true); updateCalBtn(); if(!CAL.H) calStart(); };
-  CAM.ws.onclose = ()=>{ CAM.connected=false; CAM.fromCam=false; if(CAL.phase){ calClose(); } camStatus('Camera: offline (muis/toetsen werken)', false); updateCalBtn(); scheduleReconnect(); };
+  CAM.ws.onclose = ()=>{ CAM.connected=false; CAM.fromCam=false; if(CAL.phase){ calClose(); } camStatus('Camera: offline (pijltjestoetsen werken)', false); updateCalBtn(); scheduleReconnect(); };
   CAM.ws.onerror = ()=>{ /* onclose volgt */ };
   CAM.ws.onmessage = (ev)=>{
     let msg;
@@ -723,9 +719,24 @@ addEventListener('keydown',e=>{
 
 /* ===== Tabs: Start · Onderzoek · Resultaat ===== */
 let TAB='game';
+// Uitleg altijd volledig in beeld: lettergrootte zo groot mogelijk zonder dat er gescrold hoeft te worden.
+function fitTut(){
+  const panel=$('intro'), box=panel.querySelector('.tut');
+  if(panel.hidden || !box) return;
+  let lo=8, hi=Math.max(10, Math.min(26, innerWidth/55));
+  for(let k=0;k<12;k++){ // binair zoeken naar de grootste lettergrootte die past
+    const mid=(lo+hi)/2; box.style.setProperty('--tf', mid+'px');
+    const cs=getComputedStyle(panel), room=panel.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-8;
+    if(box.getBoundingClientRect().height <= room && panel.scrollWidth <= panel.clientWidth) lo=mid; else hi=mid;
+  }
+  box.style.setProperty('--tf', lo+'px');
+}
+addEventListener('resize', fitTut);
+if(document.fonts) document.fonts.ready.then(fitTut); // opnieuw passen zodra de lettertypen geladen zijn
 function showTab(t){
   TAB=t;
   $('intro').hidden = t!=='start'; $('game').hidden = t!=='game'; $('end').hidden = t!=='result';
+  if(t==='start') requestAnimationFrame(fitTut);
   document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===t));
   if(t!=='game') CAM.inScene=false;
 }
@@ -751,14 +762,14 @@ function drawBase(){
    <path d="M1060 60 v30" stroke="#333" stroke-width="4"/><path d="M1040 90 h80 l-14 30 h-52z" fill="#C9CFD6"/>
    <g transform="translate(980 740)"><circle cx="-50" cy="20" r="34" fill="none" stroke="#2A2A2A" stroke-width="7"/><circle cx="50" cy="20" r="34" fill="none" stroke="#2A2A2A" stroke-width="7"/><path d="M-50 20 L-10 -20 L40 -20 L50 20 M-10 -20 L0 20" stroke="#E25C5C" stroke-width="7" fill="none"/></g>`;
 }
-const uvArt=`<g font-family="Manrope,sans-serif" font-weight="800" fill="#C9A8FF" style="filter:drop-shadow(0 0 6px #9B6BFF)"><text x="470" y="245" font-size="20">eigenaar planning??</text><text x="500" y="272" font-size="20">→ niemand</text>
-  <rect x="1400" y="270" width="80" height="62" fill="none" stroke="#C9A8FF" stroke-width="3"/><text x="1408" y="296" font-size="13">overleg</text><text x="1408" y="312" font-size="13">geschrapt</text><text x="1408" y="327" font-size="11">wie belt klant?</text>
-  <text x="120" y="520" font-size="16" opacity=".7">✗</text><text x="1100" y="640" font-size="16" opacity=".7">vingerafdruk</text></g>`;
+// Vage sporen: alleen te lezen als de bundel er precies op valt.
+const faintArt=`<g font-family="Manrope,sans-serif" font-weight="700" fill="#7E879E" opacity=".55"><text x="505" y="262" font-size="13">eigenaar planning?? → niemand</text>
+  <rect x="1418" y="282" width="46" height="34" fill="#C9C27A" opacity=".5"/><text x="1421" y="298" font-size="8" fill="#5A5A3A">overleg</text><text x="1421" y="309" font-size="8" fill="#5A5A3A">geschrapt</text></g>`;
 
 function start(){
-  S={bat:BAT,uv:false,marks:{},scanned:new Set(),dwellOn:null,dwell:0,score:0,card:null,over:false,beam:1};
-  $('base').innerHTML=drawBase(); $('uvLayer').innerHTML=uvArt; $('card').hidden=true; $('tabGame').disabled=false; showTab('game');
-  setUV(false); renderDossier(); ac(); last=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
+  S={bat:BAT,marks:{},scanned:new Set(),dwellOn:null,dwell:0,score:0,card:null,over:false,beam:1};
+  $('base').innerHTML=drawBase()+faintArt; $('card').hidden=true; $('tabGame').disabled=false; showTab('game');
+  renderDossier(); ac(); last=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
 }
 function svgPt(e){ const r=$('scene').getBoundingClientRect(); const vb=1600/900, rb=r.width/r.height; let w,h,ox=0,oy=0; if(rb>vb){ h=r.height; w=h*vb; ox=(r.width-w)/2; } else { w=r.width; h=w/vb; oy=(r.height-h)/2; } return {x:(e.clientX-r.left-ox)/w*1600, y:(e.clientY-r.top-oy)/h*900}; }
 // Muis/toetsen alleen als de camera geen zaklamplicht ziet (fallback)
@@ -775,7 +786,6 @@ if(MOUSE){
   ['pointerdown','mousedown','click','dblclick','contextmenu','auxclick'].forEach(t=>addEventListener(t,block,true));
 }
 addEventListener('keydown',e=>{
-  if(e.key.toLowerCase()==='u'&&S&&!S.over) setUV(!S.uv);
   if(CAM.fromCam) return; // pijltjes niet over camera heen
   if(e.key.startsWith('Arrow')) mouseT=performance.now();
   const s=40;
@@ -783,25 +793,23 @@ addEventListener('keydown',e=>{
   if(e.key==='ArrowUp') L.y-=s; if(e.key==='ArrowDown') L.y+=s;
   L.x=Math.max(0,Math.min(1600,L.x)); L.y=Math.max(0,Math.min(900,L.y));
 });
-function setUV(on){ S.uv=on; $('uvBtn').classList.toggle('on',on); $('uvBtn').setAttribute('aria-pressed',on); $('uvLayer').style.display=on?'':'none'; $('tintC').setAttribute('fill',on?'url(#tintUV)':'url(#tint)'); tone(on?300:500,.06); }
-$('uvBtn').onclick=()=>{ if(S&&!S.over) setUV(!S.uv); };
 
 function openCard(it){
-  S.card=it; tone(it.uv?520:660,.12,'triangle');
-  const c=$('card'); c.className=it.uv?'uv':''; c.hidden=false;
-  c.innerHTML=`<h3>${it.uv?'🟣 ':''}${it.n}</h3><p>${it.d}</p><div class="acts"><button class="btn k" data-v="1">Knelpunt</button><button class="btn n" data-v="0">Niets aan de hand</button></div>`;
+  S.card=it; tone(660,.12,'triangle');
+  const c=$('card'); c.className=''; c.hidden=false;
+  c.innerHTML=`<h3>${it.n}</h3><p>${it.d}</p><div class="acts"><button class="btn k" data-v="1">Knelpunt</button><button class="btn n" data-v="0">Niets aan de hand</button></div>`;
 }
 $('card').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||!S.card) return; const it=S.card, v=+b.dataset.v;
   const ok = v===(it.k?1:0); S.marks[it.id]={v,ok};
-  if(v&&ok) S.score+=100; else if(!v&&ok) S.score+=30; else S.score=Math.max(0,S.score-50);
+  if(v&&ok) S.score+=100; else if(!v&&ok) S.score+=30; else S.score=Math.max(0,S.score-PENALTY);
   ok ? tone(v?880:600,.12,'triangle') : tone(170,.25,'sawtooth',.05);
   ring(it, ok ? (v?'#FF5C6C':'#3DDC97') : '#8D96B8');
   S.card=null; $('card').hidden=true; renderDossier(); });
 function ring(it,col){ $('rings').insertAdjacentHTML('beforeend',`<circle cx="${it.x}" cy="${it.y}" r="${it.r}" fill="none" stroke="${col}" stroke-width="6" stroke-dasharray="14 10" opacity=".9"/>`); }
 function renderDossier(){
   const ks=ITEMS.filter(i=>S.marks[i.id]?.v===1);
-  $('dossier').innerHTML = ks.length ? ks.map(i=>`<div class="dz ${i.uv?'uv':''}">${i.n}<small>${i.d}</small></div>`).join('') : '<div class="empty">Houd de lichtbundel stil op iets wat opvalt. Na een seconde weet je wat het is.</div>';
-  $('found').textContent=ks.length; $('score').textContent=S.score; $('recon').disabled=ks.length<2;
+  $('dossier').innerHTML = ks.length ? ks.map(i=>`<div class="dz">${i.n}<small>${i.d}</small></div>`).join('') : '<div class="empty">Houd de lichtbundel stil op iets wat opvalt. Na ruim een seconde weet je wat het is.</div>';
+  $('found').textContent=ks.length; $('score').textContent=S.score; $('recon').disabled=ks.length<RECON_MIN;
 }
 // Zoals een echte zaklamp: geen licht op het scherm = donker. Met camera brandt de bundel alleen
 // als de camera de lichtvlek ziet (of de muis net bewoog); zonder camera altijd (muis/toetsen).
@@ -812,18 +820,18 @@ function loop(now){
   if(CAM.fromCam && now-CAM.lastTs > 400) CAM.fromCam=false; // lichtvlek kwijt
   const on=beamOn(now); S.beam += ((on?1:0)-S.beam)*Math.min(1,dt*(on?14:8));
   const baseR = CAM.fromCam ? CAM.beamR : BEAM_R;
-  $('hole').setAttribute('cx',L.x); $('hole').setAttribute('cy',L.y); $('uvHole').setAttribute('cx',L.x); $('uvHole').setAttribute('cy',L.y); $('tintC').setAttribute('cx',L.x); $('tintC').setAttribute('cy',L.y);
+  $('hole').setAttribute('cx',L.x); $('hole').setAttribute('cy',L.y); $('tintC').setAttribute('cx',L.x); $('tintC').setAttribute('cy',L.y);
   if(!S.card && S.beam<.5){ S.dwellOn=null; $('dwell').setAttribute('opacity',0); }
   else if(!S.card){
-    S.bat-=dt*(S.uv?2:1);
-    const it=ITEMS.find(i=>!S.scanned.has(i.id) && Math.hypot(i.x-L.x,i.y-L.y)<i.r && (!i.uv||S.uv));
-    if(it){ if(S.dwellOn!==it){ S.dwellOn=it; S.dwell=0; } S.dwell+=dt; const d=$('dwell'); d.setAttribute('opacity',1); d.setAttribute('transform',`translate(${L.x} ${L.y}) rotate(-90)`); d.setAttribute('stroke-dashoffset',289*(1-Math.min(1,S.dwell/1))); d.setAttribute('stroke',it.uv?'#9B6BFF':'#FFE7A3');
-      if(S.dwell>=1){ S.scanned.add(it.id); S.dwellOn=null; d.setAttribute('opacity',0); openCard(it); } }
+    S.bat-=dt;
+    const it=ITEMS.find(i=>!S.scanned.has(i.id) && Math.hypot(i.x-L.x,i.y-L.y)<i.r);
+    if(it){ if(S.dwellOn!==it){ S.dwellOn=it; S.dwell=0; } S.dwell+=dt; const d=$('dwell'); d.setAttribute('opacity',1); d.setAttribute('transform',`translate(${L.x} ${L.y}) rotate(-90)`); d.setAttribute('stroke-dashoffset',289*(1-Math.min(1,S.dwell/DWELL))); d.setAttribute('stroke','#FFE7A3');
+      if(S.dwell>=DWELL){ S.scanned.add(it.id); S.dwellOn=null; d.setAttribute('opacity',0); openCard(it); } }
     else { S.dwellOn=null; $('dwell').setAttribute('opacity',0); }
   }
-  const p=Math.max(0,S.bat/BAT); $('batF').style.width=(p*100)+'%'; $('batF').style.background=p<.2?'#FF5C6C':S.uv?'#9B6BFF':'#FFE7A3';
-  const R = baseR*S.beam*((p<.2 && Math.random()<.04) ? .7+Math.random()*.3 : 1);
-  $('hole').setAttribute('r',R); $('tintC').setAttribute('r',R); $('uvHole').setAttribute('r',R*.7);
+  const p=Math.max(0,S.bat/BAT); $('batF').style.width=(p*100)+'%'; $('batF').style.background=p<.25?'#FF5C6C':'#FFE7A3';
+  const R = baseR*S.beam*((p<.25 && Math.random()<.06) ? .7+Math.random()*.3 : 1);
+  $('hole').setAttribute('r',R); $('tintC').setAttribute('r',R);
   if(S.bat<=0 && !S.card){ $('hole').setAttribute('r',0); return openRecon(true); }
   raf=requestAnimationFrame(loop);
 }
@@ -833,15 +841,15 @@ $('opts').onclick=e=>{ const b=e.target.closest('button'); if(b) finish(OPTS[+b.
 function finish(choice){
   S.over=true; $('reconOv').hidden=true;
   const knel=ITEMS.filter(i=>i.k), found=knel.filter(i=>S.marks[i.id]?.v===1), wrong=ITEMS.filter(i=>S.marks[i.id]&&!S.marks[i.id].ok).length;
-  const uvFound=found.filter(i=>i.uv).length, batLeft=Math.max(0,Math.round(S.bat));
+  const hidFound=found.filter(i=>i.hidden).length, hidAll=knel.filter(i=>i.hidden).length, batLeft=Math.max(0,Math.round(S.bat));
   if(choice.ok) S.score+=400+batLeft*4;
-  const verdict = choice.ok && found.length>=6 ? 'Zaak opgelost. Je zag door de symptomen heen.' : choice.ok ? 'Juiste oorzaak, maar een paar sporen bleven in het donker.' : `Dat is een knelpunt, maar niet de oorzaak. ${uvFound?'':'Het UV-licht had je verder geholpen.'}`;
+  const verdict = choice.ok && found.length>=knel.length-1 ? 'Zaak opgelost. Je zag door de symptomen heen.' : choice.ok ? 'Juiste oorzaak, maar een paar sporen bleven in het donker.' : `Dat is een knelpunt, maar niet de oorzaak. ${hidFound?'':'Kijk de volgende keer ook naar de kleine, vage sporen.'}`;
   $('endBox').innerHTML=`<h2>${choice.ok?'Oorzaak gevonden.':'Bijna.'}</h2><div class="big">${S.score}</div>
-   <div class="fin"><div><b>${found.length}/${knel.length}</b>knelpunten gevonden</div><div><b>${uvFound}/2</b>UV-sporen</div><div><b>${wrong}</b>verkeerd ingeschat</div><div><b>${batLeft}s</b>batterij over</div></div>
+   <div class="fin"><div><b>${found.length}/${knel.length}</b>knelpunten gevonden</div><div><b>${hidFound}/${hidAll}</b>verborgen sporen</div><div><b>${wrong}</b>verkeerd ingeschat</div><div><b>${batLeft}s</b>batterij over</div></div>
    <p>${verdict}</p><div class="chain">${knel.filter(i=>!i.root).map(i=>`<span>${S.marks[i.id]?.v===1?'✓':'·'} ${i.n}</span>`).join('')}<span>→</span><span class="root">Niemand is eigenaar van de planning</span></div>
    <p style="font-size:17px">${WHY}</p><div id="rsSlot"></div><button class="go" id="again">Nieuw onderzoek</button>`;
   $('tabResult').disabled=false; showTab('result'); $('again').onclick=start;
-  RESULTS.mount($('rsSlot'), {score:S.score, lines:[`Gekozen oorzaak: ${choice.t} (${choice.ok?'juist':'onjuist'})`, `${found.length} van ${knel.length} knelpunten gevonden, waarvan ${uvFound} met UV-licht`, `${wrong} keer verkeerd ingeschat`, `Batterij over: ${batLeft} seconden`, ...found.map(i=>`Knelpunt: ${i.n} — ${i.d}`), WHY],
+  RESULTS.mount($('rsSlot'), {score:S.score, lines:[`Gekozen oorzaak: ${choice.t} (${choice.ok?'juist':'onjuist'})`, `${found.length} van ${knel.length} knelpunten gevonden, waarvan ${hidFound} verborgen sporen`, `${wrong} keer verkeerd ingeschat`, `Batterij over: ${batLeft} seconden`, ...found.map(i=>`Knelpunt: ${i.n} — ${i.d}`), WHY],
     outro:'Zoeken, ontdekken en zelf de puzzel leggen: zo combineert Enversed Studios storytelling, fysieke interactie en technologie in onderzoeksgames zoals AI Murder Mystery.'});
 }
 $('startBtn').onclick=()=>{ if(CAM.connected && !CAL.H) calStart(); else calGo(); };
