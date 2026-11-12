@@ -123,19 +123,19 @@ const W=792, H=1152, T=72;
 //  4: kort 420,180,0 · lang 140,380,15 · kort 580,820,30
 const ZONES=[
  {n:'Level 1',inv:{},spawn:[396,-10],
-  water:[],cps:[['c1',546,340],['c2',156,720],['c3',78,960]],
+  water:[],cps:[['c1',546,340],['c2',156,720],['c3',78,960]], mags:[[640,830,170]],
   walls:[[619,256,180,18,25],[527,616,120,18,0]],
   end:{r:[22,1040,300,90],n:'Finish',ic:'🏁'}},
  {n:'Level 2',inv:{},spawn:[396,-10],
-  water:[],cps:[['c1',246,340],['c2',636,720],['c3',714,960]],
+  water:[],cps:[['c1',246,340],['c2',636,720],['c3',714,960]], mags:[[152,830,170]],
   walls:[[174,255,180,18,-25],[212,499,120,18,0],[534,287,18,120,0]],
   end:{r:[470,1040,300,90],n:'Finish',ic:'🏁'}},
  {n:'Level 3',inv:{},spawn:[300,-10],
-  water:[],cps:[['c1',465,360],['c2',465,700],['c3',676,960]],
+  water:[],cps:[['c1',465,360],['c2',465,700],['c3',676,960]], mags:[[170,560,170]],
   walls:[[571,299,140,18,25],[430,577,18,120,0],[615,716,120,18,0]],
   end:{r:[470,1040,300,90],n:'Finish',ic:'🏁'}},
  {n:'Level 4',inv:{},spawn:[396,-10],
-  water:[],cps:[['c1',198,320],['c2',707,640],['c3',688,940]],
+  water:[],cps:[['c1',198,320],['c2',707,640],['c3',688,940]], mags:[[640,260,150],[200,860,170]],
   walls:[[640,560,160,18,0],[100,240,180,18,-25],[582,597,120,18,0],[168,460,200,18,0]],
   end:{r:[440,1040,300,90],n:'Finish',ic:'🏁'}}
 ];
@@ -156,11 +156,16 @@ const SOLID_PAD=6, BORDER=16; // SOLID_PAD: half the width of a person; BORDER: 
 // (glance: extra launch angle towards 90° for edge hits); every person gets its own height/speed/curve (vary).
 const BOUNCE={on:true, hop:340, gravity:800, curve:2.9, curveAngle:8, curveSpread:10, airSpeed:290, glance:55, vary:.1, border:.28}; // muisversie: iets meer bounce (was hop 260, curve 2.6, airSpeed 240, border .2); weinig willekeur (spread 10, vary .1) zodat een route voorspelbaar is
 const HOP_LIFT=.75; // how far a jumping person is drawn above their floor position (z * HOP_LIFT); used by drawing and checkpoints
+// Magnets (mags per level: [x, y, range]): pull every person within range towards the magnet, stronger the closer
+// they get (pull * (1 - d/range)^2 px/s). Whoever comes within `core` px is caught: sucked in and counted as verdwaald.
+// They lie off the intended routes, so a good route only gets bent a little; a stray person is caught.
+// index.html?nomagnets switches them off (for comparing / testing).
+const MAGNET={on:!/[?&]nomagnets\b/.test(location.search), pull:520, core:24, suck:.6};
 const GOAL=10, R_TRI=34, R_ROL=30, R_CUBE=30, R_CP=42, PLANK_L=160, PLANK_W=48;
 const SHIRTS=['#E8453C','#2F7FD1','#23A99A','#F2A100','#7A5CFA','#E8457A','#3A9D4E'];
 const SKIN=['#F2C9A0','#D9A27A','#A8704A','#7A4E2E','#F5D6B8'];
 // lastTouch=-1e9: de game start als inactief (wave blijft 1, geen meldingen) tot iemand iets doet
-let zoneArrived=0, zoneFull=0, zoneFill=[0,0,0], wave=null, solids=[], solidsVer=0, Z, zi, blocks, people, spawnT, tool=null, inv, cps, zoneT=0, totals, celebrate=0, lastTouch=-1e9, round=1, bid=0, bg=null, drag=null;
+let mags=[], zoneArrived=0, zoneFull=0, zoneFill=[0,0,0], wave=null, solids=[], solidsVer=0, Z, zi, blocks, people, spawnT, tool=null, inv, cps, zoneT=0, totals, celebrate=0, lastTouch=-1e9, round=1, bid=0, bg=null, drag=null;
 const cv=document.getElementById('cv'), $=id=>document.getElementById(id);
 // Rendering is done by Phaser (scene `Hall` below). The drawing helpers (stand, endpoint, entrance, wood, person, ...)
 // draw into `ctx`, which the scene points at the canvas of a Phaser texture while it builds that texture.
@@ -223,7 +228,7 @@ function knock(){ const c=ac(); if(!c) return; [0,.06].forEach((t,i)=>{ const o=
 document.querySelectorAll('.how .bi').forEach(el=>el.innerHTML=blockSVG(el.dataset.b));
 
 const rad=a=>a*Math.PI/180;
-function newTotals(){ return {score:0,out:0,lost:0,stray:0,cases:[],fill:[0,0,0],arenas:0,start:performance.now()}; }
+function newTotals(){ return {score:0,out:0,lost:0,stray:0,mag:0,cases:[],fill:[0,0,0],arenas:0,start:performance.now()}; }
 
 // Dark mode: dark floor, muted light surfaces (no large white areas: those would look like the white paper blocks).
 const DARK=!/[?&]light\b/.test(location.search);
@@ -239,9 +244,21 @@ function makeBg(){ // floor with seams, mats at start and finish
   const [sx]=Z.spawn, [ex,ey,ew,eh]=Z.end.r;
   g.fillStyle='#22344F'; g.fillRect(sx-70,0,140,80); g.beginPath(); g.roundRect(ex-26,ey-26,ew+52,eh+52,14); g.fill();
   g.strokeStyle='rgba(255,255,255,.12)'; g.lineWidth=2; g.strokeRect(sx-62,4,124,72);
+  for(const m of mags) drawMagnet(g,m);
   for(const w of solids) drawSolid(g,w); // field border and the level's walls (not white: the camera must not see them as blocks)
   return c;
 }
+function drawMagnet(g,m){ // range (faint purple disc + dashed edge) and a red horseshoe magnet; no white: the camera sees white as a block
+  g.save(); g.translate(m.x,m.y);
+  const rg=g.createRadialGradient(0,0,MAGNET.core,0,0,m.r); rg.addColorStop(0,'rgba(122,92,250,.28)'); rg.addColorStop(1,'rgba(122,92,250,0)');
+  g.fillStyle=rg; g.beginPath(); g.arc(0,0,m.r,0,7); g.fill();
+  g.strokeStyle='rgba(122,92,250,.45)'; g.lineWidth=2; g.setLineDash([6,8]); g.beginPath(); g.arc(0,0,m.r,0,7); g.stroke(); g.setLineDash([]);
+  g.fillStyle='rgba(0,0,0,.3)'; g.beginPath(); g.arc(2,4,MAGNET.core+4,0,7); g.fill();
+  g.fillStyle='#3A2F5E'; g.beginPath(); g.arc(0,0,MAGNET.core+4,0,7); g.fill();
+  g.lineCap='butt'; g.lineWidth=11; g.strokeStyle='#E8453C';
+  g.beginPath(); g.arc(0,-3,11,Math.PI,0); g.lineTo(11,10); g.moveTo(-11,-3); g.lineTo(-11,10); g.stroke();
+  g.fillStyle='#9AA3AF'; g.fillRect(-16.5,6,11,7); g.fillRect(5.5,6,11,7);
+  g.restore(); }
 function drawSolid(g,w){ // a wall: concrete-like strip with a lighter top edge and a small shadow
   g.save(); g.translate(w.x,w.y); g.rotate(w.ar);
   g.fillStyle='rgba(0,0,0,.25)'; g.fillRect(-w.hw+3,-w.hh+4,w.hw*2,w.hh*2);
@@ -287,19 +304,19 @@ function entrance(t){ const [sx]=Z.spawn;
   ctx.fillStyle='#9AA3AF'; [-40,0,40].forEach(dx=>{ ctx.fillRect(sx+dx-2,64,4,16); }); }
 function loadZone(i){ toastWave=null; /* new level: show the per-person messages again for its first played wave */
   zi=i; Z=ZONES[i]; blocks=[]; people=[]; spawnT=0; inv={...Z.inv}; zoneT=0; cps={}; zoneArrived=0; zoneFull=0; zoneFill=[0,0,0];
-  solids=buildSolids(); solidsVer++; bg=makeBg(); wave=newWave(1);
+  mags=MAGNET.on?(Z.mags||[]).map(([x,y,r])=>({x,y,r})):[]; solids=buildSolids(); solidsVer++; bg=makeBg(); wave=newWave(1);
   for(const [k,x,y] of Z.cps) cps[k]={x,y,n:0,done:false};
   $('zone').textContent=Z.n+(round>1?` · ronde ${round}`:''); renderTray(); renderCases();
   if(VIEW.scene) VIEW.scene.buildZone();
 }
-function newWave(no){ return {no, spawned:0, t:0, lastSpawn:0, pause:0, hits:{}, taken:{}, st:0, stats:{fill:[0,0,0],lost:0}}; }
+function newWave(no){ return {no, spawned:0, t:0, lastSpawn:0, pause:0, hits:{}, taken:{}, st:0, stats:{fill:[0,0,0],lost:0,mag:0}}; }
 function waveTick(dt){ // spawns the people of the current wave, then waits for them before the next wave
   if(wave.pause>0){ wave.pause-=dt; if(wave.pause<=0){ const idle=!isActive(); wave=newWave(idle?1:wave.no+1); for(const cp of Object.values(cps)){ cp.n=0; cp.done=false; } spawnT=0;  } return; }
   wave.t+=dt;
   if(wave.spawned<WAVE.size){ spawnT-=dt; while(spawnT<=0&&wave.spawned<WAVE.size){ if(!spawn()) { spawnT=.1; break; } wave.spawned++; wave.lastSpawn=wave.t; spawnT+=WAVE.every; } return; }
   if(!people.some(p=>p.W===wave)||wave.t-wave.lastSpawn>WAVE.maxWait){ const f=wave.stats.fill;
-    const res=wave.stats.lost?'is verdwaald':f[2]?'is vol aangekomen':f[1]?'is halfvol aangekomen':f[0]?'is leeg aangekomen':'is weg';
-    if(waveToasts(wave)) toast(`<i>🚶</i><div>Persoon ${res}<small>${f[2]?'Goed gedaan!':'Probeer alle 3 de checkpoints te halen'}</small></div>`);
+    const res=wave.stats.mag?'is door een magneet gegrepen':wave.stats.lost?'is verdwaald':f[2]?'is vol aangekomen':f[1]?'is halfvol aangekomen':f[0]?'is leeg aangekomen':'is weg';
+    if(waveToasts(wave)) toast(`<i>🚶</i><div>Persoon ${res}<small>${f[2]?'Goed gedaan!':wave.stats.mag?'Houd de route uit de buurt van de magneet':'Probeer alle 3 de checkpoints te halen'}</small></div>`);
     wave.pause=WAVE.pause; }
 }
 function inRect(x,y,[rx,ry,rw,rh]){ return x>=rx&&x<=rx+rw&&y>=ry&&y<=ry+rh; }
@@ -506,12 +523,23 @@ function flowMove(pp,dt){
     pp.a+=Math.max(-m,Math.min(m,d*Math.min(1,8*dt))); }
   pp.ph+=dt*Math.max(sp,15)/9;
 }
+// ---- Magnets ----
+function magnetPull(pp,dt){ // returns true when the person is caught
+  for(const m of mags){ const dx=m.x-pp.x, dy=m.y-pp.y, d=Math.hypot(dx,dy); if(d>m.r) continue;
+    if(d<MAGNET.core){ pp.mag=m; pp.magT=0; pp.z=0; pp.vz=0; pp.bounceCurve=0; tone(196,.25,'sawtooth',.03); return true; }
+    const k=1-d/m.r, v=MAGNET.pull*k*k*dt; pp.x+=dx/d*v; pp.y+=dy/d*v; }
+  return false; }
+function magnetSuck(pp,dt){ // caught: spirals into the magnet and disappears, counts as verdwaald
+  const m=pp.mag; pp.magT+=dt; const k=Math.min(1,dt*9); pp.x+=(m.x-pp.x)*k; pp.y+=(m.y-pp.y)*k; pp.ph+=dt*30;
+  pp.alpha=Math.max(0,1-pp.magT/MAGNET.suck);
+  if(pp.magT>=MAGNET.suck){ pp.gone=true; if(!isActive()) return; totals.lost++; totals.mag++; pp.W.stats.lost++; pp.W.stats.mag++; } }
 function update(dt){
   zoneT+=dt; waveTick(dt);
   if(FLOW.on) flowPrepare();
   for(const pp of people){
     if(pp.fall>0){ pp.fall+=dt; if(pp.fall>.8) pp.gone=true; continue; }
     if(celebrate>0){ pp.alpha-=dt*1.4; if(pp.alpha<=0){ pp.gone=true; continue; } }
+    if(pp.mag){ magnetSuck(pp,dt); continue; }
     if(FLOW.on) flowMove(pp,dt); else { // bounce movement (default): walk down, hop and curve off every wall
     if(pp.bounceCurve>0){
       pp.bounceCurve=Math.max(0,pp.bounceCurve-dt);
@@ -536,6 +564,7 @@ function update(dt){
       if(pp.z<=0){ pp.z=0; pp.landAt=performance.now(); pp.vz=0; } }
     if(pp.squash>0) pp.squash=Math.max(0,pp.squash-dt*4);
     }
+    if(magnetPull(pp,dt)) continue;
     for(const [k,cp] of Object.entries(cps)) if(!pp.seen[k] && atCheckpoint(pp,cp)){ pp.seen[k]=1; const Wv=pp.W;
       Wv.hits[k]=(Wv.hits[k]||0)+1; if(Wv===wave) cp.n=Wv.hits[k];
       if(!Wv.taken[k]&&Wv.hits[k]>=CP_NEED) takeCheckpoint(Wv,k); }
@@ -546,7 +575,7 @@ function update(dt){
     if(pp.x<-20||pp.x>W+20||pp.y<-40||pp.y>H+20){ pp.gone=true; if(!isActive()) continue; totals.stray++; totals.lost++; pp.W.stats.lost++; continue; } // missed the finish: counts as 'verdwaald'
   }
   people=people.filter(p=>!p.gone);
-  if(celebrate>0){ celebrate-=dt; if(celebrate<=0){ celebrate=0; const n=(zi+1)%ZONES.length; if(n===0) round++; loadZone(n); toast(`<i>➡️</i>${ZONES[n].n}`); } }
+  if(celebrate>0){ celebrate-=dt; if(celebrate<=0){ celebrate=0; const n=(zi+1)%ZONES.length; if(n===0) round++; loadZone(n); toast(mags.length?`<i>🧲</i><div>${ZONES[n].n}<small>Pas op: ${mags.length>1?mags.length+' magneten trekken':'een magneet trekt'} mensen naar zich toe</small></div>`:`<i>➡️</i>${ZONES[n].n}`); } }
   if(!isActive() && performance.now()-lastTouch>90000 && (zi!==0||blocks.length)){ /* no reset while a game is going on */ lastTouch=-1e9; round=1; totals=newTotals(); loadZone(0); }
 }
 function takeCheckpoint(Wv,k){ keepActive(); // CP_NEED people of wave Wv passed checkpoint k: the whole wave fills up
@@ -617,7 +646,8 @@ $('helpBtn').onclick=()=>{ touch();
    <ol class="steps">
     <li><b>1</b><span>Leg een wit blok op het speelveld. Mensen botsen ertegen en buigen af.</span></li>
     <li><b>2</b><span>Leid ze langs alle drie de checkpoints. Elk checkpoint vult ze verder: leeg, halfvol, vol.</span></li>
-    <li><b>3</b><span>Breng ze vol naar de finish. Bij ${GOAL} volle mensen ga je naar het volgende level.</span></li>
+    <li><b>3</b><span>Pas op voor magneten 🧲: ze trekken mensen naar zich toe. Komt iemand te dichtbij, dan zit hij vast.</span></li>
+    <li><b>4</b><span>Breng ze vol naar de finish. Bij ${GOAL} volle mensen ga je naar het volgende level.</span></li>
    </ol>
    <p>Blok verplaatsen of draaien: schuif het blok met je hand. Weghalen: pak het van het veld.</p>
    <button class="go" id="back">Spelen</button>`;
@@ -626,7 +656,7 @@ $('helpBtn').onclick=()=>{ touch();
 $('resBtn').onclick=()=>{ touch();
   const eff = totals.out+totals.lost ? Math.round(totals.out/(totals.out+totals.lost)*100) : 0;
   $('endBox').innerHTML=`<h2>Jouw stroom</h2><div class="big">${totals.score}</div>
-   <div class="fin"><div><b>${totals.out}</b>aangekomen</div><div><b>${totals.lost}</b>verdwaald</div><div><b>${eff}%</b>doorstroming</div><div><b>${totals.arenas}</b>levels voltooid</div><div><b>${wave.no}</b>personen op rij</div></div>
+   <div class="fin"><div><b>${totals.out}</b>aangekomen</div><div><b>${totals.lost}</b>verdwaald</div><div><b>${totals.mag}</b>gegrepen door een magneet</div><div><b>${eff}%</b>doorstroming</div><div><b>${totals.arenas}</b>levels voltooid</div><div><b>${wave.no}</b>personen op rij</div></div>
    <p>Aangekomen: <b>${totals.fill[2]}</b> vol · <b>${totals.fill[1]}</b> halfvol · <b>${totals.fill[0]}</b> leeg</p>
    <div class="take"><button class="go" id="takeBtn" aria-expanded="false">📱 Neem de game mee</button></div>
    <div class="qr" id="takeQr" hidden><img src="${QR_PHONE}" alt="QR-code naar People Manager op je telefoon"><p>Scan de QR-code en speel People Manager verder op je telefoon. Zo ontdek je ook wat Enversed Studios maakt.</p></div>
@@ -676,6 +706,7 @@ function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Pha
     this.hintText=this.add.text(W/2,0,'',{fontFamily:'"Baloo 2",sans-serif',fontSize:'26px',fontStyle:'700',color:'#ffffff'}).setOrigin(.5);
     this.hint=this.add.container(0,0,[hb,this.hintText]).setDepth(9).setVisible(false);
     this.pulse=this.add.graphics().setDepth(4);
+    this.magG=this.add.graphics().setDepth(1); // magnet field: rings that shrink towards the magnet
     // bounce effects: ground shadow under jumping people, dashed jump path, impact ring
     for(let st=0;st<3;st++) canvasTexture(this,'gauge'+st,18,18,g=>{ // fill gauge above each person: leeg / halfvol / vol
       g.fillStyle='rgba(20,26,38,.55)'; g.beginPath(); g.arc(9,9,7.5,0,7); g.fill();
@@ -727,6 +758,8 @@ function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Pha
     this.syncPeople(); this.syncBlocks(); this.updateStands(false); this.updateEndpoint(false);
     // destination ring
     const [x,y,w,h]=Z.end.r, p=(Math.sin(time/300)+1)/2; this.pulse.clear();
+    this.magG.clear(); for(const m of mags) for(let i=0;i<3;i++){ const ph=((time/1600)+i/3)%1, r=m.r-(m.r-MAGNET.core)*ph;
+      this.magG.lineStyle(3,0x7A5CFA,.5*Math.sin(ph*Math.PI)); this.magG.strokeCircle(m.x,m.y,r); }
     this.pulse.lineStyle(4,0xFFC93C,.35+p*.4); this.pulse.strokeRoundedRect(x-8-p*4,y-8-p*4,w+16+p*8,h+16+p*8,20);
     // banner + hint (kept out from under physical objects via freeY)
     if(celebrate>0){ this.celeb.setVisible(true).setAlpha(Math.min(1,celebrate*.8,(3-celebrate)*3)).setY(freeY(W,140)); } else this.celeb.setVisible(false);
@@ -748,7 +781,7 @@ function makeHall(){ return class Hall extends Phaser.Scene{ // defined once Pha
       if(!s.gg) s.gg=this.add.image(0,0,'gauge0').setDepth(5.2);
       const pop=pp.popAt?Math.max(0,1-(now-pp.popAt)/300):0; // short pop when the state changes
       s.gg.setVisible(FILL_GAUGE).setTexture('gauge'+(pp.st||0)).setPosition(pp.x,pp.y-lift-22).setScale(1+pop*.7).setAlpha(s.alpha);
-      s.setScale(1+pop*.35); // short pop of the person when their fill state changes
+      s.setScale((1+pop*.35)*(pp.mag?Math.max(.2,1-pp.magT/MAGNET.suck):1)); // short pop of the person when their fill state changes
       if(!s.sh) s.sh=this.add.image(0,0,'hopShadow').setDepth(4.6);
       if(z>.5){ s.sh.setVisible(true).setPosition(pp.x+2,pp.y+4).setScale(1-Math.min(.5,z/160)).setAlpha(.5*(1-Math.min(.7,z/140))); } else s.sh.setVisible(false);
       if(z>.5||(pp.landAt&&now-pp.landAt<600)){ (pp.trail||(pp.trail=[])).push([pp.x,pp.y-lift,now]); this.trailOwners.add(pp); }
@@ -898,7 +931,11 @@ window.CAM=(()=>{
   // the image center (radial model, k1/k2), then the perspective transform is applied. k1/k2 are found from the
   // calibration points themselves.
   function undist(c,x,y){ if(!c.k) return [x,y]; const A=c.aspect||16/9, u=(x-.5)*A, v=y-.5, r2=u*u+v*v, f=1+c.k[0]*r2+c.k[1]*r2*r2; return [.5+u*f/A,.5+v*f]; }
-  function applyCal(c,x,y){ const p=undist(c,x,y); return applyH(c,p[0],p[1]); }
+  function applyCal(c,x,y){ const p=undist(c,x,y), q=applyH(c,p[0],p[1]); if(!q||!c.res) return q;
+    // residual correction: what the lens model + perspective still get wrong at the measured grid points,
+    // interpolated (inverse distance) to every other point. Covers distortion the radial model cannot describe.
+    let sx=0, sy=0, sw=0; for(const [px,py,ex,ey] of c.res){ const w=1/((q[0]-px)**2+(q[1]-py)**2+400); sx+=w*ex; sy+=w*ey; sw+=w; }
+    return [q[0]+sx/sw, q[1]+sy/sw]; }
   function fitH(cam,canv){ // least-squares perspective transform (more than 4 points)
     const rows=[], rhs=[];
     cam.forEach(([x,y],k)=>{ const X=canv[k][0]/W, Y=canv[k][1]/H;
@@ -950,6 +987,9 @@ window.CAM=(()=>{
       for(let k2=best.k[1]-.08;k2<=best.k[1]+.081;k2+=.02){ const r=search(+k2.toFixed(3)); if(r&&r.rms<best.rms) best=r; }
       if(!(best.rms<noLens*.9)) best=tryK([0,0]); // only use the lens model when it clearly helps
     }
+    if(cam.length>=8){ // enough grid points: store the remaining error per point for applyCal
+      best.res=cam.map((p,i)=>{ const q=applyCal(best,p[0],p[1]); return q?[q[0],q[1],canv[i][0]-q[0],canv[i][1]-q[1]]:null; }).filter(Boolean);
+      best.rmsModel=best.rms; best.rms=0; }
     best.rmsNoLens=noLens; best.auto={cam,canv,aspect:A,...(Array.isArray(edges)&&edges.length?{edges}:{})}; best.lens=!!(best.k[0]||best.k[1]);
     return best;
   }
@@ -975,7 +1015,10 @@ window.CAM=(()=>{
   // reports where the camera sees it. Only the four corners of the field (clockwise from top left); no object
   // has to be placed. Four points give an exact perspective transform; the lens curvature follows from the outline
   // of the lit field afterwards (see edgeSides).
-  const ACAL_GRID=[[.06,.08],[.94,.08],[.94,.92],[.06,.92]];
+  // 4 columns x 5 rows over the whole field (corners first, so a stopped run still has a usable quad). The
+// interior points measure the lens curvature directly; with only the corners it had to be guessed from the outline.
+const ACAL_GRID=(()=>{ const xs=[.06,.35,.65,.94], ys=[.08,.29,.5,.71,.92], g=[[.06,.08],[.94,.08],[.94,.92],[.06,.92]];
+    for(const y of ys) for(const x of xs) if(!g.some(([a,b])=>a===x&&b===y)) g.push([x,y]); return g; })();
   const ACAL_SIZE=44, ACAL_SHOW=150, ACAL_TIMEOUT=7000;
   const acalTarget=i=>[ACAL_GRID[i][0]*W, ACAL_GRID[i][1]*H];
   function sendCal(o){ if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'cal',...o})); }
@@ -1014,7 +1057,7 @@ window.CAM=(()=>{
     return {px:Math.max(median(d),m[worst]), side:['linkerkant','rechterkant','bovenkant','onderkant'][worst], perSide:m.map(v=>Math.round(v)), n:per.map(a=>a.length)}; } // worst side counts: one wrong corner bends one or two sides
   function acalTick(now){ const s=calib; if(!s||!s.auto) return;
     if(!connected){ calib=null; if(typeof toast==='function') sysToast('<i>⚠️</i>Kalibratie gestopt: camera niet verbonden'); return; }
-    if(!s.sent&&now-s.t>(s.phase==='black'?700:ACAL_SHOW)){ s.sent=true; s.sentT=now; sendCal(s.phase==='black'?{cmd:'ref'}:s.phase==='edges'?{cmd:'edges',i:ACAL_EDGES,quad:s.cam}:{cmd:'point',i:s.i}); } // quad: search area for the outline
+    if(!s.sent&&now-s.t>(s.phase==='black'?700:ACAL_SHOW)){ s.sent=true; s.sentT=now; sendCal(s.phase==='black'?{cmd:'ref'}:s.phase==='edges'?{cmd:'edges',i:ACAL_EDGES,quad:[0,1,2,3].every(k=>(s.gi||[]).includes(k))?[0,1,2,3].map(k=>s.cam[s.gi.indexOf(k)]):null}:{cmd:'point',i:s.i}); } // quad: search area for the outline
     if(s.sent&&now-s.sentT>ACAL_TIMEOUT){ // no answer
       if(s.phase==='black'){ calib=null; if(typeof toast==='function') sysToast('<i>⚠️</i>Kalibratie: geen antwoord van camera_bridge.py (nieuwe versie nodig?)'); }
       else if(s.phase==='edges') acalFinish(); // old camera_bridge.py: calibrate without lens correction
@@ -1024,7 +1067,7 @@ window.CAM=(()=>{
     if(m.ref&&s.phase==='black'){ s.phase='point'; s.i=0; s.t=now; s.sent=false; return; }
     if(s.phase==='edges'&&m.i===ACAL_EDGES){ if(m.ok&&Array.isArray(m.edges)) s.edges=m.edges.filter(p=>Array.isArray(p)&&p.length===2&&num(p[0])&&num(p[1])); acalFinish(); return; }
     if(s.phase!=='point'||m.i!==s.i) return;
-    if(m.ok&&num(m.nx)&&num(m.ny)){ s.cam.push([m.nx,m.ny]); s.canv.push(acalTarget(s.i)); if(num(m.fw)&&num(m.fh)&&m.fh>0) s.aspect=m.fw/m.fh; acalNext(now); }
+    if(m.ok&&num(m.nx)&&num(m.ny)){ s.cam.push([m.nx,m.ny]); s.canv.push(acalTarget(s.i)); (s.gi||(s.gi=[])).push(s.i); if(num(m.fw)&&num(m.fh)&&m.fh>0) s.aspect=m.fw/m.fh; acalNext(now); }
     else if(++s.tries<2){ s.t=now; s.sent=false; } // try this point once more
     else { s.missed.push(String(m.reason||'niet gezien')); acalNext(now); }
   }
