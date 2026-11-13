@@ -73,7 +73,8 @@ body.dark .goal{border-bottom-color:rgba(227,232,239,.12)}
 body.dark .pb{background:rgba(227,232,239,.15)}
 body.dark .t{background:#2B3445;color:#E3E8EF;box-shadow:0 6px 0 rgba(0,0,0,.35)}
 body.dark .t-res{background:#2B3445;color:#FF8A7D;box-shadow:inset 0 0 0 3px #FF6B5B,0 7px 0 #151B26}
-#camStatus{display:flex;align-items:center;gap:8px;background:rgba(58,42,26,.55);border-radius:16px;padding:6px 14px;font-size:15px;font-weight:700;white-space:nowrap;line-height:1.1}
+#camStatus span{overflow:hidden;text-overflow:ellipsis}
+#camStatus{min-width:0;max-width:340px;flex:0 1 340px;display:flex;align-items:center;gap:8px;background:rgba(58,42,26,.55);border-radius:16px;padding:6px 14px;font-size:15px;font-weight:700;white-space:nowrap;line-height:1.1}
 #camStatus i{flex:none;width:12px;height:12px;border-radius:50%;background:#9AA3AF;box-shadow:0 0 0 3px rgba(255,255,255,.15)}
 #camStatus[data-s=on] i{background:#23A99A}
 #camStatus[data-s=seen] i{background:#FFC93C;box-shadow:0 0 0 3px rgba(255,201,60,.35)}
@@ -141,9 +142,10 @@ const ZONES=[
 ];
 // Waves: size people per wave, one every `every` s. The next wave follows `pause` s after the last person of the
 // wave has left the field (finish or verdwaald), or at the latest maxWait s after the last one entered.
-const WAVE={size:1, every:.2, pause:2.5, maxWait:12, idleAfter:15}; // a wave is now a single person
+const WAVE={size:1, every:.2, next:1.5, pause:1.2, maxWait:12, idleAfter:15}; // a wave is now a single person; next: seconds until the next person starts, also while the previous one is still walking
+const CP_FLASH=1500; // ms a checkpoint stays lit after a person passed it (several people walk at once now)
 // idleAfter: niet meer gebruikt; actief/inactief wordt bepaald door isActive() (ACTIVE_FOR seconden na de laatste blokactie)
-const SPEED=2; // walking speed factor (2 = twice as fast as the original stream)
+const SPEED=2.5; // walking speed factor (2.5 = 2.5x the original stream; was 2)
 const CP_NEED=Math.min(3,WAVE.size); // people of one wave that must pass a checkpoint before the wave has taken it (1 with single-person waves)
 // Fill states: 0 checkpoints taken = leeg, 1-2 = halfvol, all 3 = vol. Points per person at the finish, by state.
 const FILL_NAMES=['leeg','halfvol','vol'], FILL_PTS=[1,5,20];
@@ -310,14 +312,19 @@ function loadZone(i){ toastWave=null; /* new level: show the per-person messages
   if(VIEW.scene) VIEW.scene.buildZone();
 }
 function newWave(no){ return {no, spawned:0, t:0, lastSpawn:0, pause:0, hits:{}, taken:{}, st:0, stats:{fill:[0,0,0],lost:0,mag:0}}; }
-function waveTick(dt){ // spawns the people of the current wave, then waits for them before the next wave
-  if(wave.pause>0){ wave.pause-=dt; if(wave.pause<=0){ const idle=!isActive(); wave=newWave(idle?1:wave.no+1); for(const cp of Object.values(cps)){ cp.n=0; cp.done=false; } spawnT=0;  } return; }
+function nextWave(){ const idle=!isActive(); wave=newWave(idle?1:wave.no+1); spawnT=0; }
+function waveTick(dt){ // spawns one person per wave; the next starts after WAVE.next s, without waiting for the previous one
+  const now=performance.now(); let ch=false;
+  for(const cp of Object.values(cps)) if((cp.n||cp.done)&&now-(cp.at||0)>CP_FLASH){ cp.n=0; cp.done=false; ch=true; }
+  if(ch) renderCases();
+  if(wave.pause>0){ wave.pause-=dt; if(wave.pause<=0) nextWave(); return; }
   wave.t+=dt;
   if(wave.spawned<WAVE.size){ spawnT-=dt; while(spawnT<=0&&wave.spawned<WAVE.size){ if(!spawn()) { spawnT=.1; break; } wave.spawned++; wave.lastSpawn=wave.t; spawnT+=WAVE.every; } return; }
   if(!people.some(p=>p.W===wave)||wave.t-wave.lastSpawn>WAVE.maxWait){ const f=wave.stats.fill;
     const res=wave.stats.mag?'is door een magneet gegrepen':wave.stats.lost?'is verdwaald':f[2]?'is vol aangekomen':f[1]?'is halfvol aangekomen':f[0]?'is leeg aangekomen':'is weg';
     if(waveToasts(wave)) toast(`<i>🚶</i><div>Persoon ${res}<small>${f[2]?'Goed gedaan!':wave.stats.mag?'Houd de route uit de buurt van de magneet':'Probeer alle 3 de checkpoints te halen'}</small></div>`);
-    wave.pause=WAVE.pause; }
+    wave.pause=WAVE.pause; return; }
+  if(wave.t-wave.lastSpawn>=WAVE.next) nextWave(); // the previous person is still walking: send the next one already
 }
 function inRect(x,y,[rx,ry,rw,rh]){ return x>=rx&&x<=rx+rw&&y>=ry&&y<=ry+rh; }
 function onPlank(x,y){ return blocks.some(b=>{ if(b.t!=='bridge') return false; const a=rad(b.a), dx=x-b.x, dy=y-b.y; const u=dx*Math.cos(a)+dy*Math.sin(a), v=-dx*Math.sin(a)+dy*Math.cos(a); return Math.abs(u)<=PLANK_L/2 && Math.abs(v)<=PLANK_W/2; }); }
@@ -566,7 +573,7 @@ function update(dt){
     }
     if(magnetPull(pp,dt)) continue;
     for(const [k,cp] of Object.entries(cps)) if(!pp.seen[k] && atCheckpoint(pp,cp)){ pp.seen[k]=1; const Wv=pp.W;
-      Wv.hits[k]=(Wv.hits[k]||0)+1; if(Wv===wave) cp.n=Wv.hits[k];
+      Wv.hits[k]=(Wv.hits[k]||0)+1; cp.n=Math.max(cp.n,Math.min(Wv.hits[k],CP_NEED)); cp.at=performance.now(); if(Wv.taken[k]) renderCases();
       if(!Wv.taken[k]&&Wv.hits[k]>=CP_NEED) takeCheckpoint(Wv,k); }
     if(inRect(pp.x,pp.y,Z.end.r)){ pp.gone=true; if(!isActive()) continue; /* inactief: niets tellen */ keepActive(); const st=pp.st||0; // everyone may finish; the fill state decides the points
       totals.out++; totals.fill[st]++; zoneArrived++; zoneFill[st]++; pp.W.stats.fill[st]++; totals.score+=FILL_PTS[st];
@@ -579,7 +586,7 @@ function update(dt){
   if(!isActive() && performance.now()-lastTouch>90000 && (zi!==0||blocks.length)){ /* no reset while a game is going on */ lastTouch=-1e9; round=1; totals=newTotals(); loadZone(0); }
 }
 function takeCheckpoint(Wv,k){ keepActive(); // CP_NEED people of wave Wv passed checkpoint k: the whole wave fills up
-  Wv.taken[k]=1; if(Wv===wave) cps[k].done=true;
+  Wv.taken[k]=1; cps[k].done=true; cps[k].at=performance.now();
   const st=fillState(Object.keys(Wv.taken).length), now=performance.now();
   if(st!==Wv.st){ Wv.st=st; for(const q of people) if(q.W===Wv){ q.st=st; q.popAt=now; } fillSound(st); }
   if(waveToasts(Wv)) toast(`<i>✅</i><div>Checkpoint ${Object.keys(cps).indexOf(k)+1} gepakt<small>De persoon is nu ${FILL_NAMES[Wv.st]}</small></div>`);
@@ -994,19 +1001,28 @@ window.CAM=(()=>{
     return best;
   }
   function loadCal(){ try{ const c=JSON.parse(localStorage.getItem(CAL_KEY)||'null');
-    if(c&&c.auto&&Array.isArray(c.auto.cam)&&Array.isArray(c.auto.canv)) return fitCal(c.auto.cam,c.auto.canv,c.auto.aspect,c.auto.edges);
-    return c&&Array.isArray(c.pts)&&c.pts.length===4&&c.pts.every(p=>Array.isArray(p)&&p.length===2&&p.every(num))?makeCal(c.pts):null; }catch(e){ return null; } }
+    if(c&&c.auto&&Array.isArray(c.auto.cam)&&Array.isArray(c.auto.canv)){ const f=fitCal(c.auto.cam,c.auto.canv,c.auto.aspect,c.auto.edges); if(f&&okRect(c.rect)) f.rect=c.rect; return f; }
+    const m=c&&Array.isArray(c.pts)&&c.pts.length===4&&c.pts.every(p=>Array.isArray(p)&&p.length===2&&p.every(num))?makeCal(c.pts):null; if(m&&okRect(c.rect)) m.rect=c.rect; return m; }catch(e){ return null; } }
   function saveCal(){ try{ if(!cal) localStorage.removeItem(CAL_KEY);
-    else localStorage.setItem(CAL_KEY,JSON.stringify(cal.auto?{auto:cal.auto,rms:cal.rms,at:new Date().toISOString()}:{pts:cal.pts,at:new Date().toISOString()})); }catch(e){} }
+    else localStorage.setItem(CAL_KEY,JSON.stringify(cal.auto?{auto:cal.auto,rms:cal.rms,rect:cal.rect,at:new Date().toISOString()}:{pts:cal.pts,rect:cal.rect,at:new Date().toISOString()})); }catch(e){} }
 
+  // The calibration links camera points to the canvas *as it lay on the screen during calibration*. If the page
+  // layout changes afterwards (header wraps to two lines, window resized, zoom, other monitor scaling), the canvas
+  // moves or scales on the screen and every block would land off by that shift. So the canvas position on the
+  // screen at calibration time is stored (rect) and every mapped point is converted to the canvas as it lies now.
+  const viewRect=()=>{ const r=cv.getBoundingClientRect(); return {l:r.left,t:r.top,w:r.width,h:r.height}; };
+  const okRect=r=>!!r&&[r.l,r.t,r.w,r.h].every(num)&&r.w>0&&r.h>0;
+  function relayout(p){ if(!p||!cal||!okRect(cal.rect)) return p; const a=cal.rect, b=viewRect(); if(!(b.w>0&&b.h>0)) return p;
+    return [((a.l+p[0]/W*a.w)-b.l)/b.w*W, ((a.t+p[1]/H*a.h)-b.t)/b.h*H]; }
+  function rectShift(){ if(!cal||!okRect(cal.rect)) return null; const a=cal.rect, b=viewRect(); return Math.max(Math.abs(a.l-b.l),Math.abs(a.t-b.t),Math.abs(a.w-b.w),Math.abs(a.h-b.h)); }
   function toCanvas(nx,ny){
     if(!cal) return [c01(nx)*W, c01(ny)*H]; // uncalibrated: whole camera frame = canvas
-    const p=applyCal(cal,nx,ny);
+    const p=relayout(applyCal(cal,nx,ny));
     if(!p||p[0]<-OFF_CANVAS||p[0]>W+OFF_CANVAS||p[1]<-OFF_CANVAS||p[1]>H+OFF_CANVAS) return null; // object lies next to the playfield
     return [Math.min(W,Math.max(0,p[0])), Math.min(H,Math.max(0,p[1]))];
   }
 
-  function mapRaw(nx,ny){ return cal?applyCal(cal,nx,ny):[nx*W,ny*H]; } // helper points (rim, heading): no clamping
+  function mapRaw(nx,ny){ return cal?relayout(applyCal(cal,nx,ny)):[nx*W,ny*H]; } // helper points (rim, heading): no clamping
 
   // ---- Calibration: hold the object still on each target; the averaged raw position is recorded ----
   function startCal(){ calib={pts:[],buf:[],seen:false,near:false}; cur=null; console.info('[camera] kalibratie gestart'); }
@@ -1015,16 +1031,13 @@ window.CAM=(()=>{
   // reports where the camera sees it. Only the four corners of the field (clockwise from top left); no object
   // has to be placed. Four points give an exact perspective transform; the lens curvature follows from the outline
   // of the lit field afterwards (see edgeSides).
-  // 4 columns x 5 rows over the whole field (corners first, so a stopped run still has a usable quad). The
-// interior points measure the lens curvature directly; with only the corners it had to be guessed from the outline.
-const ACAL_GRID=(()=>{ const xs=[.06,.35,.65,.94], ys=[.08,.29,.5,.71,.92], g=[[.06,.08],[.94,.08],[.94,.92],[.06,.92]];
-    for(const y of ys) for(const x of xs) if(!g.some(([a,b])=>a===x&&b===y)) g.push([x,y]); return g; })();
+  const ACAL_GRID=[[.06,.08],[.94,.08],[.94,.92],[.06,.92]]; // only the four corners of the field
   const ACAL_SIZE=44, ACAL_SHOW=150, ACAL_TIMEOUT=7000;
   const acalTarget=i=>[ACAL_GRID[i][0]*W, ACAL_GRID[i][1]*H];
   function sendCal(o){ if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'cal',...o})); }
   function startAutoCal(){
     if(!ws||ws.readyState!==1){ if(typeof toast==='function') sysToast('<i>📷</i>Camera niet verbonden: handmatige kalibratie'); startCal(); return; }
-    calib={auto:true,phase:'black',t:performance.now(),sent:false,i:0,tries:0,cam:[],canv:[],missed:[]}; cur=null;
+    calib={auto:true,phase:'black',t:performance.now(),sent:false,i:0,tries:0,cam:[],canv:[],missed:[],rect:viewRect(),moved:0}; cur=null;
     console.info('[camera] automatische kalibratie gestart');
   }
   const ACAL_EDGES=99; // request id for the field outline
@@ -1037,11 +1050,13 @@ const ACAL_GRID=(()=>{ const xs=[.06,.35,.65,.94], ys=[.08,.29,.5,.71,.92], g=[[
     if(c&&off&&off.px>CAL_MAX_OFF){ // the lit field does not land on the field edges: outline or a corner measured wrong
       // Use the four corners anyway (without lens correction): the old calibration is most likely worse. If the
       // outline is now still off, the corner measurement is wrong; kalibratie_rand.png (bridge) shows the outline.
-      const c0=fitCal(s.cam,s.canv,s.aspect); if(c0){ cal=c0; saveCal(); setObjs(objs); }
+      const c0=fitCal(s.cam,s.canv,s.aspect); if(c0){ c0.rect=s.rect; cal=c0; saveCal(); setObjs(objs); }
       console.warn('[camera] randcontrole mislukt: rand wijkt',off.px.toFixed(0),'px af, vooral aan de',off.side,'| per kant (links, rechts, boven, onder):',off.perSide,'px, punten:',off.n,'| gekalibreerd op 4 hoeken zonder lenscorrectie');
       if(typeof toast==='function') sysToast(`<i>⚠️</i><div>Gekalibreerd op de 4 hoeken, zonder lenscorrectie<small>De randcontrole klopte niet (${off.px.toFixed(0)} px, vooral ${off.side}). Ligt de omtrek van een blok nog verkeerd? Stuur dan kalibratie_rand.png uit de map van camera_bridge.py.</small></div>`);
       return; }
-    if(c){ if(off) c.outlinePx=off.px; cal=c; saveCal(); setObjs(objs);
+    if(c){ if(off) c.outlinePx=off.px; c.rect=s.rect; cal=c; saveCal(); setObjs(objs);
+      if(s.moved>2&&typeof toast==='function') sysToast('<i>⚠️</i><div>Het speelveld verschoof tijdens het kalibreren<small>Laat het venster met rust en druk nog een keer K.</small></div>');
+      console.info('[camera] speelveld op het scherm tijdens kalibratie',s.rect);
       console.info('[camera] automatische kalibratie',s.cam.length,'punten, gemiddelde afwijking',c.rms.toFixed(1),'px',c.lens?`(lenscorrectie k1=${c.k[0].toFixed(3)} k2=${c.k[1].toFixed(3)}; zonder: ${c.rmsNoLens.toFixed(1)} px)`:'',c.edgeRms!=null?`rand recht tot ${c.edgeRms.toFixed(1)} px (zonder lenscorrectie ${c.edgeRmsNoLens.toFixed(1)} px)`:'',s.missed);
       if(typeof toast==='function') sysToast(`<i>🎯</i><div>Camera gekalibreerd<small>${s.cam.length} punten · gemiddelde afwijking ${c.rms.toFixed(1).replace('.',',')} px${c.lens?' · met lenscorrectie':''}${c.outlinePx!=null?` · rand ${c.outlinePx.toFixed(0)} px`:''}</small></div>`); }
     else if(typeof toast==='function') sysToast(`<i>⚠️</i><div>Kalibratie mislukt<small>${s.cam.length} van ${ACAL_GRID.length} punten gezien${s.missed[0]?': '+s.missed[0]:''}. Staat de game op het volle scherm en ziet de camera het hele speelveld?</small></div>`);
@@ -1067,7 +1082,8 @@ const ACAL_GRID=(()=>{ const xs=[.06,.35,.65,.94], ys=[.08,.29,.5,.71,.92], g=[[
     if(m.ref&&s.phase==='black'){ s.phase='point'; s.i=0; s.t=now; s.sent=false; return; }
     if(s.phase==='edges'&&m.i===ACAL_EDGES){ if(m.ok&&Array.isArray(m.edges)) s.edges=m.edges.filter(p=>Array.isArray(p)&&p.length===2&&num(p[0])&&num(p[1])); acalFinish(); return; }
     if(s.phase!=='point'||m.i!==s.i) return;
-    if(m.ok&&num(m.nx)&&num(m.ny)){ s.cam.push([m.nx,m.ny]); s.canv.push(acalTarget(s.i)); (s.gi||(s.gi=[])).push(s.i); if(num(m.fw)&&num(m.fh)&&m.fh>0) s.aspect=m.fw/m.fh; acalNext(now); }
+    if(m.ok&&num(m.nx)&&num(m.ny)){ { const r=viewRect(); s.moved=Math.max(s.moved,Math.abs(r.l-s.rect.l),Math.abs(r.t-s.rect.t),Math.abs(r.w-s.rect.w),Math.abs(r.h-s.rect.h)); }
+      s.cam.push([m.nx,m.ny]); s.canv.push(acalTarget(s.i)); (s.gi||(s.gi=[])).push(s.i); if(num(m.fw)&&num(m.fh)&&m.fh>0) s.aspect=m.fw/m.fh; acalNext(now); }
     else if(++s.tries<2){ s.t=now; s.sent=false; } // try this point once more
     else { s.missed.push(String(m.reason||'niet gezien')); acalNext(now); }
   }
@@ -1089,7 +1105,7 @@ const ACAL_GRID=(()=>{ const xs=[.06,.35,.65,.94], ys=[.08,.29,.5,.71,.92], g=[[
     const n=s.buf.length; s.pts.push([s.buf.reduce((a,p)=>a+p[0],0)/n, s.buf.reduce((a,p)=>a+p[1],0)/n]); s.buf=[];
     if(typeof tone==='function') tone(660+s.pts.length*90,.1);
     if(s.pts.length<4) return;
-    const c=makeCal(s.pts); calib=null;
+    const c=makeCal(s.pts); if(c) c.rect=viewRect(); calib=null;
     if(c){ cal=c; saveCal(); setObjs(objs); console.info('[camera] kalibratie opgeslagen',c.pts); if(typeof toast==='function') sysToast('<i>🎯</i>Camera gekalibreerd'); }
     else if(typeof toast==='function') sysToast('<i>⚠️</i><div>Kalibratie mislukt<small>De vier punten waren niet goed te onderscheiden. Druk K om opnieuw te beginnen.</small></div>');
   }
@@ -1311,7 +1327,7 @@ const ACAL_GRID=(()=>{ const xs=[.06,.35,.65,.94], ys=[.08,.29,.5,.71,.92], g=[[
 
   function debugInfo(c){ // raw input: helps verify mirroring/scaling
     const p=objs[0], txt=!connected?'camdebug: niet verbonden':!raw?'camdebug: nog geen bericht':
-      `camdebug: detected=${raw.detected} nx=${num(raw.nx)?raw.nx.toFixed(3):raw.nx} ny=${num(raw.ny)?raw.ny.toFixed(3):raw.ny}`+(p?` → canvas ${Math.round(p.x)}, ${Math.round(p.y)} van ${W}×${H}`:'')+` · kalibratie ${cal?'aan':'uit'}`+[...chips.values()].map(ch=>` · ${ch.kind==='split'?'splits':'stroom '+Math.round(ch.b.a)+'°'} r=${Math.round(ch.r)}${ch.held?' (vast)':''}`).join('');
+      `camdebug: detected=${raw.detected} nx=${num(raw.nx)?raw.nx.toFixed(3):raw.nx} ny=${num(raw.ny)?raw.ny.toFixed(3):raw.ny}`+(p?` → canvas ${Math.round(p.x)}, ${Math.round(p.y)} van ${W}×${H}`:'')+` · kalibratie ${cal?'aan':'uit'}`+(rectShift()!=null?` · veld verschoven ${Math.round(rectShift())} px t.o.v. kalibratie`:'')+[...chips.values()].map(ch=>` · ${ch.kind==='split'?'splits':'stroom '+Math.round(ch.b.a)+'°'} r=${Math.round(ch.r)}${ch.held?' (vast)':''}`).join('');
     c.save(); c.font='700 16px "Baloo 2",sans-serif'; c.textAlign='left'; c.textBaseline='middle';
     const w=c.measureText(txt).width+24; c.fillStyle='rgba(34,52,79,.85)'; c.beginPath(); c.roundRect(52,10,w,34,10); c.fill(); c.fillStyle='#fff'; c.fillText(txt,64,28);
     if(p){ c.fillStyle='#23A99A'; c.beginPath(); c.arc(p.x,p.y,5,0,7); c.fill(); } // unsmoothed position
