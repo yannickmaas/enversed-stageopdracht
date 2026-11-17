@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="nl" data-game="festivalcrew">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Festivalcrew — Enversed Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F3EEE2;--green:#1F2A5C;--green2:#2E3D82;--org:#FF4F81;--yel:#FFC531;--blue:#2BB3C0;--ink:#1A1F3D;--mut:#646A86;--ok:#2BA36B;--bad:#D7263D;--rs-acc:#FF5A1F;--rs-on:#fff;
+  font-family:"IBM Plex Sans",Arial,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none}
+.d{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;letter-spacing:.01em}
+header{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;padding:10px 22px;background:var(--green);color:#fff}
+.brand b{display:block;font-family:"Big Shoulders Display",sans-serif;font-size:36px;line-height:.9}
+.brand span{font-size:14px;opacity:.75}
+#meters{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.mt b{display:flex;justify-content:space-between;font-size:16px}
+.mt div{height:18px;background:rgba(255,255,255,.15);border-radius:9px;overflow:hidden;margin-top:3px}
+.mt em{display:block;height:100%;border-radius:9px;transition:width .3s,background .3s}
+.mt.flash div{box-shadow:0 0 0 3px var(--bad)}
+.qbox{text-align:right;line-height:1}
+.qbox b{font-family:"Big Shoulders Display",sans-serif;font-size:46px;display:block}
+.qbox span{font-size:14px;opacity:.8}
+#omzet{font-family:"Big Shoulders Display",sans-serif;font-size:26px;color:var(--yel)}
+#field{display:block;width:100%;height:auto;max-height:30vh;background:#8FD3FF}
+#field .pop{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:30px;paint-order:stroke;stroke:#1A1F3D;stroke-width:5px;animation:pop 1.6s ease-out forwards}
+@keyframes pop{0%{opacity:0;transform:translateY(8px)}15%{opacity:1}100%{opacity:0;transform:translateY(-46px)}}
+#field .bub{transition:opacity .2s}
+.flashred{animation:fr .5s 2}@keyframes fr{50%{opacity:.55}}
+#panels{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:14px;padding:14px 22px 20px;min-height:0}
+.pn{background:#fff;border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;position:relative;border:5px solid transparent;min-height:0}
+.pn.samen{border-color:var(--yel);background:#FFFBEA}
+.pn .hd{display:flex;align-items:center;gap:10px}
+.pn .hd i{font-style:normal;font-size:34px}
+.pn .hd b{font-family:"Big Shoulders Display",sans-serif;font-size:30px}
+.pn .pl{margin-left:auto;border-radius:20px;padding:3px 12px;font-weight:700;font-size:14px;color:#fff}
+.pn .q{font-size:13px;color:var(--mut)}
+.card{flex:1;display:flex;flex-direction:column;gap:10px;min-height:0}
+.card h3{margin:0;font-size:clamp(20px,2vw,28px);line-height:1.15}
+.card .tag{display:inline-block;background:var(--yel);color:var(--ink);font-weight:700;font-size:14px;border-radius:8px;padding:2px 10px;margin-right:6px}
+.opts{display:grid;gap:10px;margin-top:auto}
+.opts.c2{grid-template-columns:1fr 1fr}.opts.c3{grid-template-columns:1fr 1fr 1fr}
+.op{--acc:#FF4F81;font:inherit;font-weight:700;font-size:clamp(15px,1.3vw,18px);text-align:left;border:2px solid #E6DFCF;border-left:7px solid var(--acc);border-radius:14px;padding:11px 12px 10px;cursor:pointer;color:var(--ink);background:#FFFDF7;min-height:76px;line-height:1.2;touch-action:manipulation;position:relative;box-shadow:0 3px 0 #E6DFCF;transition:transform .06s,box-shadow .06s,background .15s}
+.op:nth-child(2){--acc:#2BB3C0}.op:nth-child(3){--acc:#9B5DE5}
+.op:hover{background:#fff;border-color:var(--acc)}
+.op:active{transform:translateY(2px);box-shadow:0 1px 0 #E6DFCF}
+.op small{display:flex;flex-wrap:wrap;gap:4px;font-weight:700;font-size:12px;margin-top:6px}
+.op small i{font-style:normal;border-radius:8px;padding:2px 6px;background:#E8F6EA;color:#1E7A3C}.op small i.n{background:#FDE7EA;color:#B3192E}.op small i.z{background:#EEE;color:#666}
+.op kbd{position:absolute;top:5px;right:8px;font-size:11px;opacity:.45;font-family:inherit}
+.op.picked{background:#FFF4CC;border-color:var(--yel);border-left-color:var(--yel)}
+.tb{height:10px;border-radius:5px;background:#E1E6E0;overflow:hidden}.tb em{display:block;height:100%;background:var(--org)}
+.idle{flex:1;display:grid;place-items:center;color:var(--mut);font-size:18px}
+.fx{position:absolute;left:50%;top:40%;transform:translateX(-50%);font-family:"Big Shoulders Display",sans-serif;font-size:34px;pointer-events:none;animation:up 1s forwards;white-space:nowrap}
+@keyframes up{to{transform:translate(-50%,-60px);opacity:0}}
+#feed{position:fixed;left:50%;top:96px;transform:translateX(-50%);z-index:6;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.t{background:var(--ink);color:#fff;font-weight:700;font-size:20px;border-radius:12px;padding:8px 18px;animation:tt 2.2s forwards}
+.t.good{background:var(--ok)}.t.bad{background:var(--bad)}
+@keyframes tt{0%{opacity:0}10%,80%{opacity:1}100%{opacity:0}}
+button:focus-visible,a:focus-visible{outline:5px solid var(--org);outline-offset:3px}
+.overlay{position:fixed;inset:0;background:rgba(15,37,38,.94);display:grid;place-items:center;z-index:10;padding:24px;color:#fff}
+.overlay[hidden]{display:none}
+.box{max-width:960px;width:100%;max-height:92vh;overflow:auto}
+.box h2{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:clamp(54px,9vw,120px);margin:0;line-height:.9}
+.box p{font-size:20px;line-height:1.45;max-width:60ch}
+.np{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.np button{font:inherit;font-weight:700;font-size:22px;border:0;border-radius:18px;padding:18px 26px;cursor:pointer;background:#fff;color:var(--ink);min-width:150px}
+.np button b{display:block;font-family:"Big Shoulders Display",sans-serif;font-size:52px;line-height:1}
+.go{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:34px;background:var(--org);color:#fff;border:0;border-radius:18px;padding:14px 44px;cursor:pointer;margin-top:10px}
+.strat{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0}
+.strat button{font:inherit;text-align:left;border:0;border-radius:20px;padding:18px;cursor:pointer;background:#fff;color:var(--ink);font-size:18px;position:relative}
+.strat button b{display:block;font-size:24px;margin-bottom:4px}
+.strat .v{position:absolute;top:10px;right:12px;background:var(--org);color:#fff;border-radius:12px;padding:2px 10px;font-weight:700}
+.rep{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.rep div{background:var(--green2);border-radius:16px;padding:12px;font-size:15px}.rep b{display:block;font-family:"Big Shoulders Display",sans-serif;font-size:40px}
+.rep small{opacity:.8}
+.bars{display:flex;gap:10px;align-items:flex-end;height:120px;margin:10px 0}
+.bars div{flex:1;background:var(--yel);border-radius:8px 8px 0 0;position:relative;min-height:6px}
+.bars div span{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font-size:14px}
+.big{font-family:"Big Shoulders Display",sans-serif;font-size:110px;line-height:1}
+.dec{columns:2;font-size:15px;opacity:.9;margin:10px 0;padding-left:18px}
+@media (max-width:1000px){#panels{grid-template-columns:1fr;grid-template-rows:none;overflow:auto}header{grid-template-columns:1fr auto}#meters{grid-column:1/-1;grid-row:2}.strat,.rep{grid-template-columns:1fr 1fr}body{overflow:auto}}
+/* tabs: play / how it works */
+.tabs{display:flex;background:rgba(255,255,255,.12);border-radius:24px;padding:3px;gap:3px}
+.tabs button{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:20px;padding:7px 15px;background:none;color:#fff;opacity:.8;cursor:pointer}
+.tabs button[aria-selected="true"]{background:#fff;color:var(--green);opacity:1}
+.top{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#tutorial{flex:1;overflow:auto;padding:16px 22px 24px}
+#tutorial[hidden],#panels[hidden],#results[hidden]{display:none}
+#results{flex:1;overflow:auto;padding:16px 22px 24px}
+#results h2{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:clamp(40px,7vw,80px);line-height:.9;margin:6px 0 4px}
+#results .big{color:var(--org)} #results .rep div{color:#fff} #results .bars div span{color:var(--ink)} #results .dec{columns:1}
+#results p{font-size:17px;line-height:1.45;max-width:62ch}
+#tutorial h2{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:clamp(44px,8vw,90px);line-height:.9;margin:6px 0 12px}
+#tutorial p,#tutorial li{font-size:18px;line-height:1.5;max-width:62ch}
+#tutorial ol{padding-left:22px}
+#tutorial .np button{background:#fff;border:3px solid var(--green2)}
+#tutorial .np button[aria-pressed="true"]{border-color:var(--org)}
+/* phone: the four departments stay side by side in a 2x2 grid, options stacked */
+@media (max-width:700px){
+  body{overflow:hidden}
+  header{grid-template-columns:1fr auto;grid-template-areas:'brand clock' 'tabs tabs' 'meters meters';gap:6px 10px;padding:8px 10px}
+  header .brand{grid-area:brand} .top{display:contents} .tabs{grid-area:tabs;justify-self:stretch} .tabs button{flex:1} .qbox{grid-area:clock} #meters{grid-area:meters}
+  .brand b{font-size:24px}.brand span{font-size:12px} #omzet{font-size:18px}
+  #meters{gap:8px}.mt b{font-size:11px}.mt div{height:10px}
+  .qbox b{font-size:30px}.qbox span{font-size:12px}
+  .tabs button{font-size:13px;padding:5px 8px}
+  /* phone: the four posts as full-width rows with the options side by side; rows keep their natural height, and on
+     a small phone the posts scroll instead of overlapping */
+  #panels{grid-template-columns:1fr;grid-template-rows:none;grid-auto-rows:max-content;align-content:start;overflow-y:auto;gap:6px;padding:6px 8px 8px}
+  #field{max-height:11vh} #field .pop{font-size:44px}
+  .pn{padding:6px 8px;gap:3px;border-width:2px;border-radius:12px;min-height:0}
+  .pn .hd{gap:6px}.pn .hd i{font-size:15px}.pn .hd b{font-family:inherit;font-weight:700;font-size:12px;color:var(--mut)}.pn .pl{font-size:10px;padding:1px 7px}
+  .card{gap:3px;min-height:0}
+  .card h3{font-size:14px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none} .card .tb,.card .opts{flex:none}
+  .card .tag{display:inline-block;font-size:10px;padding:0 5px;margin:0 4px 0 0;vertical-align:1px}
+  .tb{height:5px}
+  .opts{gap:5px}.opts.c2{grid-template-columns:1fr 1fr}.opts.c3{grid-template-columns:1fr 1fr 1fr}
+  .op{min-height:44px;padding:4px 6px 5px;font-size:12px;line-height:1.15;border-radius:9px;border-width:1.5px;border-left-width:5px;box-shadow:0 2px 0 #E6DFCF;display:flex;flex-direction:column;justify-content:center}
+  .op small{font-size:9.5px;margin-top:2px;gap:2px}.op small i{padding:0 4px;border-radius:6px}.op kbd{display:none}
+  .idle{font-size:12px;text-align:center}
+  .fx{font-size:22px}
+  #feed{top:118px}.t{font-size:14px;padding:6px 12px}
+  #tutorial,#results{padding:10px 14px 20px} #tutorial p,#tutorial li,#results p{font-size:16px}
+  .overlay{padding:14px}.box p{font-size:16px}.box h2{font-size:48px}
+  .strat{grid-template-columns:1fr}.strat button{padding:12px;font-size:15px}.strat button b{font-size:19px}
+  .rep{grid-template-columns:1fr 1fr}.rep b{font-size:28px}.big{font-size:64px}.dec{columns:1}
+  .np button{min-width:0;flex:1;padding:12px 10px;font-size:16px}.np button b{font-size:34px}
+}
+/* showcase: the festival runs by itself until someone taps */
+#attract{position:fixed;left:50%;bottom:20%;transform:translateX(-50%);z-index:15;font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:clamp(26px,3.4vw,40px);letter-spacing:.5px;line-height:1.05;text-align:center;background:var(--org);color:#fff;border:0;border-radius:999px;padding:16px 34px;box-shadow:0 10px 30px rgba(26,31,61,.35),0 0 0 6px rgba(255,255,255,.6);cursor:pointer;animation:attr 1.8s ease-in-out infinite;white-space:nowrap}
+#attract small{display:block;font-family:Manrope,system-ui,sans-serif;font-weight:700;font-size:14px;letter-spacing:0;opacity:.9;margin-top:3px}
+@keyframes attr{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.06)}}
+#panels.demo .pn{opacity:.8} #panels.demo .pl{background:#9AA0B8!important}
+.op.auto{background:#FFF4CC;border-color:var(--yel);border-left-color:var(--yel);transform:translateY(2px)}
+@media (max-width:700px){#attract{bottom:14%;font-size:24px;padding:12px 22px;white-space:normal;width:max-content;max-width:calc(100vw - 28px)}#attract small{font-size:13px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><div class="brand"><b>FESTIVALCREW</b><span>Zomerveld · <span id="omzet">0 bezoekers blij</span></span></div><div id="meters"></div><div class="top"><nav class="tabs" role="tablist" aria-label="Weergave"><button role="tab" id="tabPlay" aria-selected="true" aria-controls="panels">Spelen</button><button role="tab" id="tabHelp" aria-selected="false" aria-controls="tutorial">Uitleg</button><button role="tab" id="tabRes" aria-selected="false" aria-controls="results">Resultaat</button></nav><div class="qbox"><b id="q">14:00</b><span id="qt">Middag</span></div></div></header>
+<svg id="field" viewBox="0 0 1200 240" role="img" aria-label="Het festivalterrein: podium, publiek, eten en drinken, toiletten"></svg>
+<div id="panels" role="tabpanel" aria-labelledby="tabPlay"></div>
+<button id="attract" hidden>Tik om te spelen<small>De crew draait nu zelf. Neem het roer over!</small></button>
+<section id="results" role="tabpanel" aria-labelledby="tabRes" hidden></section>
+<section id="tutorial" role="tabpanel" aria-labelledby="tabHelp" hidden>
+  <h2>Houd het feest draaiende.</h2>
+  <p>Je runt de crew van festival Zomerveld, van de middag tot de headliner in de nacht. Er gebeurt steeds meer tegelijk: jij houdt het terrein veilig, schoon en vol sfeer.</p>
+  <ol><li>Bij elke post verschijnt een melding: Podium, Eten &amp; drinken, Veiligheid en Schoonmaak. Tik op een keuze voordat de balk leeg is. Ben je te laat, dan pakt het slecht uit.</li>
+  <li>Elke keuze verschuift de meters bovenin: Sfeer, Veiligheid, Netheid en Crew. Op het terrein zie je meteen wat er gebeurt. Laat geen meter op nul komen, anders wordt het festival stilgelegd.</li>
+  <li>Gele meldingen moeten twee posten samen oplossen: kies bij allebei hetzelfde.</li>
+  <li>Na elk dagdeel kies je een verbetering voor de rest van het festival.</li></ol>
+  <p>Speelt er niemand, dan draait het festival vanzelf met een automatische crew. Tik erop en je begint met een vers festival: dag 1, middag, alle meters op 60. Laat je het een tijdje liggen, dan neemt de automatische crew het weer over.</p>
+  <p>Het festival gaat gewoon door: na de nacht begint een nieuwe dag. Valt een meter op nul, dan volgt een incident dat bezoekers kost, en daarna gaat het feest verder. Je score staat in de tab Resultaat.</p>
+  <p>Samen spelen op één scherm? Kies het aantal spelers; dan krijgt iedereen een eigen post. Het festival begint dan opnieuw.</p>
+  <div class="np" id="np"><button data-n="1" aria-pressed="true"><b>1</b>speler</button><button data-n="2" aria-pressed="false"><b>2</b>spelers</button><button data-n="3" aria-pressed="false"><b>3</b>spelers</button><button data-n="4" aria-pressed="false"><b>4</b>spelers</button></div>
+  <p style="font-size:15px;opacity:.75">Iedereen speelt op hetzelfde touchscreen, elk aan een eigen post. Toetsenbord: 1 2 3 · Q W E · A S D · Z X C.</p>
+  <button class="go" id="backPlay">Verder spelen</button>
+</section>
+<div id="feed"></div>
+<div class="overlay" id="between" hidden><div class="box" id="betweenBox"></div></div>
+<script>// ===== Resultaten: score opslaan en ranglijst (gedeeld door alle Enversed-games, zonder e-mail) =====
+const RESULTS = (() => {
+  const GAME = document.documentElement.dataset.game || 'game';
+  const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+  const dbP = use('db');
+  const LKEY = 'enversed-results-' + GAME;
+  const local = { get() { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch (e) { return []; } },
+                  put(a) { try { localStorage.setItem(LKEY, JSON.stringify(a.slice(-300))); } catch (e) {} } };
+  const refs = {};
+  // Save (or update) the score of one play session; returns where it was stored.
+  async function save(runId, score, lines) {
+    const doc = { game: GAME, naam: 'Anoniem', score, samenvatting: lines.join(' | '), at: new Date().toISOString() };
+    const db = await dbP;
+    if (db) { try { if (refs[runId]?.ref) await refs[runId].ref.set(doc); else refs[runId] = { ref: await db.collection('scores').add(doc) }; return 'db'; } catch (e) {} }
+    const a = local.get();
+    if (refs[runId]?.localId) { const i = a.findIndex(x => x.id === refs[runId].localId); if (i >= 0) a[i] = { ...doc, id: refs[runId].localId }; }
+    else { const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7); refs[runId] = { localId: id }; a.push({ ...doc, id }); }
+    local.put(a); return 'local';
+  }
+  async function all() {
+    const db = await dbP;
+    if (db) { try { const s = await db.collection('scores').orderBy('score', 'desc').limit(1000).get(); return s.docs.map(d => d.data()); } catch (e) {} }
+    return local.get().sort((a, b) => b.score - a.score);
+  }
+  // Place of `score` among all saved scores, as HTML for the result tab.
+  async function rank(el, score) {
+    const rows = await all(); if (!rows.length) { el.innerHTML = ''; return; }
+    const place = rows.filter(x => x.score > score).length + 1;
+    el.innerHTML = `<div class="rs-rank"><b>#${place}</b><span>van ${rows.length} ${rows.length === 1 ? 'spelsessie' : 'spelsessies'}</span></div><ol class="rs-top">${rows.slice(0, 5).map(x => `<li>${x.score}</li>`).join('')}</ol>`;
+  }
+  const css = document.createElement('style');
+  css.textContent = `.rs-rank{display:flex;align-items:baseline;gap:10px;margin:4px 0}.rs-rank b{font-size:34px}.rs-rank span{opacity:.8}
+    .rs-top{display:flex;gap:14px;list-style:decimal inside;padding:0;margin:0 0 6px;font-size:15px;opacity:.8;flex-wrap:wrap}`;
+  document.head.appendChild(css);
+  return { save, rank };
+})();
+</script>
+<script>
+// ===== Festivalcrew: keep the festival running =====
+const MET=[{k:'sfeer',n:'🎉 Sfeer'},{k:'veilig',n:'🦺 Veiligheid'},{k:'schoon',n:'🧹 Netheid'},{k:'crew',n:'⚡ Crew'}];
+// zone: where on the field the feedback of this post appears (x in the 1200x240 field)
+const DEP=[{k:'podium',ic:'🎤',n:'Podium',keys:['1','2','3'],zone:[240,70]},{k:'eten',ic:'🍔',n:'Eten & drinken',keys:['q','w','e'],zone:[950,95]},
+           {k:'veilig',ic:'🚧',n:'Veiligheid',keys:['a','s','d'],zone:[600,110]},{k:'schoon',ic:'🚻',n:'Schoonmaak',keys:['z','x','c'],zone:[1115,95]}];
+const PCOL=['#FF4F81','#2BB3C0','#7BC74D','#9B5DE5'];
+const MAP={1:[0,0,0,0],2:[0,0,1,1],3:[0,1,2,2],4:[0,1,2,3]};
+// a card: t = what happens, o = [label, effects, optional field effect]
+const C={
+ podium:[
+  {t:'Artiest staat in de file',o:[['DJ speelt langer',{sfeer:-3,crew:2}],['Programma omgooien',{crew:-5,sfeer:4}],['Publiek laten wachten',{sfeer:-10}]]},
+  {t:'Geluid valt weg',o:[['Reserve-installatie',{crew:-4,sfeer:2}],['Akoestisch verder',{sfeer:4,crew:-2},'spot'],['Pauze inlassen',{sfeer:-8}]]},
+  {t:'Regenbui op het podium',o:[['Zeil spannen',{crew:-4,veilig:4},'rain'],['Doorspelen',{veilig:-8,sfeer:3},'rain'],['Show stilleggen',{sfeer:-8,veilig:3},'rain']]},
+  {t:'Publiek wil een toegift',o:[['Toegift!',{sfeer:10,crew:-3},'confetti'],['Op schema blijven',{sfeer:-5,crew:4}]]},
+  {t:'Lichtshow hapert',o:[['Technicus erop',{crew:-3,sfeer:3},'spot'],['Zonder licht verder',{sfeer:-6}]]}],
+ eten:[
+  {t:'Lange rij bij de bar',o:[['Extra tap openen',{crew:-4,sfeer:5}],['Muntjes vooraf',{sfeer:2,schoon:-2,crew:3}],['Rij laten staan',{sfeer:-8}]]},
+  {t:'Bekers zijn op',o:[['Ophalen bij de buren',{crew:-4}],['Statiegeldbekers',{schoon:6,sfeer:-2}],['Flesjes uitdelen',{schoon:-8}]]},
+  {t:'Foodtruck zonder stroom',o:[['Aggregaat erbij',{crew:-3,sfeer:3}],['Truck dicht',{sfeer:-6}]]},
+  {t:'Het is snikheet',o:[['Gratis water',{sfeer:6,crew:-2}],['Sproeiers aan',{sfeer:5,schoon:-4},'rain'],['Niets doen',{veilig:-8,sfeer:-4}]]},
+  {t:'Vegan burgers uitverkocht',o:[['Snel bijbestellen',{crew:-3,sfeer:3}],['Excuusbordje',{sfeer:-4}]]}],
+ veilig:[
+  {t:'Te druk voor het podium',o:[['Vak afsluiten',{veilig:8,sfeer:-4}],['Omroepen',{veilig:4,crew:2}],['Laten gaan',{veilig:-12}]]},
+  {t:'Iemand onwel in het publiek',o:[['EHBO erheen',{crew:-3,veilig:8}],['Vriendjes laten helpen',{veilig:-8}]]},
+  {t:'Hek omgeduwd',o:[['Direct herstellen',{crew:-4,veilig:6}],['Afzetlint',{veilig:2,sfeer:-2}],['Later doen',{veilig:-10}]]},
+  {t:'Onweer op komst',o:[['Terrein ontruimen',{veilig:12,sfeer:-12},'storm'],['Even afwachten',{veilig:-10},'storm'],['Alleen podium stil',{veilig:6,sfeer:-6},'storm']]},
+  {t:'Kind kwijt',o:[['Omroepen bij het podium',{veilig:6,sfeer:-3}],['Crew laten zoeken',{crew:-4,veilig:6}]]}],
+ schoon:[
+  {t:'Toiletten verstopt',o:[['Loodgieter bellen',{crew:-2,schoon:8}],['Dixi\'s erbij',{schoon:5,crew:-2}],['Bordje "defect"',{schoon:-10,sfeer:-3}]]},
+  {t:'Afval bij de bar',o:[['Prikkers op pad',{crew:-3,schoon:8}],['Extra bakken',{schoon:4,crew:3}],['Na afloop',{schoon:-10}]]},
+  {t:'Modder bij de ingang',o:[['Rijplaten leggen',{crew:-4,schoon:6,veilig:3}],['Stro strooien',{schoon:3}],['Laten zo',{veilig:-6,schoon:-4}]]},
+  {t:'Prullenbakken puilen uit',o:[['Leegmaken',{crew:-3,schoon:8}],['Containers erbij',{schoon:5}]]},
+  {t:'Glas op de grond',o:[['Meteen opruimen',{crew:-2,veilig:6,schoon:4}],['Hekje eromheen',{veilig:2}],['Negeren',{veilig:-10}]]}]
+};
+const SAMEN=[
+ {d:['podium','veilig'],t:'Moshpit wordt wild',o:[['Samen: muziek even zachter',{veilig:10,sfeer:-4}],['Gewoon doorgaan',{veilig:-10,sfeer:6}]]},
+ {d:['eten','schoon'],t:'Statiegeld op bekers invoeren?',o:[['Ja, doen',{schoon:12,sfeer:-2}],['Nee',{schoon:-6}]]},
+ {d:['podium','eten'],t:'Headliner wil 15 minuten langer',o:[['Ja, de bar blijft open',{sfeer:12,crew:-5},'confetti'],['Nee, op tijd stoppen',{sfeer:-6}]]},
+ {d:['veilig','schoon'],t:'Nooduitgang staat vol afval',o:[['Samen vrijmaken',{veilig:10,schoon:6,crew:-4}],['Later',{veilig:-10}]]},
+ {d:['eten','veilig'],t:'Ruzie in de rij bij de bar',o:[['Beveiliging + gratis water',{veilig:8,sfeer:3,crew:-2}],['Laten uitpraten',{veilig:-8}]]},
+ {d:['podium','schoon'],t:'Confettikanon na de show?',o:[['Knallen!',{sfeer:12,schoon:-8},'confetti'],['Liever niet',{sfeer:-3}]]}
+];
+const STRAT=[
+ {k:'toilet',t:'Extra toiletten',d:'Netheid zakt minder snel',now:{schoon:10}},
+ {k:'water',t:'Gratis waterpunten',d:'Sfeer +10 en blijft beter hangen',now:{sfeer:10}},
+ {k:'crew',t:'Extra crew inhuren',d:'Crew +15 en raakt minder snel moe',now:{crew:15}},
+ {k:'ehbo',t:'Grotere EHBO-post',d:'Veiligheid +10 en zakt minder snel',now:{veilig:10}},
+ {k:'scherm',t:'Groot scherm bij het podium',d:'Sfeer +15',now:{sfeer:15}}
+];
+const BLOCKS=[{n:'Middag',h:14,sky:['#7CC8F5','#DDF3FF']},{n:'Vooravond',h:17,sky:['#FF9F68','#FFE0A8']},{n:'Avond',h:20,sky:['#5B3E8C','#F08A6B']},{n:'Nacht',h:23,sky:['#0B1030','#2D2A66']}];
+const QT=45, DEMO_QT=16; // seconds per day part; in the showcase the day goes by faster
+const DEMO_IDLE=40; // seconds without any tap before the automatic crew takes over again
+const qlen=()=>S.demo?DEMO_QT:QT;
+const lvl=()=>Math.min(S.q,6); // difficulty grows for six day parts, then stays the same
+let S, raf, last;
+const $=id=>document.getElementById(id);
+function ac(){ if(!ac.c){try{ac.c=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} return ac.c }
+function tone(f,d=.1,t='triangle',v=.06){ if(S&&S.demo) return; const c=ac(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d)}
+// In the showcase at most one message per DEMO_TOAST_GAP seconds, and no bad news: it should stay calm and inviting.
+const DEMO_TOAST_GAP=15; let demoToastAt=-1e9;
+function feed(m,c=''){ if(S&&S.demo){ const now=performance.now(); if(c==='bad'||now-demoToastAt<DEMO_TOAST_GAP*1000) return; demoToastAt=now; }
+  const t=document.createElement('div'); t.className='t '+c; t.textContent=m; $('feed').appendChild(t); setTimeout(()=>t.remove(),2200); while($('feed').children.length>3) $('feed').firstChild.remove(); }
+const sum=e=>Object.values(e).reduce((a,b)=>a+b,0);
+const dep=k=>DEP.findIndex(d=>d.k===k);
+const ico=k=>MET.find(m=>m.k===k).n.split(' ')[0];
+
+// ---------- the festival field: everything that happens is visible here ----------
+const F={people:[],trash:[],crew:[]};
+function buildField(){
+  const rnd=(a,b)=>a+Math.random()*(b-a), cols=['#FF4F81','#2BB3C0','#FFC531','#7BC74D','#9B5DE5','#FFFFFF','#FF8A3D'];
+  F.people=[...Array(70)].map(()=>({x:rnd(330,860),y:rnd(158,228),c:cols[Math.floor(Math.random()*cols.length)],p:Math.random()*6}));
+  F.people.sort((a,b)=>a.y-b.y);
+  F.trash=[...Array(16)].map(()=>({x:rnd(320,1180),y:rnd(205,236),r:rnd(-30,30),c:Math.random()<.5?'#E8E2D0':'#C0392B'}));
+  F.crew=[[460,150],[700,150],[930,170],[1090,170],[380,200],[800,200]];
+  $('field').innerHTML=`<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop id="sk0" offset="0" stop-color="#7CC8F5"/><stop id="sk1" offset="1" stop-color="#DDF3FF"/></linearGradient>
+     <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6C8" stop-opacity=".8"/><stop offset="1" stop-color="#FFF6C8" stop-opacity="0"/></linearGradient></defs>
+   <rect width="1200" height="150" fill="url(#sky)"/>
+   <g id="stars" opacity="0">${[...Array(30)].map(()=>`<circle cx="${rnd(0,1200)}" cy="${rnd(5,90)}" r="${rnd(.8,2)}" fill="#fff"/>`).join('')}</g>
+   <path d="M0 132 q150 -26 300 -6 t300 -4 t300 6 t300 -8 V150 H0z" fill="#6FBF73" opacity=".5"/>
+   <rect y="140" width="1200" height="100" fill="#73C26A"/><path d="M0 150 h1200" stroke="#5FAF5A" stroke-width="6"/>
+   <!-- podium --><rect x="120" y="40" width="250" height="16" fill="#2A2F45"/><rect x="128" y="56" width="10" height="110" fill="#2A2F45"/><rect x="352" y="56" width="10" height="110" fill="#2A2F45"/>
+   <rect x="110" y="150" width="270" height="22" fill="#3A3F5C"/><rect x="138" y="70" width="214" height="80" fill="#1A1F3D"/>
+   <g id="beams">${[170,215,260,305].map((x,i)=>`<path d="M${x} 58 L${x-40+i*10} 150 L${x+40+i*10} 150z" fill="url(#beam)"/>`).join('')}</g>
+   <g id="lamps">${[170,215,260,305].map(x=>`<circle cx="${x}" cy="60" r="6" fill="#FFE27A"/>`).join('')}</g>
+   <rect x="92" y="96" width="30" height="70" rx="4" fill="#20243A"/><rect x="368" y="96" width="30" height="70" rx="4" fill="#20243A"/>
+   <text x="245" y="118" text-anchor="middle" font-family="'Big Shoulders Display',Impact,sans-serif" font-weight="900" font-size="26" fill="#FFC531" id="act">ZOMERVELD</text>
+   <path d="M310 176 h560" stroke="#C9CED6" stroke-width="4" stroke-dasharray="10 6"/>
+   <!-- eten en drinken --><g transform="translate(880 100)"><rect width="70" height="56" fill="#FFF3D6"/><path d="M-6 0 h82 l-8 -18 h-66z" fill="#FF4F81"/><text x="35" y="34" text-anchor="middle" font-size="22">🍺</text></g>
+   <g transform="translate(965 100)"><rect width="70" height="56" fill="#FFF3D6"/><path d="M-6 0 h82 l-8 -18 h-66z" fill="#2BB3C0"/><text x="35" y="34" text-anchor="middle" font-size="22">🍔</text></g>
+   <g id="queue"></g>
+   <!-- toiletten --><g transform="translate(1060 96)">${[0,1,2].map(i=>`<rect x="${i*40}" width="34" height="62" rx="5" fill="#3E7CB1"/><circle cx="${i*40+17}" cy="14" r="5" fill="#9CC3E6"/>`).join('')}</g>
+   <g id="stink" opacity="0">${[1075,1115,1155].map(x=>`<path d="M${x} 90 q8 -10 0 -20 q-8 -10 0 -20" stroke="#8BA84A" stroke-width="4" fill="none"/>`).join('')}</g>
+   <g id="trash"></g><g id="crowd"></g><g id="crewG"></g>
+   <g id="warn" opacity="0"><path d="M600 60 l26 46 h-52z" fill="#FFC531" stroke="#1A1F3D" stroke-width="4"/><text x="600" y="100" text-anchor="middle" font-weight="900" font-size="28" fill="#1A1F3D">!</text></g>
+   <g id="rain" opacity="0">${[...Array(70)].map(()=>{const x=rnd(0,1220),y=rnd(-20,220);return `<path d="M${x} ${y} l-6 16" stroke="#CFE6FF" stroke-width="2.5"/>`;}).join('')}</g>
+   <rect id="flash" width="1200" height="240" fill="#fff" opacity="0" pointer-events="none"/>
+   <g id="bubbles">${DEP.map(d=>`<g class="bub" id="b-${d.k}" opacity="0" transform="translate(${d.zone[0]} ${d.zone[1]-38})"><circle r="17" fill="#fff" stroke="#1A1F3D" stroke-width="3"/><circle id="bu-${d.k}" r="17" fill="none" stroke="#FF4F81" stroke-width="5" stroke-dasharray="107" transform="rotate(-90)"/><text y="7" text-anchor="middle" font-size="18">${d.ic}</text></g>`).join('')}</g>
+   <g id="pops"></g><g id="confetti"></g>`;
+}
+function pop(x,y,txt,col){ const g=$('pops'); g.insertAdjacentHTML('beforeend',`<text class="pop" x="${x}" y="${y}" text-anchor="middle" fill="${col}">${txt}</text>`); const el=g.lastChild; setTimeout(()=>el.remove(),1600); }
+function effectPops(k,e){ const [x,y]=DEP[dep(k)].zone; const parts=Object.entries(e).filter(([,v])=>v);
+  if(!parts.length) return pop(x,y,'=', '#fff');
+  parts.forEach(([m,v],i)=>setTimeout(()=>pop(x+(i-(parts.length-1)/2)*70,y,`${v>0?'+':''}${Math.round(v)}${ico(m)}`,v>0?'#7CFF8A':'#FF6B7A'),i*120)); }
+function fieldFx(kind){
+  if(kind==='rain'||kind==='storm'){ S.rainT=5; }
+  if(kind==='storm'){ let n=0; const f=()=>{ $('flash').setAttribute('opacity',n%2?0:.7); if(++n<5) setTimeout(f,110); }; f(); tone(90,.5,'sawtooth',.05); }
+  if(kind==='confetti'){ const g=$('confetti'), cols=['#FF4F81','#FFC531','#2BB3C0','#7BC74D','#fff'];
+    g.innerHTML=[...Array(50)].map(()=>{ const x=150+Math.random()*700, d=1+Math.random()*1.2; return `<rect x="${x}" y="-10" width="7" height="12" fill="${cols[Math.floor(Math.random()*5)]}"><animate attributeName="y" from="-10" to="${170+Math.random()*60}" dur="${d}s" fill="freeze"/><animate attributeName="opacity" values="1;1;0" dur="${d+.6}s" fill="freeze"/></rect>`; }).join(''); }
+  if(kind==='spot'){ S.spotT=2.5; }
+}
+function drawField(t){
+  if(!S||!$('crowd')) return;
+  const m=S.m, bi=S.q%4, b=BLOCKS[bi], night=bi>=2;
+  $('sk0').setAttribute('stop-color',b.sky[0]); $('sk1').setAttribute('stop-color',b.sky[1]); $('field').style.background=`linear-gradient(${b.sky[0]},${b.sky[1]} 58%,#73C26A 58%)`; // fills the sides on wide screens $('stars').setAttribute('opacity',bi===3?.9:bi===2?.3:0);
+  // lights: brighter with more atmosphere, flashing to the beat at night
+  const beat=(Math.sin(t/180)+1)/2, lit=Math.max(.08,m.sfeer/100)*(night?.55+.45*beat:.5)*(S.spotT>0?1.4:1);
+  $('beams').setAttribute('opacity',Math.min(1,lit)); $('lamps').setAttribute('opacity',.4+m.sfeer/170);
+  // crowd: more people and higher jumps with more atmosphere
+  const n=Math.round(20+m.sfeer*.5), amp=1+m.sfeer/14;
+  $('crowd').innerHTML=F.people.slice(0,n).map(p=>{ const j=Math.abs(Math.sin(t/220+p.p))*amp; return `<g transform="translate(${p.x} ${p.y-j})"><rect x="-4" y="-2" width="8" height="12" rx="3" fill="${p.c}"/><circle cy="-7" r="4.5" fill="#F2C9A0"/></g>`; }).join('');
+  // trash appears as netheid drops; stink above the toilets
+  const tr=Math.round((100-m.schoon)/6); $('trash').innerHTML=F.trash.slice(0,tr).map(q=>`<rect x="${q.x}" y="${q.y}" width="10" height="6" rx="1" fill="${q.c}" transform="rotate(${q.r} ${q.x} ${q.y})"/>`).join('');
+  $('stink').setAttribute('opacity',m.schoon<45?Math.min(1,(45-m.schoon)/25):0);
+  // crew: fewer orange vests when the crew is tired
+  const cn=Math.round(m.crew/17); $('crewG').innerHTML=F.crew.slice(0,cn).map(([x,y])=>`<g transform="translate(${x} ${y})"><rect x="-5" y="-2" width="10" height="14" rx="3" fill="#FF8A3D"/><circle cy="-7" r="5" fill="#F2C9A0"/></g>`).join('');
+  // safety: warning sign above the crowd when it gets dangerous
+  $('warn').setAttribute('opacity',m.veilig<35?(.5+.5*Math.sin(t/120)):0);
+  // the queue at the bar grows while the food & drink card waits
+  const se=S.slots.eten, ql=se?2+Math.round((1-se.t/se.life)*9):1;
+  $('queue').innerHTML=[...Array(ql)].map((_,i)=>`<g transform="translate(${950-i*14} ${170+(i%2)*4})"><rect x="-4" y="-2" width="8" height="12" rx="3" fill="#9B5DE5"/><circle cy="-7" r="4.5" fill="#F2C9A0"/></g>`).join('');
+  // a bubble over every post with something waiting, its ring runs out with the time
+  for(const d of DEP){ const sl=S.slots[d.k], g=$('b-'+d.k); if(!g) continue; g.setAttribute('opacity',sl?1:0);
+    if(sl){ const f=Math.max(0,sl.t/sl.life); const r=$('bu-'+d.k); r.setAttribute('stroke-dashoffset',107*(1-f)); r.setAttribute('stroke',f<.3?'#E5243B':sl.samen?'#FFC531':'#2BB3C0'); g.setAttribute('transform',`translate(${d.zone[0]} ${d.zone[1]-38-(f<.3?Math.abs(Math.sin(t/90))*5:0)})`); } }
+  $('rain').setAttribute('opacity',S.rainT>0?Math.min(1,S.rainT):0); if(S.rainT>0) $('rain').setAttribute('transform',`translate(${(t/8)%20-10} ${(t/3)%40-20})`);
+}
+
+// ---------- the game ----------
+$('np').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; [...$('np').children].forEach(x=>x.setAttribute('aria-pressed',x===b)); start(+b.dataset.n); tab('play'); feed('Een nieuw festival begint. Veel plezier!','good'); };
+function start(n,demo=false){
+  cancelAnimationFrame(raf); $('between').hidden=true; $('feed').innerHTML='';
+  $('attract').hidden=!demo; $('panels').classList.toggle('demo',demo);
+  S={n,demo,lastInput:performance.now(),run:'run-'+Date.now(),day:1,incidents:0,q:0,qt:QT,m:{sfeer:60,veilig:60,schoon:60,crew:60},blij:0,mods:{},slots:{},next:{podium:1,eten:2,veilig:3,schoon:4},samenNext:12,coop:{ok:0,tot:0},dec:[],timeouts:0,decisions:0,hist:[],over:false,paused:false,used:new Set(),rainT:0,spotT:0};
+  buildField(); S.qt=qlen(); clock();
+  $('panels').innerHTML=DEP.map((d,i)=>{ const p=MAP[n][i]; return `<div class="pn" id="p-${d.k}"><div class="hd"><i>${d.ic}</i><b>${d.n}</b><span class="pl" style="background:${PCOL[p]}">${demo?'Auto':n===1?'Jij':'Speler '+(p+1)}</span></div><div class="card" id="c-${d.k}"></div></div>`; }).join('');
+  DEP.forEach(d=>idle(d.k)); meters(); ac(); last=performance.now(); raf=requestAnimationFrame(loop);
+}
+function clock(){ const b=BLOCKS[S.q%4], mins=Math.floor((qlen()-Math.max(0,S.qt))/qlen()*180); const h=(b.h+Math.floor(mins/60))%24, mm=mins%60;
+  $('q').textContent=`${String(h).padStart(2,'0')}:${String(mm-mm%5).padStart(2,'0')}`; $('qt').textContent=`Dag ${S.day} · ${b.n}`; }
+function idle(k){ S.slots[k]=null; $('c-'+k).innerHTML='<div class="idle">Rustig… voor nu.</div>'; $('p-'+k).classList.remove('samen'); }
+function pickCard(k){ const pool=C[k].filter(c=>!S.used.has(c.t)); const c=(pool.length?pool:C[k])[Math.floor(Math.random()*(pool.length||C[k].length))]; S.used.add(c.t); if(S.used.size>16) S.used.clear(); return c; }
+function cardTime(){ return Math.max(5,10-lvl()*.9); }
+function show(k,card,samen=null){
+  const life=samen?cardTime()+3:cardTime();
+  S.slots[k]={card,t:life,life,samen,pick:null};
+  const d=DEP[dep(k)], cls=card.o.length===3?'c3':'c2';
+  $('p-'+k).classList.toggle('samen',!!samen);
+  $('c-'+k).innerHTML=`<h3>${samen?`<span class="tag">SAMEN met ${DEP[dep(samen.other)].n}</span>`:''}${card.t}</h3><div class="tb"><em id="tb-${k}"></em></div>
+   <div class="opts ${cls}">${card.o.map(([t,e],i)=>`<button class="op" data-k="${k}" data-i="${i}"><kbd>${d.keys[i].toUpperCase()}</kbd>${t}<small>${eff(e)}</small></button>`).join('')}</div>`;
+  tone(samen?520:740,.08,'square',.04);
+}
+function eff(e){ const p=Object.entries(e).filter(([,v])=>v); return p.length?p.map(([k,v])=>`<i class="${v>0?'':'n'}">${v>0?'+':''}${v} ${ico(k)}</i>`).join(''):'<i class="z">geen effect</i>'; }
+$('panels').addEventListener('pointerdown',e=>{ const b=e.target.closest('.op'); if(b) choose(b.dataset.k,+b.dataset.i,b); });
+addEventListener('keydown',e=>{ if(!S||S.over||S.paused||tabOpen) return; DEP.forEach(d=>{ const i=d.keys.indexOf(e.key.toLowerCase()); if(i>=0 && S.slots[d.k] && i<S.slots[d.k].card.o.length) choose(d.k,i,document.querySelector(`.op[data-k="${d.k}"][data-i="${i}"]`)); }); });
+function apply(e,mult=1){ for(const [k,v] of Object.entries(e)) S.m[k]=Math.max(0,Math.min(100,S.m[k]+v*mult)); meters(); }
+function fx(k,txt,col){ const s=document.createElement('div'); s.className='fx'; s.style.color=col; s.textContent=txt; $('p-'+k).appendChild(s); setTimeout(()=>s.remove(),1000); }
+function choose(k,i,btn){
+  const sl=S.slots[k]; if(!sl||S.paused||S.over||tabOpen) return;
+  if(sl.samen){
+    if(sl.pick!==null) return; sl.pick=i; btn&&btn.classList.add('picked'); tone(600,.06);
+    const other=S.slots[sl.samen.other];
+    if(other && other.pick!==null) resolveSamen(sl.samen);
+    return;
+  }
+  const [t,e,f]=sl.card.o[i]; apply(e); S.decisions++; S.dec.push(`${DEP[dep(k)].n}: ${sl.card.t} → ${t}`);
+  const s=sum(e); fx(k, s>=0?'✓':'⚠', s>=0?'#2BA36B':'#D7263D'); tone(s>=0?820:260,.1); effectPops(k,e); if(f) fieldFx(f);
+  S.blij+=Math.max(0,s)*12;
+  idle(k); S.next[k]=1+Math.random()*2.5*(1-Math.min(S.q,3)*.2);
+}
+function resolveSamen(sm){
+  const [a,b]=sm.d, A=S.slots[a], B=S.slots[b]; S.coop.tot++;
+  const card=sm.card;
+  if(A.pick!==null && A.pick===B.pick){
+    const [t,e,f]=card.o[A.pick]; apply(e,1.25); S.coop.ok++; S.blij+=150; S.decisions++;
+    S.dec.push(`Samen (${DEP[dep(a)].n} + ${DEP[dep(b)].n}): ${card.t} → ${t}`);
+    feed(`Samen besloten: ${t} (+25% effect)`,'good'); [523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.15),i*70));
+    const sc={}; for(const [k,v] of Object.entries(e)) sc[k]=v*1.25; effectPops(a,sc); fieldFx(f||'confetti');
+  } else {
+    const picks=[A.pick,B.pick].filter(x=>x!==null);
+    const e={}; for(const p of picks) for(const [k,v] of Object.entries(card.o[p][1])) e[k]=(e[k]||0)+v/picks.length;
+    for(const m of MET) e[m.k]=(e[m.k]||0)-3; apply(e); effectPops(a,e);
+    S.dec.push(`Niet eens over: ${card.t}`); feed(picks.length<2?'Geen gezamenlijk besluit: te laat':'Niet eens geworden: halfslachtig compromis','bad'); tone(180,.3,'sawtooth',.05);
+  }
+  idle(a); idle(b); S.next[a]=1.5; S.next[b]=1.5;
+}
+function timeout(k){
+  const sl=S.slots[k];
+  if(sl.samen){ resolveSamen(sl.samen); return; }
+  const worst=sl.card.o.reduce((w,o)=>sum(o[1])<sum(w[1])?o:w); const e={...worst[1]}; for(const m of MET) e[m.k]=(e[m.k]||0)-2;
+  apply(e); S.timeouts++; S.dec.push(`${DEP[dep(k)].n}: ${sl.card.t} → niemand besliste`);
+  fx(k,'Te laat!','#D7263D'); tone(160,.25,'sawtooth',.05); effectPops(k,e); if(worst[2]) fieldFx(worst[2]);
+  const [x,y]=DEP[dep(k)].zone; pop(x,y-30,'Te laat!','#FF6B7A'); idle(k); S.next[k]=1.5;
+}
+function meters(){
+  $('meters').innerHTML=MET.map(m=>{ const v=Math.round(S.m[m.k]); return `<div class="mt ${v<20?'flash':''}"><b>${m.n}<span>${v}</span></b><div><em style="width:${v}%;background:${v>=60?'#2BA36B':v>=30?'#FFC531':'#E5243B'}"></em></div></div>`; }).join('');
+  $('omzet').textContent=S.demo?'demo · tik om te spelen':`${Math.round(S.blij)} bezoekers blij`;
+}
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  if(!S.paused&&!tabOpen){
+    S.qt-=dt; S.rainT=Math.max(0,S.rainT-dt); S.spotT=Math.max(0,S.spotT-dt);
+    // continuous pressure: everything slowly wears down
+    const drain=.35+lvl()*.08;
+    S.m.schoon-=drain*dt*(S.mods.toilet?.5:1); S.m.sfeer-=drain*dt*(S.mods.water?.6:1); S.m.crew-=drain*dt*(S.mods.crew?.6:1); S.m.veilig-=drain*dt*(S.mods.ehbo?.6:1)*.8;
+    // the crew catches its breath at posts where nothing is going on
+    const rest=DEP.filter(d=>!S.slots[d.k]).length; S.m.crew+=rest*.45*dt;
+    S.blij += (S.m.sfeer*S.m.veilig/10000)*dt*20*(1+lvl()*.3);
+    for(const k in S.m) S.m[k]=Math.max(0,Math.min(100,S.m[k]));
+    S.samenNext-=dt;
+    if(S.samenNext<=0){ const sm=SAMEN[Math.floor(Math.random()*SAMEN.length)]; const [a,b]=sm.d;
+      if(!S.slots[a]&&!S.slots[b]){ const card={t:sm.t,o:sm.o}; show(a,card,{other:b}); show(b,card,{other:a});
+        S.slots[a].samen={d:sm.d,card,other:b}; S.slots[b].samen={d:sm.d,card,other:a}; feed('Gele melding: samen beslissen!'); S.samenNext=Math.max(7,15-lvl()*1.5); }
+      else S.samenNext=1; }
+    for(const d of DEP){ const k=d.k, sl=S.slots[k];
+      if(!sl){ S.next[k]-=dt; if(S.next[k]<=0) show(k,pickCard(k)); continue; }
+      sl.t-=dt; if(S.demo) autoCrew(k,sl); const el=$('tb-'+k); if(el) el.style.width=Math.max(0,sl.t/sl.life*100)+'%';
+      if(sl.t<=0) timeout(k); }
+    if(Math.floor(now/250)!==S.mtick){ S.mtick=Math.floor(now/250); meters(); clock(); }
+    const dead=MET.find(m=>S.m[m.k]<=0); if(dead) incident(dead); // no game over: an incident, then the festival goes on
+    if(S.qt<=0){ quarterEnd(); }
+  }
+  if(!S.demo && !tabOpen && now-S.lastInput>DEMO_IDLE*1000) return backToDemo(); // nobody playing: the automatic crew takes over
+  drawField(now); if(resOpen&&Math.floor(now/1500)!==S.rtick){ S.rtick=Math.floor(now/1500); renderResults(); }
+  raf=requestAnimationFrame(loop);
+}
+// ---------- showcase: an automatic crew keeps the festival lively for passers-by ----------
+function bestOption(card){ const low=Object.entries(S.m).sort((a,b)=>a[1]-b[1]).map(x=>x[0]); let best=0, bv=-1e9;
+  card.o.forEach(([t,e],i)=>{ let v=0; for(const [m,dv] of Object.entries(e)) v+=dv*(m===low[0]?3:m===low[1]?1.6:1); if(v>bv){bv=v;best=i;} }); return best; }
+function autoCrew(k,sl){
+  if(sl.pick!==null&&sl.pick!==undefined) return;
+  if(sl.autoAt===undefined) sl.autoAt=sl.life-(1.3+Math.random()*2.2);           // pick after 1.3-3.5 s, as a person would
+  if(sl.t>sl.autoAt||sl.pressing) return;
+  const i=bestOption(sl.card), btn=document.querySelector(`.op[data-k="${k}"][data-i="${i}"]`);
+  sl.pressing=true; btn&&btn.classList.add('auto');                              // the button visibly goes down
+  setTimeout(()=>{ if(S.demo&&S.slots[k]===sl) choose(k,i,btn); },260);
+}
+let lastS=null; // the last real game, for the Resultaat tab while the showcase runs
+function backToDemo(){ if(S.decisions) { RESULTS.save(S.run, score(), lines()); lastS=S; } start(S.n,true); }
+function takeOver(){ const n=S.n; start(n,false); feed('Jij hebt het roer! Dag 1 begint, de eerste melding komt eraan.','good'); tone(659,.12); setTimeout(()=>tone(784,.15),110); }
+// Any tap counts as activity; the first tap in the showcase starts a fresh festival and is not used as a choice.
+document.addEventListener('pointerdown',e=>{ if(!S) return; S.lastInput=performance.now();
+  if(S.demo && !tabOpen && !e.target.closest('header,#tutorial,#results')){ e.preventDefault(); e.stopPropagation(); takeOver(); } },true);
+addEventListener('keydown',e=>{ if(!S) return; S.lastInput=performance.now(); if(S.demo&&!tabOpen){ e.stopImmediatePropagation(); takeOver(); } },true);
+$('attract').onclick=()=>{ if(S.demo) takeOver(); };
+function score(){ return Math.max(0,Math.round(S.blij + S.coop.ok*150 - S.timeouts*20 - S.incidents*100)); }
+function lines(){ return [`Dag ${S.day}, ${BLOCKS[S.q%4].n.toLowerCase()} met ${S.n} ${S.n===1?'speler':'spelers'}`, `${Math.round(S.blij)} bezoekers blij`, `${S.decisions} beslissingen, ${S.timeouts} te laat, ${S.incidents} incidenten`, ...S.dec.slice(-6)]; }
+const WHAT={sfeer:['De sfeer is weg','Bezoekers lopen weg'],veilig:['Onveilige situatie','Het terrein gaat even dicht'],schoon:['Het terrein is een puinhoop','Bezoekers haken af'],crew:['De crew is op','Alles ligt even stil']};
+function incident(m){ // a meter reached zero: visitors leave, the meter recovers a bit, the festival continues
+  if(S.demo){ S.m[m.k]=40; return; } // the showcase never breaks down
+  S.incidents++; const lost=Math.round(S.blij*.12); S.blij-=lost; S.m[m.k]=35; meters();
+  feed(`${WHAT[m.k][0]}! ${WHAT[m.k][1]} (−${lost} blij)`,'bad'); tone(140,.5,'sawtooth',.06);
+  $('flash').setAttribute('opacity',.45); setTimeout(()=>$('flash').setAttribute('opacity',0),250); pop(600,120,'Incident!','#FF6B7A');
+  S.dec.push(`Incident: ${WHAT[m.k][0].toLowerCase()}`);
+}
+function nextBlock(st){
+  $('between').hidden=true; S.q++; if(S.q%4===0){ S.day++; if(!S.demo) feed(`Dag ${S.day} begint`,'good'); } S.qt=qlen(); clock(); S.paused=false; last=performance.now();
+  DEP.forEach(d=>S.next[d.k]=1+Math.random()*2); if(st) feed(`${BLOCKS[S.q%4].n}: ${st.t}`,'good');
+  $('act').textContent=S.q%4===3?'HEADLINER':'ZOMERVELD';
+}
+function quarterEnd(){
+  S.paused=true; S.hist.push({...S.m,blij:Math.round(S.blij),n:`Dag ${S.day} ${BLOCKS[S.q%4].n.toLowerCase()}`}); DEP.forEach(d=>idle(d.k));
+  if(S.demo){ setTimeout(()=>nextBlock(null),300); return; } // showcase: no improvements, no score
+  RESULTS.save(S.run, score(), lines());
+  const opts=STRAT.filter(s=>!S.mods[s.k]).sort(()=>Math.random()-.5).slice(0,3);
+  if(!opts.length){ setTimeout(()=>nextBlock(null),400); return; } // all improvements taken: straight on
+  const prev=S.hist[S.hist.length-2]||{sfeer:60,veilig:60,schoon:60,crew:60,blij:0};
+  const nb=BLOCKS[(S.q+1)%4].n.toLowerCase();
+  $('betweenBox').innerHTML=`<h2>${BLOCKS[S.q%4].n} zit erop</h2>
+   <div class="rep">${MET.map(m=>{ const v=Math.round(S.m[m.k]), dlt=v-Math.round(prev[m.k]); return `<div><b>${v}</b>${m.n}<br><small>${dlt>=0?'▲':'▼'} ${Math.abs(dlt)}</small></div>`; }).join('')}</div>
+   <p>${Math.round(S.blij)} bezoekers blij tot nu toe. ${S.coop.tot?`Samen beslist: ${S.coop.ok} van ${S.coop.tot}.`:''} Straks: <b>${(S.q+1)%4===0?`dag ${S.day+1}, ${nb}`:nb}</b>. Wat verbeteren jullie?</p>
+   <div class="strat" id="strat">${opts.map(o=>`<button data-k="${o.k}"><b>${o.t}</b>${o.d}<span class="v" hidden>0</span></button>`).join('')}</div>
+   <p id="voteInfo" style="font-size:16px;opacity:.8">${S.n>1?`Iedereen tikt een keuze aan. Meeste stemmen wint (${S.n} stemmen).`:'Kies één verbetering.'}</p>`;
+  $('between').hidden=false; tone(440,.3);
+  const votes={}; let n=0;
+  $('strat').onpointerdown=e=>{ const b=e.target.closest('button'); if(!b) return; votes[b.dataset.k]=(votes[b.dataset.k]||0)+1; n++; const v=b.querySelector('.v'); v.hidden=false; v.textContent=votes[b.dataset.k]; tone(600+n*80,.08);
+    if(n>=S.n){ const win=Object.entries(votes).sort((a,b)=>b[1]-a[1])[0][0]; const st=STRAT.find(s=>s.k===win); S.mods[win]=true; apply(st.now); S.dec.push(`Verbetering na ${BLOCKS[S.q%4].n.toLowerCase()}: ${st.t}`);
+      setTimeout(()=>nextBlock(st),600); } };
+}
+// The Resultaat tab: the festival so far (it keeps running, so this is a live overview)
+function renderResults(){
+  if(S.demo){ if(!lastS){ $('results').innerHTML='<h2>Nog niemand gespeeld.</h2><p>Het festival draait nu met een automatische crew. Tik op Spelen en neem het roer over; hier zie je daarna hoe jouw festival ging.</p>'; return; }
+    const cur=S; S=lastS; try{ renderResults(); } finally { S=cur; } return; }
+  const sc=score(), avg=Math.round(MET.reduce((a,m)=>a+S.m[m.k],0)/4);
+  const msg = S.incidents ? `${S.incidents} ${S.incidents===1?'incident':'incidenten'} tot nu toe. Als er veel tegelijk gebeurt, schiet één kant er makkelijk bij in.` : avg>=55 ? 'Nog geen enkel incident. Het terrein draait als een trein.' : 'Nog geen incidenten, maar het terrein heeft het zwaar.';
+  const hist=S.hist.slice(-8), gains=hist.map((h,i)=>{ const all=S.hist, j=all.length-hist.length+i; return {n:h.n, g:h.blij-(j>0?all[j-1].blij:0)}; }), maxG=Math.max(1,...gains.map(x=>x.g));
+  $('results').innerHTML=`<h2>Dag ${S.day} · ${BLOCKS[S.q%4].n}</h2><div class="big">${sc}</div>
+   <p>${Math.round(S.blij)} bezoekers blij. ${msg} ${S.decisions} beslissingen, ${S.timeouts} keer te laat${S.coop.tot?`, ${S.coop.ok} van ${S.coop.tot} keer samen eens`:''}.</p>
+   ${gains.length?`<div class="bars">${gains.map(x=>`<div style="height:${Math.max(4,x.g/maxG*100)}%"><span>${x.n.replace('Dag ','D')}</span></div>`).join('')}</div>`:'<p style="opacity:.7">Na het eerste dagdeel zie je hier per dagdeel hoeveel bezoekers blij werden.</p>'}
+   <div class="rep" style="margin-top:34px">${MET.map(m=>`<div><b>${Math.round(S.m[m.k])}</b>${m.n}</div>`).join('')}</div>
+   <div id="rank"></div>
+   <ul class="dec">${S.dec.slice(-8).reverse().map(d=>`<li>${d}</li>`).join('')}</ul>
+   <p style="font-size:15px;opacity:.75">Veel tegelijk, samen kiezen en direct zien wat er gebeurt: zo maakt Enversed Studios drukte speelbaar.</p>`;
+  RESULTS.rank($('rank'), sc);
+}
+// Tabs: Spelen / Uitleg / Resultaat. The festival pauses while another tab is open.
+let tabOpen=false, resOpen=false;
+function tab(which){ tabOpen=which!=='play'; resOpen=which==='res';
+  $('tutorial').hidden=which!=='help'; $('results').hidden=which!=='res'; $('panels').hidden=tabOpen; $('field').style.display=tabOpen?'none':'';
+  $('tabPlay').setAttribute('aria-selected',which==='play'); $('tabHelp').setAttribute('aria-selected',which==='help'); $('tabRes').setAttribute('aria-selected',which==='res');
+  if(resOpen) renderResults(); if(!tabOpen) last=performance.now(); }
+$('tabPlay').onclick=()=>tab('play'); $('tabHelp').onclick=()=>tab('help'); $('tabRes').onclick=()=>tab('res'); $('backPlay').onclick=()=>tab('play');
+start(1,true); // no start screen: the festival shows itself with an automatic crew until someone taps
+window.__br={S:()=>S};
+</script>
+</body>
+</html>
