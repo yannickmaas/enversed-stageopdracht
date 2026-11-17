@@ -25,6 +25,13 @@ main{flex:1;display:grid;grid-template-columns:1fr 300px;gap:16px;padding:0 24px
 #stageWrap{position:relative;min-height:0;border-radius:18px;overflow:hidden;background:#000}
 svg#scene{width:100%;height:100%;display:block;touch-action:none;cursor:none}
 html.no-mouse,html.no-mouse *{cursor:none!important}
+/* idle screen: the room stays visible behind it, a ghost beam searches by itself */
+#attract{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);z-index:5;text-align:center;pointer-events:none;
+  background:rgba(11,16,32,.82);border:3px solid var(--beam);border-radius:24px;padding:18px 34px;box-shadow:0 0 40px rgba(255,231,163,.25);animation:attr 2s ease-in-out infinite;width:max-content;max-width:90%}
+#attract b{display:block;font-family:Unbounded,"Arial Black",sans-serif;font-size:clamp(24px,3vw,42px);color:var(--beam);line-height:1.1}
+#attract span{display:block;font-size:clamp(15px,1.5vw,20px);color:var(--ink);margin-top:6px}
+#attract.go{animation:none;border-color:var(--ok)} #attract.go b{color:var(--ok)}
+@keyframes attr{0%,100%{transform:translateX(-50%) scale(1);box-shadow:0 0 30px rgba(255,231,163,.2)}50%{transform:translateX(-50%) scale(1.04);box-shadow:0 0 60px rgba(255,231,163,.45)}}
 #card{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:min(560px,92%);background:#141B33;border:3px solid var(--beam);border-radius:20px;padding:18px 20px;z-index:4}
 #card[hidden]{display:none}
 #card h3{margin:0 0 4px;font-size:24px}
@@ -139,6 +146,7 @@ body.cam-screen #lightCur{background:conic-gradient(#8C7F5C calc(var(--p,0)*360d
       <circle id="dwell" cx="0" cy="0" r="46" fill="none" stroke="#FFE7A3" stroke-width="7" stroke-dasharray="289" stroke-dashoffset="289" transform="rotate(-90)" opacity="0"/>
     </svg>
     <div id="card" hidden></div>
+    <div id="attract" hidden aria-live="polite"><b>🔦 Pak de zaklamp</b><span>Schijn op het scherm en zoek uit waarom het project vastloopt</span></div>
   </div>
   <aside><h2>Dossier</h2><div id="dossier"><div class="empty">Houd de lichtbundel stil op iets wat opvalt. Na ruim een seconde weet je wat het is.</div></div><button id="recon" disabled>Reconstrueer de oorzaak</button></aside>
 </main>
@@ -766,6 +774,22 @@ function drawBase(){
 const faintArt=`<g font-family="Manrope,sans-serif" font-weight="700" fill="#7E879E" opacity=".55"><text x="505" y="262" font-size="13">eigenaar planning?? → niemand</text>
   <rect x="1418" y="282" width="46" height="34" fill="#C9C27A" opacity=".5"/><text x="1421" y="298" font-size="8" fill="#5A5A3A">overleg</text><text x="1421" y="309" font-size="8" fill="#5A5A3A">geschrapt</text></g>`;
 
+// ---------- Idle screen: when nobody plays, the room runs by itself with a ghost beam ----------
+// As soon as someone shines the flashlight on the screen (or uses the arrow keys), a fresh investigation starts:
+// full battery, nothing found yet. With no flashlight for IDLE_GAME s (IDLE_RESULT s on the result tab) the idle screen returns.
+const IDLE_GAME=30, IDLE_RESULT=60;
+let DEMO=false, lastAct=performance.now(), demoT0=0;
+const realInput=now=>(CAM.fromCam && now-CAM.lastTs<400) || now-mouseT<800; // flashlight seen, or mouse/keys just used
+function startDemo(){ $('reconOv').hidden=true; start(); DEMO=true; demoT0=performance.now(); mouseT=-1e9;
+  const a=$('attract'); a.className=''; a.innerHTML='<b>🔦 Pak de zaklamp</b><span>Schijn op het scherm en zoek uit waarom het project vastloopt</span>'; a.hidden=false; }
+function takeOver(){ DEMO=false; start(); lastAct=performance.now();
+  const a=$('attract'); a.className='go'; a.innerHTML='<b>Daar ben je!</b><span>Houd de lichtbundel stil op iets wat opvalt</span>'; a.hidden=false;
+  tone(660,.12,'triangle'); setTimeout(()=>tone(880,.15,'triangle'),120); setTimeout(()=>{ if(!DEMO) a.hidden=true; },2600); }
+function demoBeam(now){ const t=(now-demoT0)/1000; // a slow searching sweep through the room
+  return {x:800+600*Math.sin(t*.23)+90*Math.sin(t*.9), y:470+280*Math.sin(t*.31+1.2)+50*Math.sin(t*1.3)}; }
+setInterval(()=>{ const now=performance.now(); if(realInput(now)) lastAct=now;
+  if(DEMO||CAL.phase) return;
+  if(now-lastAct > (TAB==='result'?IDLE_RESULT:IDLE_GAME)*1000) startDemo(); }, 500);
 function start(){
   S={bat:BAT,marks:{},scanned:new Set(),dwellOn:null,dwell:0,score:0,card:null,over:false,beam:1};
   $('base').innerHTML=drawBase()+faintArt; $('card').hidden=true; $('tabGame').disabled=false; showTab('game');
@@ -817,6 +841,13 @@ function beamOn(now){ return CAM.fromCam ? CAM.inScene : (!CAM.connected || now-
 function loop(now){
   if(TAB!=='game' || CAL.phase){ last=now; raf=requestAnimationFrame(loop); return; } // ander tabblad of kalibreren: pauze
   const dt=Math.min(.05,(now-last)/1000); last=now;
+  if(DEMO){ // idle screen: ghost beam, no battery, no findings; the first real flashlight light starts a fresh game
+    if((CAM.fromCam && CAM.inScene && now-CAM.lastTs<400) || mouseT>demoT0){ takeOver(); raf=requestAnimationFrame(loop); return; }
+    L=demoBeam(now); S.beam+=(1-S.beam)*Math.min(1,dt*6);
+    $('hole').setAttribute('cx',L.x); $('hole').setAttribute('cy',L.y); $('tintC').setAttribute('cx',L.x); $('tintC').setAttribute('cy',L.y);
+    $('hole').setAttribute('r',BEAM_R*1.15*S.beam); $('tintC').setAttribute('r',BEAM_R*1.15*S.beam); $('dwell').setAttribute('opacity',0);
+    $('batF').style.width='100%'; $('batF').style.background='#FFE7A3';
+    raf=requestAnimationFrame(loop); return; }
   if(CAM.fromCam && now-CAM.lastTs > 400) CAM.fromCam=false; // lichtvlek kwijt
   const on=beamOn(now); S.beam += ((on?1:0)-S.beam)*Math.min(1,dt*(on?14:8));
   const baseR = CAM.fromCam ? CAM.beamR : BEAM_R;
@@ -856,7 +887,7 @@ $('startBtn').onclick=()=>{ if(CAM.connected && !CAL.H) calStart(); else calGo()
 $('calBtn').onclick=()=>calStart();
 $('tryBtn').onclick=()=>{ const b=$('tryBtn'); b.textContent='Goed zo! ✓'; b.classList.add('done'); tone(880,.12,'triangle'); setTimeout(()=>{ b.textContent='Oefenknop'; b.classList.remove('done'); },2500); };
 updateCalBtn();
-start(); // het spel opent direct op het tabblad Onderzoek
+startDemo(); // het spel opent in het idle-scherm: de kamer draait op de achtergrond tot iemand de zaklamp pakt
 </script>
 </body>
 </html>
